@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (!ready || !user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0b]">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
