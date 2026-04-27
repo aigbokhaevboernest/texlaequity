@@ -201,6 +201,7 @@ export type Database = {
           id: string
           phone: string | null
           profit: number
+          status: string
           total_deposit: number
           updated_at: string
           user_id: string
@@ -220,6 +221,7 @@ export type Database = {
           id?: string
           phone?: string | null
           profit?: number
+          status?: string
           total_deposit?: number
           updated_at?: string
           user_id: string
@@ -239,6 +241,7 @@ export type Database = {
           id?: string
           phone?: string | null
           profit?: number
+          status?: string
           total_deposit?: number
           updated_at?: string
           user_id?: string
@@ -460,6 +463,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          user_id: string
+          username: string
+        }[]
+      }
+      admin_set_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target_user: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
