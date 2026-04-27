@@ -82,9 +82,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6 lg:py-8 lg:grid lg:grid-cols-[220px_1fr] lg:gap-8">
+      <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8 lg:grid lg:grid-cols-[200px_1fr] lg:gap-6">
         <aside className="mb-6 lg:mb-0 lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-1.5 flex lg:flex-col gap-0.5 overflow-x-auto">
+          <div className="rounded-xl border border-border bg-muted/30 p-1.5 flex lg:flex-col gap-0.5 overflow-x-auto">
             {items.map((it) => (
               <NavLink
                 key={it.to}
@@ -93,8 +93,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 className={({ isActive }) =>
                   `flex items-center gap-2.5 px-3 py-2 rounded-md text-[12.5px] font-mono transition-all whitespace-nowrap ${
                     isActive
-                      ? "bg-primary/15 text-primary border border-primary/30 shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)]"
-                      : "text-zinc-400 hover:bg-white/5 hover:text-white border border-transparent"
+                      ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
                   }`
                 }
               >
@@ -103,16 +103,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </NavLink>
             ))}
           </div>
-          <div className="hidden lg:block mt-4 px-3 py-2.5 rounded-xl border border-white/5 bg-black/30">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">session</p>
-            <p className="text-[11px] font-mono text-zinc-300 truncate mt-0.5">{user.id.slice(0, 18)}…</p>
-            <p className="text-[10px] font-mono text-emerald-400 mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> authenticated · admin
+          <div className="hidden lg:block mt-4 px-3 py-2.5 rounded-xl border border-border bg-muted/30">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">session</p>
+            <p className="text-[11px] font-mono text-foreground truncate mt-0.5">{user.id.slice(0, 18)}…</p>
+            <p className="text-[10px] font-mono text-emerald-600 mt-1 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> authenticated · admin
             </p>
           </div>
         </aside>
 
-        <main className="min-w-0 admin-surface">{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
     </div>
   );
