@@ -44,11 +44,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     // Dark, console-style admin shell — intentionally distinct from the
     // light glassy user dashboard so admins know they are in privileged mode.
     <div
-      className="min-h-screen text-zinc-100"
-      style={{
-        background:
-          "radial-gradient(1200px 600px at 0% 0%, hsl(354 78% 50% / 0.08), transparent 60%), radial-gradient(800px 600px at 100% 100%, hsl(220 80% 50% / 0.05), transparent 60%), #0a0a0b",
-      }}
+      className="min-h-screen text-foreground"
+      style={{ background: "#ffffff" }}
     >
       <header className="sticky top-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-xl">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-14 flex items-center justify-between">
