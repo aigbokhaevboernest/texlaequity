@@ -88,7 +88,7 @@ export default function AdminTransactions() {
   const filtered = filter === "all" ? txs : txs.filter((t) => t.status === filter);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Transactions</h1>
         <p className="text-muted-foreground text-[13px] mt-1">Approve or reject deposit & withdrawal requests.</p>

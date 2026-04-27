@@ -108,7 +108,7 @@ export default function AdminCars() {
   const resolveImg = (c: Car) => c.image_url || carImages[c.model] || "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Tesla Cars</h1>

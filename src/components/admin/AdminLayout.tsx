@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (!ready || !user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0b]">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
@@ -41,43 +41,35 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    // Dark, console-style admin shell — intentionally distinct from the
-    // light glassy user dashboard so admins know they are in privileged mode.
-    <div
-      className="min-h-screen text-zinc-100"
-      style={{
-        background:
-          "radial-gradient(1200px 600px at 0% 0%, hsl(354 78% 50% / 0.08), transparent 60%), radial-gradient(800px 600px at 100% 100%, hsl(220 80% 50% / 0.05), transparent 60%), #0a0a0b",
-      }}
-    >
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-xl">
+    <div className="min-h-screen text-foreground" style={{ background: "#ffffff" }}>
+      <header className="sticky top-0 z-40 border-b border-border bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-14 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center shadow-glow">
               <Terminal className="w-3.5 h-3.5" strokeWidth={2.5} />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-[13px] font-semibold tracking-tight text-white">
+              <span className="font-mono text-[13px] font-semibold tracking-tight text-foreground">
                 teslavest<span className="text-primary">::</span>admin
               </span>
-              <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.18em] px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">
+              <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.18em] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                 root
               </span>
             </div>
           </Link>
           <div className="flex items-center gap-1">
-            <span className="hidden md:inline text-[11px] font-mono text-zinc-500 mr-3">
+            <span className="hidden md:inline text-[11px] font-mono text-muted-foreground mr-3">
               {user.email}
             </span>
             <Link
               to="/dashboard"
-              className="flex items-center gap-1.5 text-[12px] text-zinc-400 hover:text-white transition-colors px-2.5 py-1.5 rounded-md hover:bg-white/5"
+              className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-md hover:bg-muted"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> User view
             </Link>
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-1.5 text-[12px] text-zinc-400 hover:text-white transition-colors px-2.5 py-1.5 rounded-md hover:bg-white/5"
+              className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-md hover:bg-muted"
             >
               <LogOut className="w-3.5 h-3.5" /> Sign out
             </button>
@@ -85,9 +77,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6 lg:py-8 lg:grid lg:grid-cols-[220px_1fr] lg:gap-8">
+      <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8 lg:grid lg:grid-cols-[200px_1fr] lg:gap-6">
         <aside className="mb-6 lg:mb-0 lg:sticky lg:top-20 lg:self-start">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-1.5 flex lg:flex-col gap-0.5 overflow-x-auto">
+          <div className="rounded-xl border border-border bg-muted/30 p-1.5 flex lg:flex-col gap-0.5 overflow-x-auto">
             {items.map((it) => (
               <NavLink
                 key={it.to}
@@ -96,8 +88,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 className={({ isActive }) =>
                   `flex items-center gap-2.5 px-3 py-2 rounded-md text-[12.5px] font-mono transition-all whitespace-nowrap ${
                     isActive
-                      ? "bg-primary/15 text-primary border border-primary/30 shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)]"
-                      : "text-zinc-400 hover:bg-white/5 hover:text-white border border-transparent"
+                      ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
                   }`
                 }
               >
@@ -106,16 +98,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </NavLink>
             ))}
           </div>
-          <div className="hidden lg:block mt-4 px-3 py-2.5 rounded-xl border border-white/5 bg-black/30">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">session</p>
-            <p className="text-[11px] font-mono text-zinc-300 truncate mt-0.5">{user.id.slice(0, 18)}…</p>
-            <p className="text-[10px] font-mono text-emerald-400 mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> authenticated · admin
+          <div className="hidden lg:block mt-4 px-3 py-2.5 rounded-xl border border-border bg-muted/30">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">session</p>
+            <p className="text-[11px] font-mono text-foreground truncate mt-0.5">{user.id.slice(0, 18)}…</p>
+            <p className="text-[10px] font-mono text-emerald-600 mt-1 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> authenticated · admin
             </p>
           </div>
         </aside>
 
-        <main className="min-w-0 admin-surface">{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
     </div>
   );

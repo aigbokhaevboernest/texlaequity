@@ -56,7 +56,7 @@ export default function AdminKyc() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="font-display text-3xl font-light tracking-[-0.03em]">KYC review</h1>
         <p className="text-muted-foreground text-[13px] mt-1">{rows.filter((r) => r.status === "pending").length} pending</p>
