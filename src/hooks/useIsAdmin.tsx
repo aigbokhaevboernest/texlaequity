@@ -1,30 +1,10 @@
-import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
-import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Backwards-compatible thin wrapper around the centralized role in `useAuth`.
+ * Prefer `useAuth()` directly in new code.
+ */
 export const useIsAdmin = () => {
-  const { user, loading: authLoading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => {
-        setIsAdmin(!!data);
-        setLoading(false);
-      });
-  }, [user, authLoading]);
-
-  return { isAdmin, loading: loading || authLoading };
+  const { isAdmin, loading, roleLoading } = useAuth();
+  return { isAdmin, loading: loading || roleLoading };
 };
