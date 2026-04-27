@@ -21,28 +21,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Debug helper: log the user + role whenever auth state resolves
-  const logUserAndRole = (s: Session | null, label: string) => {
-    if (!s?.user) {
-      console.log(`[auth:${label}] no user`);
-      return;
-    }
-    // Defer the role lookup to avoid recursion inside onAuthStateChange
-    setTimeout(async () => {
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", s.user.id)
-        .maybeSingle();
-      console.log(`[auth:${label}]`, {
-        id: s.user.id,
-        email: s.user.email,
-        role: roleRow?.role ?? "user",
-      });
-    }, 0);
-  };
-
   useEffect(() => {
+    // Debug helper kept inside the effect so Fast Refresh doesn't lose hook bindings
+    const logUserAndRole = (s: Session | null, label: string) => {
+      if (!s?.user) {
+        console.log(`[auth:${label}] no user`);
+        return;
+      }
+      // Defer the role lookup to avoid recursion inside onAuthStateChange
+      setTimeout(async () => {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", s.user.id)
+          .maybeSingle();
+        console.log(`[auth:${label}]`, {
+          id: s.user.id,
+          email: s.user.email,
+          role: roleRow?.role ?? "user",
+        });
+      }, 0);
+    };
+
     // Set up listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
