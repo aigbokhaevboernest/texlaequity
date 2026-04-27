@@ -201,6 +201,7 @@ export type Database = {
           id: string
           phone: string | null
           profit: number
+          status: string
           total_deposit: number
           updated_at: string
           user_id: string
@@ -220,6 +221,7 @@ export type Database = {
           id?: string
           phone?: string | null
           profit?: number
+          status?: string
           total_deposit?: number
           updated_at?: string
           user_id: string
@@ -239,6 +241,7 @@ export type Database = {
           id?: string
           phone?: string | null
           profit?: number
+          status?: string
           total_deposit?: number
           updated_at?: string
           user_id?: string
