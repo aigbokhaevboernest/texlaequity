@@ -1,0 +1,46 @@
+const Footer = () => (
+  <footer className="pt-24 pb-10 border-t border-border bg-surface/30">
+    <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+      <div className="grid md:grid-cols-12 gap-10 mb-16">
+        <div className="md:col-span-5">
+          <p className="font-display font-semibold text-[17px] mb-4">
+            Tesla<span className="text-primary">Vest</span>
+          </p>
+          <p className="text-sm text-foreground/55 max-w-sm leading-relaxed font-light">
+            A platform where digital wealth meets electric mobility. Earn, grow, and drive the future.
+          </p>
+        </div>
+        <div className="md:col-span-2">
+          <p className="label-mono text-foreground/40 mb-4">Platform</p>
+          <ul className="space-y-2.5 text-[13px] text-foreground/70">
+            <li><a href="#vehicles" className="hover:text-foreground transition-colors">Vehicles</a></li>
+            <li><a href="#plans" className="hover:text-foreground transition-colors">Plans</a></li>
+            <li><a href="#leaderboard" className="hover:text-foreground transition-colors">Traders</a></li>
+          </ul>
+        </div>
+        <div className="md:col-span-2">
+          <p className="label-mono text-foreground/40 mb-4">Company</p>
+          <ul className="space-y-2.5 text-[13px] text-foreground/70">
+            <li><a href="#" className="hover:text-foreground transition-colors">About</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Security</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
+          </ul>
+        </div>
+        <div className="md:col-span-3">
+          <p className="label-mono text-foreground/40 mb-4">Legal</p>
+          <ul className="space-y-2.5 text-[13px] text-foreground/70">
+            <li><a href="#" className="hover:text-foreground transition-colors">Terms of service</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Privacy policy</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Risk disclosure</a></li>
+          </ul>
+        </div>
+      </div>
+      <div className="text-[11px] text-foreground/40 font-mono border-t border-border pt-6 flex justify-between flex-wrap gap-2">
+        <span>© {new Date().getFullYear()} TESLAVEST. ALL RIGHTS RESERVED.</span>
+        <span>BUILT FOR THE FUTURE OF MOBILITY &amp; MONEY.</span>
+      </div>
+    </div>
+  </footer>
+);
+
+export default Footer;

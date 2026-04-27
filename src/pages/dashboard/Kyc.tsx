@@ -1,0 +1,165 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Upload, Loader2, ShieldCheck, Clock, X, FileText } from "lucide-react";
+import { validateFile, DOC_TYPES } from "@/lib/uploads";
+
+interface Submission {
+  id: string; document_type: string; status: string; created_at: string;
+  rejection_reason: string | null;
+}
+
+export default function Kyc() {
+  const { user } = useAuth();
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [docType, setDocType] = useState("Passport");
+  const [docNumber, setDocNumber] = useState("");
+  const [front, setFront] = useState<File | null>(null);
+  const [back, setBack] = useState<File | null>(null);
+  const [selfie, setSelfie] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("kyc_submissions").select("id, document_type, status, created_at, rejection_reason")
+      .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setSubmission(data as Submission); });
+  }, [user]);
+
+  const upload = async (file: File, key: string) => {
+    const path = `${user!.id}/${Date.now()}-${key}-${file.name}`;
+    const { error } = await supabase.storage.from("kyc-documents").upload(path, file, { upsert: false });
+    if (error) throw error;
+    return path;
+  };
+
+  const submit = async () => {
+    if (!user) return;
+    if (!docNumber || !front || !selfie) { toast.error("Please fill all required fields"); return; }
+    setLoading(true);
+    try {
+      const id_front_url = await upload(front, "front");
+      const id_back_url = back ? await upload(back, "back") : null;
+      const selfie_url = await upload(selfie, "selfie");
+      const { data, error } = await supabase.from("kyc_submissions").insert({
+        user_id: user.id, document_type: docType, document_number: docNumber,
+        id_front_url, id_back_url, selfie_url, status: "pending",
+      }).select().single();
+      if (error) throw error;
+      setSubmission(data as Submission);
+      toast.success("KYC submitted. We'll review within 24h.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const FileSlot = ({ label, file, onChange, required }: { label: string; file: File | null; onChange: (f: File | null) => void; required?: boolean }) => (
+    <div>
+      <Label>{label} {required && <span className="text-primary">*</span>}</Label>
+      {file ? (
+        <div className="mt-1 rounded-xl border border-border overflow-hidden bg-muted/40">
+          {file.type.startsWith("image/") ? (
+            <img src={URL.createObjectURL(file)} alt={label} className="w-full max-h-48 object-contain bg-muted" />
+          ) : (
+            <div className="flex items-center justify-center py-8 bg-muted">
+              <FileText className="w-10 h-10 text-muted-foreground" />
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-3 py-2 text-[12px] bg-card">
+            <span className="truncate flex-1">{file.name}</span>
+            <span className="text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+            <button type="button" onClick={() => onChange(null)} className="hover:text-red-600">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="mt-1 flex items-center gap-3 rounded-xl border border-dashed border-border p-3 cursor-pointer hover:border-foreground/40">
+          <Upload className="w-4 h-4 text-muted-foreground" />
+          <span className="text-[13px] truncate flex-1 text-muted-foreground">Click to upload (JPG/PNG/PDF, max 8MB)</span>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              if (!f) return;
+              const err = validateFile(f, { types: DOC_TYPES });
+              if (err) { toast.error(err); return; }
+              onChange(f);
+            }}
+          />
+        </label>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="label-mono text-muted-foreground mb-2">Identity verification</p>
+        <h1 className="font-display text-3xl font-light tracking-[-0.03em]">AML / KYC</h1>
+        <p className="text-muted-foreground text-[14px] mt-1">Verify your identity to enable withdrawals and large deposits.</p>
+      </div>
+
+      {submission && (
+        <div className={`rounded-2xl border p-5 max-w-2xl flex items-center gap-4 ${
+          submission.status === "approved" ? "border-emerald-500/30 bg-emerald-500/5" :
+          submission.status === "rejected" ? "border-red-500/30 bg-red-500/5" :
+          "border-yellow-500/30 bg-yellow-500/5"
+        }`}>
+          {submission.status === "approved" ? <ShieldCheck className="w-5 h-5 text-emerald-600" /> :
+           submission.status === "rejected" ? <X className="w-5 h-5 text-red-600" /> :
+           <Clock className="w-5 h-5 text-yellow-600" />}
+          <div className="flex-1">
+            <p className="font-medium text-[14px] capitalize">Status: {submission.status}</p>
+            <p className="text-[12px] text-muted-foreground">
+              {submission.document_type} · submitted {new Date(submission.created_at).toLocaleDateString()}
+            </p>
+            {submission.rejection_reason && (
+              <p className="text-[12px] text-red-700 mt-1">Reason: {submission.rejection_reason}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(!submission || submission.status === "rejected") && (
+        <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Document type</Label>
+              <Select value={docType} onValueChange={setDocType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Passport">Passport</SelectItem>
+                  <SelectItem value="National ID">National ID</SelectItem>
+                  <SelectItem value="Driver License">Driver's license</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Document number</Label>
+              <Input value={docNumber} onChange={(e) => setDocNumber(e.target.value)} />
+            </div>
+          </div>
+
+          <FileSlot label="ID front" file={front} onChange={setFront} required />
+          <FileSlot label="ID back (if applicable)" file={back} onChange={setBack} />
+          <FileSlot label="Selfie holding ID" file={selfie} onChange={setSelfie} required />
+
+          <Button onClick={submit} disabled={loading} className="w-full">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit for verification"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
