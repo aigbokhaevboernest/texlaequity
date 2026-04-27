@@ -47,34 +47,34 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       className="min-h-screen text-foreground"
       style={{ background: "#ffffff" }}
     >
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-border bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-14 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center shadow-glow">
               <Terminal className="w-3.5 h-3.5" strokeWidth={2.5} />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-[13px] font-semibold tracking-tight text-white">
+              <span className="font-mono text-[13px] font-semibold tracking-tight text-foreground">
                 teslavest<span className="text-primary">::</span>admin
               </span>
-              <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.18em] px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">
+              <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.18em] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                 root
               </span>
             </div>
           </Link>
           <div className="flex items-center gap-1">
-            <span className="hidden md:inline text-[11px] font-mono text-zinc-500 mr-3">
+            <span className="hidden md:inline text-[11px] font-mono text-muted-foreground mr-3">
               {user.email}
             </span>
             <Link
               to="/dashboard"
-              className="flex items-center gap-1.5 text-[12px] text-zinc-400 hover:text-white transition-colors px-2.5 py-1.5 rounded-md hover:bg-white/5"
+              className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-md hover:bg-muted"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> User view
             </Link>
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-1.5 text-[12px] text-zinc-400 hover:text-white transition-colors px-2.5 py-1.5 rounded-md hover:bg-white/5"
+              className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-md hover:bg-muted"
             >
               <LogOut className="w-3.5 h-3.5" /> Sign out
             </button>
