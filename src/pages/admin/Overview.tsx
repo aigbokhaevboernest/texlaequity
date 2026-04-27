@@ -32,10 +32,10 @@ export default function AdminOverview() {
   }, []);
 
   const cards = [
-    { label: "Total users", value: s.users, icon: Users, to: "/admin/users" },
-    { label: "Pending transactions", value: s.pendingTx, icon: Banknote, to: "/admin/transactions", highlight: s.pendingTx > 0 },
-    { label: "Pending KYC", value: s.pendingKyc, icon: FileCheck2, to: "/admin/kyc", highlight: s.pendingKyc > 0 },
-    { label: "Pending orders", value: s.pendingOrders, icon: CarIcon, to: "/admin/orders", highlight: s.pendingOrders > 0 },
+    { label: "Total users", value: s.users, icon: Users, to: "/admin/users", color: "bg-blue-50 text-blue-600 border-blue-200", iconBg: "bg-blue-100" },
+    { label: "Pending transactions", value: s.pendingTx, icon: Banknote, to: "/admin/transactions", highlight: s.pendingTx > 0, color: "bg-amber-50 text-amber-600 border-amber-200", iconBg: "bg-amber-100" },
+    { label: "Pending KYC", value: s.pendingKyc, icon: FileCheck2, to: "/admin/kyc", highlight: s.pendingKyc > 0, color: "bg-purple-50 text-purple-600 border-purple-200", iconBg: "bg-purple-100" },
+    { label: "Pending orders", value: s.pendingOrders, icon: CarIcon, to: "/admin/orders", highlight: s.pendingOrders > 0, color: "bg-emerald-50 text-emerald-600 border-emerald-200", iconBg: "bg-emerald-100" },
   ];
 
   return (
@@ -46,29 +46,29 @@ export default function AdminOverview() {
         <p className="text-muted-foreground text-[14px] mt-1">Moderate users, payouts, KYC and orders.</p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
-          <Link key={c.label} to={c.to} className={`rounded-2xl border bg-card p-5 hover:-translate-y-0.5 transition-all ${c.highlight ? "border-primary/40" : "border-border hover:border-foreground/40"}`}>
+          <Link key={c.label} to={c.to} className={`rounded-2xl border p-5 hover:-translate-y-0.5 transition-all shadow-sm ${c.color} ${c.highlight ? "ring-1 ring-primary/30" : ""}`}>
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${c.highlight ? "bg-primary/10" : "bg-muted"}`}>
-                <c.icon className={`w-4 h-4 ${c.highlight ? "text-primary" : "text-foreground/70"}`} />
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${c.iconBg}`}>
+                <c.icon className="w-4 h-4" />
               </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              <ArrowRight className="w-4 h-4 opacity-50" />
             </div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{c.label}</p>
+            <p className="text-[11px] uppercase tracking-wider mb-1 opacity-70">{c.label}</p>
             <p className="font-display text-2xl font-medium tracking-tight">{c.value}</p>
           </Link>
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Approved deposits</p>
-          <p className="font-display text-3xl font-medium tracking-tight text-emerald-600">{formatUSD(s.totalDeposits)}</p>
+      <div className="grid sm:grid-cols-2 gap-4 max-w-3xl">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <p className="text-[11px] text-emerald-700 uppercase tracking-wider mb-1">Approved deposits</p>
+          <p className="font-display text-3xl font-medium tracking-tight text-emerald-700">{formatUSD(s.totalDeposits)}</p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Approved withdrawals</p>
-          <p className="font-display text-3xl font-medium tracking-tight text-primary">{formatUSD(s.totalWithdrawals)}</p>
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <p className="text-[11px] text-blue-700 uppercase tracking-wider mb-1">Approved withdrawals</p>
+          <p className="font-display text-3xl font-medium tracking-tight text-blue-700">{formatUSD(s.totalWithdrawals)}</p>
         </div>
       </div>
     </div>
