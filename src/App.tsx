@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,7 +35,7 @@ import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useIsAdmin } from "./hooks/useIsAdmin";
 
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+const AdminRoute = ({ children }: { children: ReactNode }) => {
   const { isAdmin, loading } = useIsAdmin();
 
   if (loading) {
