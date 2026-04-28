@@ -212,6 +212,12 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {!adminLoading && !isAdmin && (
+        <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+          Admin access is required to manage users.
+        </div>
+      )}
+
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
