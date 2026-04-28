@@ -26,7 +26,7 @@ const schema = z.object({
 });
 
 const Signup = () => {
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -35,7 +35,10 @@ const Signup = () => {
     country: "United States", currency: "USD",
   });
 
-  useEffect(() => { if (user) nav("/dashboard"); }, [user, nav]);
+  useEffect(() => {
+    if (authLoading || roleLoading || !user) return;
+    nav(isAdmin ? "/admin" : "/dashboard", { replace: true });
+  }, [user, isAdmin, authLoading, roleLoading, nav]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +72,6 @@ const Signup = () => {
       return;
     }
     toast.success("Welcome to TeslaVest!");
-    nav("/dashboard");
   };
 
   return (
