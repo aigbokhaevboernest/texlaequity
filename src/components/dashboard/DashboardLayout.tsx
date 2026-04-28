@@ -55,12 +55,16 @@ const NavItems = ({ onClick }: { onClick?: () => void }) => (
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const nav = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
-  useEffect(() => { if (!authLoading && !user) nav("/login"); }, [user, authLoading, nav]);
+  useEffect(() => {
+    if (authLoading || adminLoading) return;
+    if (!user) nav("/login", { replace: true });
+    else if (isAdmin) nav("/admin", { replace: true });
+  }, [user, isAdmin, authLoading, adminLoading, nav]);
 
   const { data: profile } = useLiveData<Profile | null>(async () => {
     if (!user) return null;
@@ -71,7 +75,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
-  if (authLoading || !user) {
+  if (authLoading || adminLoading || !user || isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
