@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,6 +33,22 @@ import AdminCars from "./pages/admin/Cars";
 import AdminLogin from "./pages/admin/Login";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { useIsAdmin } from "./hooks/useIsAdmin";
+
+const AdminRoute = ({ children }: { children: ReactNode }) => {
+  const { isAdmin, loading } = useIsAdmin();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) return <Forbidden />;
+  return <>{children}</>;
+};
 
 const queryClient = new QueryClient();
 
@@ -60,13 +77,13 @@ const App = () => (
             <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
             <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminLayout><AdminOverview /></AdminLayout>} />
-            <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-            <Route path="/admin/transactions" element={<AdminLayout><AdminTransactions /></AdminLayout>} />
-            <Route path="/admin/kyc" element={<AdminLayout><AdminKyc /></AdminLayout>} />
-            <Route path="/admin/orders" element={<AdminLayout><AdminOrders /></AdminLayout>} />
-            <Route path="/admin/plans" element={<AdminLayout><AdminPlanSubs /></AdminLayout>} />
-            <Route path="/admin/cars" element={<AdminLayout><AdminCars /></AdminLayout>} />
+            <Route path="/admin" element={<AdminRoute><AdminLayout><AdminOverview /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/transactions" element={<AdminRoute><AdminLayout><AdminTransactions /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/kyc" element={<AdminRoute><AdminLayout><AdminKyc /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/orders" element={<AdminRoute><AdminLayout><AdminOrders /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/plans" element={<AdminRoute><AdminLayout><AdminPlanSubs /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/cars" element={<AdminRoute><AdminLayout><AdminCars /></AdminLayout></AdminRoute>} />
             <Route path="/403" element={<Forbidden />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

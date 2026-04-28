@@ -33,6 +33,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [roleLoading, setRoleLoading] = useState(true);
 
+  useEffect(() => {
+    console.log("[auth:state]", {
+      userId: user?.id ?? null,
+      email: user?.email ?? null,
+      role,
+      isAdmin: role === "admin",
+      loading,
+      roleLoading,
+    });
+  }, [user?.id, user?.email, role, loading, roleLoading]);
+
   // NOTE: Roles are stored in the secure `user_roles` table (not profiles)
   // to prevent client-side privilege escalation. We expose the resolved role
   // here so every page can read it via `useAuth()`.
@@ -48,17 +59,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", uid)
-      .order("role", { ascending: true }) // 'admin' < 'moderator' < 'user' alphabetically: admin wins
-      .limit(1)
-      .maybeSingle();
+      .returns<{ role: AppRole }[]>();
 
     if (error) {
       console.warn(`[auth:${label}] role fetch error`, error.message);
       setRole("user");
     } else {
-      const resolved = (data?.role as AppRole | undefined) ?? "user";
+      const roleRows = Array.isArray(data) ? data : [];
+      const resolved = roleRows.some((entry) => entry.role === "admin")
+        ? "admin"
+        : roleRows.some((entry) => entry.role === "moderator")
+          ? "moderator"
+          : "user";
       setRole(resolved);
-      console.log(`[auth:${label}]`, { uid, role: resolved });
+      console.log(`[auth:${label}]`, {
+        uid,
+        role: resolved,
+        rows: roleRows.map((entry) => entry.role),
+      });
     }
     setRoleLoading(false);
   };

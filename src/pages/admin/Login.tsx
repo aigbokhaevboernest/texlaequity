@@ -15,27 +15,16 @@ const loginSchema = z.object({
 });
 
 const AdminLogin = () => {
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // If already logged in as admin, jump straight to /admin
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled && data) nav("/admin", { replace: true });
-      });
-    return () => { cancelled = true; };
-  }, [user, nav]);
+    if (authLoading || roleLoading || !user) return;
+    nav(isAdmin ? "/admin" : "/dashboard", { replace: true });
+  }, [user, isAdmin, authLoading, roleLoading, nav]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +70,6 @@ const AdminLogin = () => {
 
     setLoading(false);
     toast.success("Welcome, admin");
-    nav("/admin", { replace: true });
   };
 
   return (

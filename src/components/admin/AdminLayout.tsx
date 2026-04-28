@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import {
   Loader2, ShieldCheck, Users, Banknote, FileCheck2,
   Car as CarIcon, LineChart, ArrowLeft, Terminal, LogOut,
@@ -17,17 +18,17 @@ const items = [
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { isAdmin, loading } = useIsAdmin();
   const nav = useNavigate();
-  const ready = !loading && !roleLoading;
 
   useEffect(() => {
-    if (!ready) return;
+    if (loading) return;
     if (!user) nav("/admin/login", { replace: true });
     else if (!isAdmin) nav("/403", { replace: true });
-  }, [user, isAdmin, ready, nav]);
+  }, [user, isAdmin, loading, nav]);
 
-  if (!ready || !user || !isAdmin) {
+  if (loading || !user || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />

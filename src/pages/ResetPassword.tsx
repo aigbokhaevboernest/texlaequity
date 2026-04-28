@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Zap, Loader2, CheckCircle2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const pwdSchema = z
   .object({
@@ -17,6 +18,7 @@ const pwdSchema = z
 
 const ResetPassword = () => {
   const nav = useNavigate();
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [done, setDone] = useState(false);
@@ -51,7 +53,7 @@ const ResetPassword = () => {
     }
     setDone(true);
     toast.success("Password updated");
-    setTimeout(() => nav("/dashboard"), 1200);
+    setTimeout(() => nav(isAdmin ? "/admin" : "/dashboard"), 1200);
   };
 
   return (

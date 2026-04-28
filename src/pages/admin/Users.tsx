@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ interface ProfileBalances {
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [balances, setBalances] = useState<Record<string, ProfileBalances>>({});
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,7 @@ export default function AdminUsers() {
   const [confirmDelete, setConfirmDelete] = useState<AdminUserRow | null>(null);
 
   const load = async () => {
+    if (!isAdmin) return;
     setLoading(true);
     setError(null);
     const [{ data: usersData, error: usersErr }, { data: balData }] =
@@ -84,7 +87,10 @@ export default function AdminUsers() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (adminLoading || !isAdmin) return;
+    load();
+  }, [adminLoading, isAdmin]);
 
   const filtered = rows.filter((r) => {
     const s = q.trim().toLowerCase();
@@ -206,6 +212,12 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {!adminLoading && !isAdmin && (
+        <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+          Admin access is required to manage users.
+        </div>
+      )}
+
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
@@ -227,7 +239,7 @@ export default function AdminUsers() {
                   </td>
                 </tr>
               )}
-              {!loading && filtered.map((r) => {
+              {!loading && !adminLoading && filtered.map((r) => {
                 const b = balances[r.user_id];
                 const busy = pendingId === r.user_id;
                 const isMe = r.user_id === currentUser?.id;
