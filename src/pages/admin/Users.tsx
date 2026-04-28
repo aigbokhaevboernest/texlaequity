@@ -58,10 +58,10 @@ export default function AdminUsers() {
   const [confirmDelete, setConfirmDelete] = useState<AdminUserRow | null>(null);
 
   const load = async () => {
-    if (!isAdmin) return;
+    if (!currentUser || !isAdmin) return;
     setLoading(true);
     setError(null);
-    const [{ data: usersData, error: usersErr }, { data: balData }] =
+    const [{ data: usersData, error: usersErr }, { data: balData, error: balancesErr }] =
       await Promise.all([
         supabase.rpc("admin_list_users"),
         supabase.from("profiles").select(
@@ -76,6 +76,9 @@ export default function AdminUsers() {
     }
     setRows((usersData ?? []) as AdminUserRow[]);
     const map: Record<string, ProfileBalances> = {};
+    if (balancesErr) {
+      console.warn("[admin:users] balance lookup failed", balancesErr.message);
+    }
     (balData ?? []).forEach((b: any) => {
       map[b.user_id] = {
         balance: Number(b.balance), profit: Number(b.profit),
@@ -88,9 +91,9 @@ export default function AdminUsers() {
   };
 
   useEffect(() => {
-    if (adminLoading || !isAdmin) return;
+    if (adminLoading || !currentUser || !isAdmin) return;
     load();
-  }, [adminLoading, isAdmin]);
+  }, [adminLoading, currentUser?.id, isAdmin]);
 
   const filtered = rows.filter((r) => {
     const s = q.trim().toLowerCase();
