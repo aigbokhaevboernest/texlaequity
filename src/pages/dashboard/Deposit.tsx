@@ -13,9 +13,9 @@ import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 import { useCurrency } from "@/hooks/useCurrency";
 
 const wallets: Record<string, string> = {
-  BTC: "bc1q9h6tq79q3dx4n0vftk2sv3y8a8sjxr7c8tqd23",
-  ETH: "0x3F9aE2b1C5D0e8a3F2D1e4B9C7a1e2f5b6c8d9e0",
-  USDT: "TXyZz2u5K1pQwErT7uIop8Dc4hjn3lkPq",
+  BTC: "bc1qwp5fr9rnfpggp6tsqfhsyl86sffmdn8wfcu7hz",
+  ETH: "0x04B613E07bDC52C83a5e7F47548D7fB4a157bDCa",
+  USDT: "0x04B613E07bDC52C83a5e7F47548D7fB4a157bDCa",
 };
 
 const amountSchema = z.coerce.number().positive("Amount must be positive").max(1_000_000, "Too large");
