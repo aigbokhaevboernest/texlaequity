@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { formatUSD } from "@/lib/cars";
 import {
-  Search, Pencil, Loader2, ShieldCheck, ShieldOff,
+  Search, Pencil, Loader2,
   UserX, UserCheck, Trash2, AlertCircle,
 } from "lucide-react";
 
