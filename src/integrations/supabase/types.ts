@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_withdrawal_codes: {
+        Row: {
+          code: string
+          code_type: Database["public"]["Enums"]["withdrawal_code_type"]
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          code: string
+          code_type: Database["public"]["Enums"]["withdrawal_code_type"]
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          code?: string
+          code_type?: Database["public"]["Enums"]["withdrawal_code_type"]
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       copy_subscriptions: {
         Row: {
           allocated_usd: number
@@ -485,6 +515,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      withdrawal_code_type: "auth" | "cot" | "tax"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -613,6 +644,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      withdrawal_code_type: ["auth", "cot", "tax"],
     },
   },
 } as const
