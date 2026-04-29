@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,12 +33,14 @@ import AdminCars from "./pages/admin/Cars";
 import AdminLogin from "./pages/admin/Login";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { useIsAdmin } from "./hooks/useIsAdmin";
+import { useAuth } from "./hooks/useAuth";
 
 const AdminRoute = ({ children }: { children: ReactNode }) => {
-  const { isAdmin, loading } = useIsAdmin();
+  const { user, isAdmin, loading, roleLoading } = useAuth();
 
-  if (loading) {
+  // Wait until BOTH auth and role lookups are fully resolved.
+  // This prevents the race where role=null briefly and we redirect by mistake.
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
@@ -46,7 +48,8 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
     );
   }
 
-  if (!isAdmin) return <Forbidden />;
+  if (!user) return <Navigate to="/admin/login" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
