@@ -31,6 +31,7 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminPlanSubs from "./pages/admin/PlanSubs";
 import AdminCars from "./pages/admin/Cars";
 import AdminLogin from "./pages/admin/Login";
+import AdminAccountCodes from "./pages/admin/AccountCodes";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuth } from "./hooks/useAuth";
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/admin/orders" element={<AdminRoute><AdminLayout><AdminOrders /></AdminLayout></AdminRoute>} />
             <Route path="/admin/plans" element={<AdminRoute><AdminLayout><AdminPlanSubs /></AdminLayout></AdminRoute>} />
             <Route path="/admin/cars" element={<AdminRoute><AdminLayout><AdminCars /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/codes" element={<AdminRoute><AdminLayout><AdminAccountCodes /></AdminLayout></AdminRoute>} />
             <Route path="/403" element={<Forbidden />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
