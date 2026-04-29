@@ -475,13 +475,6 @@ export type Database = {
           username: string
         }[]
       }
-      admin_set_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _target_user: string
-        }
-        Returns: undefined
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
