@@ -24,7 +24,7 @@ const Hero = () => {
             transition={{ duration: 0.6 }}
             className="label-mono text-foreground/50 mb-6"
           >
-            TeslaVest — Invest. Drive. Repeat.
+            Tesla — Invest. Drive. Repeat.
           </motion.p>
 
           <motion.h1
@@ -44,7 +44,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mt-7 text-[15px] md:text-base text-foreground/55 max-w-md mx-auto leading-relaxed font-light"
           >
-            A secure platform for digital wealth growth — turn your returns into the world's most iconic electric vehicles.
+            A secure platform for digital wealth growth turns your returns into the world's most iconic electric vehicles.
           </motion.p>
 
           <motion.div
