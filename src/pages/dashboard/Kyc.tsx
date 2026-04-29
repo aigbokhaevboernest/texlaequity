@@ -107,7 +107,7 @@ export default function Kyc() {
       <div>
         <p className="label-mono text-muted-foreground mb-2">Identity verification</p>
         <h1 className="font-display text-3xl font-light tracking-[-0.03em]">AML / KYC</h1>
-        <p className="text-muted-foreground text-[14px] mt-1">Verify your identity to enable withdrawals and large deposits.</p>
+        <p className="text-muted-foreground text-[14px] mt-1">To maintain a secure and transparent financial process, you are required to confirm your identity </p>
       </div>
 
       {submission && (
