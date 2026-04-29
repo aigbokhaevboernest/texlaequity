@@ -4,7 +4,7 @@ const Footer = () => (
       <div className="grid md:grid-cols-12 gap-10 mb-16">
         <div className="md:col-span-5">
           <p className="font-display font-semibold text-[17px] mb-4">
-            Tesla<span className="text-primary">Vest</span>
+            <span className="text-primary">Tesla</span>
           </p>
           <p className="text-sm text-foreground/55 max-w-sm leading-relaxed font-light">
             A platform where digital wealth meets electric mobility. Earn, grow, and drive the future.
@@ -36,7 +36,7 @@ const Footer = () => (
         </div>
       </div>
       <div className="text-[11px] text-foreground/40 font-mono border-t border-border pt-6 flex justify-between flex-wrap gap-2">
-        <span>© {new Date().getFullYear()} TESLAVEST. ALL RIGHTS RESERVED.</span>
+        <span>© {new Date().getFullYear()} TESLA. ALL RIGHTS RESERVED.</span>
         <span>BUILT FOR THE FUTURE OF MOBILITY &amp; MONEY.</span>
       </div>
     </div>
