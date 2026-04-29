@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Bitcoin, Landmark, ShieldAlert, RefreshCw } from "lucide-react";
+import { Loader2, Bitcoin, Landmark, ShieldAlert, Check, ShieldCheck, Percent, Receipt } from "lucide-react";
 import { z } from "zod";
 import { Link } from "react-router-dom";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
-const codeSchema = z.string().trim().min(4, "Enter the authorization code");
+
+type CodeType = "auth" | "cot" | "tax";
+
+interface AccountCode {
+  id: string;
+  code_type: CodeType;
+  code: string;
+  verified: boolean;
+}
+
+const STEP_ORDER: CodeType[] = ["auth", "cot", "tax"];
+const STEP_META: Record<CodeType, { title: string; subtitle: string; icon: typeof ShieldCheck }> = {
+  auth: { title: "Authentication code", subtitle: "Provided by our compliance desk to authorize this withdrawal.", icon: ShieldCheck },
+  cot:  { title: "COT code", subtitle: "Cost of Transfer code required to release funds.", icon: Percent },
+  tax:  { title: "Tax code", subtitle: "Withholding tax clearance code.", icon: Receipt },
+};
 
 export default function Withdraw() {
   const { user } = useAuth();
@@ -30,23 +45,36 @@ export default function Withdraw() {
   const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
   const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
 
-  // Auth-code dialog state
+  // Sequential code dialog state
   const [authOpen, setAuthOpen] = useState(false);
   const [pendingTxId, setPendingTxId] = useState<string | null>(null);
-  const [authCode, setAuthCode] = useState("");
+  const [codes, setCodes] = useState<AccountCode[]>([]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [input, setInput] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [polling, setPolling] = useState(false);
-  const [codeIssued, setCodeIssued] = useState(false);
 
-  // Poll for code issuance from admin
+  // Active steps in order, only those the admin actually assigned
+  const activeSteps = useMemo<CodeType[]>(
+    () => STEP_ORDER.filter((t) => codes.some((c) => c.code_type === t)),
+    [codes],
+  );
+  const currentType: CodeType | null = activeSteps[stepIndex] ?? null;
+  const currentCode = currentType ? codes.find((c) => c.code_type === currentType) : null;
+
+  // Poll for any newly-issued codes while the dialog is open
   useEffect(() => {
-    if (!authOpen || !pendingTxId || codeIssued) return;
-    const i = setInterval(async () => {
-      const { data } = await supabase.from("transactions").select("auth_code").eq("id", pendingTxId).maybeSingle();
-      if (data?.auth_code) { setCodeIssued(true); setPolling(false); }
-    }, 4000);
+    if (!authOpen || !user) return;
+    const fetchCodes = async () => {
+      const { data } = await supabase
+        .from("account_withdrawal_codes")
+        .select("id, code_type, code, verified")
+        .eq("user_id", user.id);
+      if (data) setCodes(data as AccountCode[]);
+    };
+    fetchCodes();
+    const i = setInterval(fetchCodes, 5000);
     return () => clearInterval(i);
-  }, [authOpen, pendingTxId, codeIssued]);
+  }, [authOpen, user?.id]);
 
   const submit = async (method: string, body: Record<string, unknown>, amt: string) => {
     if (!user) return;
@@ -65,35 +93,43 @@ export default function Withdraw() {
     setSubmitting(false);
     if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
     setPendingTxId(data.id);
-    setAuthCode("");
-    setCodeIssued(false);
-    setPolling(true);
+    setInput("");
+    setStepIndex(0);
     setAuthOpen(true);
   };
 
   const verify = async () => {
-    if (!pendingTxId) return;
-    const c = codeSchema.safeParse(authCode);
-    if (!c.success) { toast.error(c.error.errors[0].message); return; }
+    if (!user || !currentType || !currentCode) return;
+    const entered = input.trim().toUpperCase();
+    if (entered.length < 4) { toast.error("Enter the code"); return; }
+    if (entered !== currentCode.code.trim().toUpperCase()) {
+      toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
+      return;
+    }
     setVerifying(true);
-    const { data } = await supabase.from("transactions").select("auth_code").eq("id", pendingTxId).maybeSingle();
-    if (!data?.auth_code) {
+    const { error } = await supabase
+      .from("account_withdrawal_codes")
+      .update({ verified: true })
+      .eq("id", currentCode.id);
+    if (error) { setVerifying(false); toast.error(error.message); return; }
+
+    const nextIdx = stepIndex + 1;
+    setInput("");
+    if (nextIdx >= activeSteps.length) {
+      // All codes verified → mark transaction as gate-passed
+      await supabase.from("transactions")
+        .update({ auth_code: currentCode.code, auth_code_verified: true })
+        .eq("id", pendingTxId!);
       setVerifying(false);
-      toast.error("Authorization code has not been issued yet. Please wait for the support team.");
-      return;
-    }
-    if (data.auth_code.trim() !== c.data) {
+      setAuthOpen(false);
+      setPendingTxId(null);
+      refreshBalance();
+      toast.success("All codes verified. Withdrawal is under final review.");
+    } else {
+      setStepIndex(nextIdx);
       setVerifying(false);
-      toast.error("Invalid authorization code.");
-      return;
+      toast.success(`${STEP_META[currentType].title} accepted.`);
     }
-    const { error } = await supabase.from("transactions").update({ auth_code_verified: true }).eq("id", pendingTxId);
-    setVerifying(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Code verified. Withdrawal request is now under final review.");
-    setAuthOpen(false);
-    setPendingTxId(null);
-    refreshBalance();
   };
 
   const cancelRequest = async () => {
@@ -104,6 +140,8 @@ export default function Withdraw() {
     setPendingTxId(null);
   };
 
+  const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
+
   return (
     <div className="space-y-6">
       <div>
@@ -113,7 +151,7 @@ export default function Withdraw() {
       </div>
 
       <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3 text-[12px] text-yellow-800 max-w-2xl">
-        Withdrawals require a verified KYC and an authorization code from our compliance desk.{" "}
+        Withdrawals require a verified KYC and authorization codes from our compliance desk.{" "}
         <Link to="/dashboard/kyc" className="underline font-medium">Verify now</Link>.
       </div>
 
@@ -197,48 +235,65 @@ export default function Withdraw() {
         </TabsContent>
       </Tabs>
 
-      {/* Authorization code dialog */}
+      {/* Sequential authorization dialog */}
       <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-yellow-600" /> Authorization required
+              <StepIcon className="w-5 h-5 text-yellow-600" />
+              {currentType ? STEP_META[currentType].title : "Authorization required"}
             </DialogTitle>
             <DialogDescription>
-              Your withdrawal request was submitted. For security, our compliance desk must issue an authorization code before funds can be released.
+              {currentType
+                ? STEP_META[currentType].subtitle
+                : "Waiting for the compliance desk to issue your authorization code."}
             </DialogDescription>
           </DialogHeader>
 
+          {/* Step progress */}
+          {activeSteps.length > 0 && (
+            <div className="flex items-center gap-2">
+              {activeSteps.map((t, i) => {
+                const done = i < stepIndex;
+                const active = i === stepIndex;
+                return (
+                  <div key={t} className="flex items-center gap-2 flex-1">
+                    <div className={`h-1.5 flex-1 rounded-full ${done ? "bg-emerald-500" : active ? "bg-primary" : "bg-muted"}`} />
+                    {done && <Check className="w-3 h-3 text-emerald-600" />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div className="space-y-4">
-            {!codeIssued ? (
-              <div className="rounded-xl bg-muted/60 border border-border p-4 flex items-start gap-3">
-                <RefreshCw className={`w-4 h-4 mt-0.5 ${polling ? "animate-spin" : ""} text-muted-foreground`} />
-                <div className="text-[13px] text-muted-foreground">
-                  Waiting for the support team to issue your code. You can leave this open or check back from your email/support chat.
-                </div>
+            {activeSteps.length === 0 ? (
+              <div className="rounded-xl bg-muted/60 border border-border p-4 text-[13px] text-muted-foreground">
+                Your account does not yet have authorization codes assigned. Our compliance desk will issue them shortly — keep this window open or check back soon.
               </div>
             ) : (
-              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-[13px] text-emerald-800">
-                A code has been issued. Enter it below to complete your request.
-              </div>
+              <>
+                <p className="text-[12px] text-muted-foreground">
+                  Step {stepIndex + 1} of {activeSteps.length}
+                </p>
+                <div>
+                  <Label>Enter code</Label>
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value.toUpperCase())}
+                    placeholder="ENTER CODE"
+                    className="font-mono tracking-widest text-center text-lg"
+                    maxLength={12}
+                  />
+                </div>
+              </>
             )}
-
-            <div>
-              <Label>Authorization code</Label>
-              <Input
-                value={authCode}
-                onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
-                placeholder="ENTER CODE"
-                className="font-mono tracking-widest text-center text-lg"
-                maxLength={12}
-              />
-            </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={cancelRequest}>Cancel request</Button>
-            <Button disabled={verifying} onClick={verify}>
-              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & continue"}
+            <Button disabled={verifying || !currentCode} onClick={verify}>
+              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & next")}
             </Button>
           </DialogFooter>
         </DialogContent>
