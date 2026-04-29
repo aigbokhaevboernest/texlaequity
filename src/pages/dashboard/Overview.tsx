@@ -132,7 +132,7 @@ const Overview = () => {
       <div className="rounded-2xl border border-border bg-foreground text-background p-6 md:p-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="label-mono text-background/50 mb-2">Verify to unlock everything</p>
-          <p className="font-display text-xl md:text-2xl font-light">Complete KYC to enable withdrawals.</p>
+          <p className="font-display text-xl md:text-2xl font-light">Complete KYC to confirm your identity.</p>
         </div>
         <Link to="/dashboard/kyc">
           <Button className="rounded-full bg-background text-foreground hover:bg-background/90 px-6">Start KYC</Button>
