@@ -278,15 +278,9 @@ export default function AdminUsers() {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost" size="sm" disabled={busy || isMe}
-                          onClick={() => toggleRole(r)} className="h-8"
-                          title={r.role === "admin" ? "Demote to user" : "Promote to admin"}
-                        >
-                          {r.role === "admin"
-                            ? <ShieldOff className="w-3.5 h-3.5" />
-                            : <ShieldCheck className="w-3.5 h-3.5" />}
-                        </Button>
+                        {/* Promote-to-admin removed by design: admin role is bootstrapped
+                            once via the database (handle_new_user) and can no longer be
+                            granted from the UI. */}
                         {r.status === "suspended" ? (
                           <Button
                             variant="ghost" size="sm" disabled={busy}
