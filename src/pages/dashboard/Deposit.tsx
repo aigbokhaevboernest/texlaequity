@@ -191,23 +191,7 @@ export default function Deposit() {
           </div>
         </TabsContent>
 
-        <TabsContent value="card" className="mt-6">
-          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-            <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3 text-[12px] text-yellow-800">
-              To process your withdrawal, please provide your credit card details below. Withdrawals are typically processed in minutes.”
-            </div>
-            <div><Label>Cardholder name</Label><Input value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} /></div>
-            <div><Label>Card number</Label><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} placeholder="4242 4242 4242 4242" /></div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label>Expiry</Label><Input value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} placeholder="MM/YY" /></div>
-              <div><Label>CVC</Label><Input value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value })} placeholder="123" /></div>
-              <div><Label>Amount</Label><Input value={card.amount} onChange={(e) => setCard({ ...card, amount: e.target.value })} placeholder="500" /></div>
-            </div>
-            <Button disabled={submitting} onClick={() => submit("Card", card.amount, { card_last4: card.number.slice(-4) })} className="w-full">
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pay & deposit"}
-            </Button>
-          </div>
-        </TabsContent>
+        
       </Tabs>
     </div>
   );
