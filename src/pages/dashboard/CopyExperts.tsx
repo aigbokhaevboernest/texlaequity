@@ -37,38 +37,7 @@ export default function CopyExperts() {
     if (!a.success) { toast.error(a.error.errors[0].message); return; }
     if (a.data < selected.min_copy_amount) { toast.error(`Min ${format(selected.min_copy_amount)}`); return; }
     setLoading(true);
-Check for existing subscription here
-  const { data: existing } = await supabase
-    .from("copy_subscriptions")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("expert_id", selected.id)
-    .maybeSingle();
 
-  if (existing) {
-    toast.error(`You're already copying ${selected.name}.`);
-    setLoading(false);
-    return;
-  }
-
-  const { error } = await supabase.from("copy_subscriptions").insert({
-    user_id: user.id, expert_id: selected.id, allocated_usd: a.data, status: "active",
-  });
-  setLoading(false);
-  if (error?.code === "23505") { toast.error("You're already copying this trader."); return; }
-  if (error) { toast.error(error.message); return; }
-  toast.success(`Now copying ${selected.name}.`);
-  setSelected(null); setAmount("");
-};
-    
-    const { error } = await supabase.from("copy_subscriptions").insert({
-      user_id: user.id, expert_id: selected.id, allocated_usd: a.data, status: "active",
-    });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Now copying ${selected.name}.`);
-    setSelected(null); setAmount("");
-  };
 
   return (
     <div className="space-y-6">
