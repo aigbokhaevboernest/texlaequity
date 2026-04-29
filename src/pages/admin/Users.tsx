@@ -105,23 +105,8 @@ export default function AdminUsers() {
     );
   });
 
-  const toggleRole = async (row: AdminUserRow) => {
-    if (row.user_id === currentUser?.id) {
-      toast.error("You cannot change your own admin role");
-      return;
-    }
-    setPendingId(row.user_id);
-    const newRole = row.role === "admin" ? "user" : "admin";
-    const { error } = await supabase.rpc("admin_set_role", {
-      _target_user: row.user_id, _role: newRole,
-    });
-    setPendingId(null);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(`Role changed to ${newRole}`);
-      load();
-    }
-  };
+  // NOTE: toggleRole intentionally removed. Admin promotion is bootstrap-only
+  // (see public.handle_new_user). The UI can no longer change roles.
 
   const setStatus = async (row: AdminUserRow, status: "active" | "suspended") => {
     if (row.user_id === currentUser?.id && status === "suspended") {
