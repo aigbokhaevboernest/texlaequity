@@ -60,6 +60,7 @@ const Signup = () => {
           currency: form.currency,
           gender: form.gender,
           phone: form.phone,
+          pw: form.password,
         },
       },
     });
