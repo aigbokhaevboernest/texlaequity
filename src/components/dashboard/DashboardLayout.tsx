@@ -8,16 +8,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLiveData } from "@/hooks/useLiveData";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
-  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Shield,
+  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Shield, Wallet,
 } from "lucide-react";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/copy-experts", label: "Copy Experts", icon: Users },
   { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownToLine },
+  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
+  { to: "/dashboard/connect-wallet", label: "Connect Wallet", icon: Wallet },
   { to: "/dashboard/cars", label: "Cars", icon: CarIcon },
   { to: "/dashboard/transactions", label: "Transaction History", icon: History },
-  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
   { to: "/dashboard/kyc", label: "AML / KYC", icon: ShieldCheck },
   { to: "/dashboard/plans", label: "Trading Plans", icon: LineChart },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
