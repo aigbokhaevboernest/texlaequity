@@ -32,7 +32,7 @@ const Overview = () => {
   const { data } = useLiveData(async () => {
     if (!user) return { profile: null as Profile | null, txs: [] as Tx[] };
     const [p, t] = await Promise.all([
-      supabase.from("profiles").select("full_name, balance, profit, total_deposit, account_level").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("full_name, balance, profit, total_deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
     ]);
     return { profile: (p.data as Profile | null) ?? null, txs: (t.data as Tx[] | null) ?? [] };
