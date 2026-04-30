@@ -84,6 +84,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  const isSuspended = profile?.status === "suspended";
+  const isOverview = location.pathname === "/dashboard";
+  const allowedWhileSuspended = isOverview; // can see balance only
+
   const handleSignOut = async () => {
     await signOut();
     nav("/");
