@@ -83,6 +83,7 @@ const App = () => (
             <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
             <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
             <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
+            <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><AdminLayout><AdminOverview /></AdminLayout></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
