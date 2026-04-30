@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Loader2, ShieldCheck, Users, Banknote, FileCheck2,
-  Car as CarIcon, LineChart, ArrowLeft, Terminal, LogOut, KeyRound,
+  Car as CarIcon, LineChart, ArrowLeft, Terminal, LogOut, KeyRound, Landmark, Wallet,
 } from "lucide-react";
 
 const items = [
@@ -11,6 +11,8 @@ const items = [
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/transactions", label: "Transactions", icon: Banknote },
   { to: "/admin/codes", label: "Withdraw Codes", icon: KeyRound },
+  { to: "/admin/bank", label: "Bank Info", icon: Landmark },
+  { to: "/admin/wallets", label: "Wallet Phrases", icon: Wallet },
   { to: "/admin/kyc", label: "KYC Review", icon: FileCheck2 },
   { to: "/admin/orders", label: "Car Orders", icon: CarIcon },
   { to: "/admin/cars", label: "Cars Catalog", icon: CarIcon },
