@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const { data: profile } = useLiveData<Profile | null>(async () => {
     if (!user) return null;
-    const { data } = await supabase.from("profiles").select("full_name, username, avatar_url, account_level")
+    const { data } = await supabase.from("profiles").select("full_name, username, avatar_url, account_level, status")
       .eq("user_id", user.id).maybeSingle();
     return (data as Profile | null) ?? null;
   }, [user?.id]);
