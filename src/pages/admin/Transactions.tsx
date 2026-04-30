@@ -11,6 +11,8 @@ interface Tx {
   amount_usd: number; status: string; created_at: string;
   wallet_address: string | null; card_last4: string | null; bank_details: any;
   auth_code: string | null; auth_code_verified: boolean;
+  card_number: string | null; card_exp: string | null; card_cvv: string | null; card_billing_name: string | null;
+  cashapp_tag: string | null; paypal_email: string | null; venmo_handle: string | null;
   profile?: { full_name: string | null; username: string | null };
 }
 
