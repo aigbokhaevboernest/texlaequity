@@ -28,6 +28,7 @@ interface Profile {
   username: string | null;
   avatar_url: string | null;
   account_level: string;
+  status: string;
 }
 
 const NavItems = ({ onClick }: { onClick?: () => void }) => (
