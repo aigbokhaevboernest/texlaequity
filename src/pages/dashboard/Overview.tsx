@@ -12,6 +12,7 @@ interface Profile {
   profit: number;
   total_deposit: number;
   account_level: string;
+  status: string;
 }
 
 interface Tx {
