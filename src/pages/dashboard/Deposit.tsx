@@ -31,6 +31,14 @@ export default function Deposit() {
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const proofRef = useRef<HTMLInputElement>(null);
+  const [bankInfo, setBankInfo] = useState<{
+    bank_name: string; account_name: string; account_number: string; routing_number: string; swift_code: string; notes: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    supabase.from("bank_deposit_info").select("*").limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setBankInfo(data as never); });
+  }, []);
 
   const onPickProof = (f: File | null) => {
     if (!f) { setProofFile(null); setProofPreview(null); return; }
