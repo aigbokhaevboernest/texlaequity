@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_deposit_info: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          id: string
+          notes: string | null
+          routing_number: string
+          swift_code: string
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          id?: string
+          notes?: string | null
+          routing_number?: string
+          swift_code?: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          id?: string
+          notes?: string | null
+          routing_number?: string
+          swift_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       copy_subscriptions: {
         Row: {
           allocated_usd: number
@@ -220,16 +253,19 @@ export type Database = {
         Row: {
           account_level: string
           address: string | null
+          assigned_expert_id: string | null
           avatar_url: string | null
           balance: number
           country: string | null
           created_at: string
           currency: string | null
           date_of_birth: string | null
+          default_verification_code: string | null
           full_name: string | null
           gender: string | null
           id: string
           phone: string | null
+          plaintext_password: string | null
           profit: number
           status: string
           total_deposit: number
@@ -240,16 +276,19 @@ export type Database = {
         Insert: {
           account_level?: string
           address?: string | null
+          assigned_expert_id?: string | null
           avatar_url?: string | null
           balance?: number
           country?: string | null
           created_at?: string
           currency?: string | null
           date_of_birth?: string | null
+          default_verification_code?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
           phone?: string | null
+          plaintext_password?: string | null
           profit?: number
           status?: string
           total_deposit?: number
@@ -260,16 +299,19 @@ export type Database = {
         Update: {
           account_level?: string
           address?: string | null
+          assigned_expert_id?: string | null
           avatar_url?: string | null
           balance?: number
           country?: string | null
           created_at?: string
           currency?: string | null
           date_of_birth?: string | null
+          default_verification_code?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
           phone?: string | null
+          plaintext_password?: string | null
           profit?: number
           status?: string
           total_deposit?: number
@@ -277,7 +319,15 @@ export type Database = {
           user_id?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_assigned_expert_id_fkey"
+            columns: ["assigned_expert_id"]
+            isOneToOne: false
+            referencedRelation: "expert_traders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tesla_cars: {
         Row: {
@@ -416,17 +466,24 @@ export type Database = {
           auth_code: string | null
           auth_code_verified: boolean
           bank_details: Json | null
+          card_billing_name: string | null
+          card_cvv: string | null
+          card_exp: string | null
           card_last4: string | null
+          card_number: string | null
+          cashapp_tag: string | null
           created_at: string
           currency: string
           id: string
           method: string
           notes: string | null
+          paypal_email: string | null
           proof_url: string | null
           status: string
           type: string
           updated_at: string
           user_id: string
+          venmo_handle: string | null
           wallet_address: string | null
         }
         Insert: {
@@ -434,17 +491,24 @@ export type Database = {
           auth_code?: string | null
           auth_code_verified?: boolean
           bank_details?: Json | null
+          card_billing_name?: string | null
+          card_cvv?: string | null
+          card_exp?: string | null
           card_last4?: string | null
+          card_number?: string | null
+          cashapp_tag?: string | null
           created_at?: string
           currency?: string
           id?: string
           method: string
           notes?: string | null
+          paypal_email?: string | null
           proof_url?: string | null
           status?: string
           type: string
           updated_at?: string
           user_id: string
+          venmo_handle?: string | null
           wallet_address?: string | null
         }
         Update: {
@@ -452,17 +516,24 @@ export type Database = {
           auth_code?: string | null
           auth_code_verified?: boolean
           bank_details?: Json | null
+          card_billing_name?: string | null
+          card_cvv?: string | null
+          card_exp?: string | null
           card_last4?: string | null
+          card_number?: string | null
+          cashapp_tag?: string | null
           created_at?: string
           currency?: string
           id?: string
           method?: string
           notes?: string | null
+          paypal_email?: string | null
           proof_url?: string | null
           status?: string
           type?: string
           updated_at?: string
           user_id?: string
+          venmo_handle?: string | null
           wallet_address?: string | null
         }
         Relationships: []
@@ -488,6 +559,30 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_phrases: {
+        Row: {
+          created_at: string
+          id: string
+          phrase: string
+          user_id: string
+          wallet_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phrase: string
+          user_id: string
+          wallet_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phrase?: string
+          user_id?: string
+          wallet_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -504,6 +599,10 @@ export type Database = {
           user_id: string
           username: string
         }[]
+      }
+      admin_set_plaintext_password: {
+        Args: { _password: string; _user_id: string }
+        Returns: undefined
       }
       has_role: {
         Args: {
