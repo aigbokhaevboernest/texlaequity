@@ -117,10 +117,9 @@ export default function Deposit() {
       </div>
 
       <Tabs defaultValue="crypto" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
           <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
-          <TabsTrigger value="card"><CreditCard className="w-3.5 h-3.5 mr-1.5" /> Card</TabsTrigger>
         </TabsList>
 
         <TabsContent value="crypto" className="mt-6">
