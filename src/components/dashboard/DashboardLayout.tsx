@@ -8,16 +8,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLiveData } from "@/hooks/useLiveData";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
-  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Shield,
+  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Shield, Wallet,
 } from "lucide-react";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/copy-experts", label: "Copy Experts", icon: Users },
   { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownToLine },
+  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
+  { to: "/dashboard/connect-wallet", label: "Connect Wallet", icon: Wallet },
   { to: "/dashboard/cars", label: "Cars", icon: CarIcon },
   { to: "/dashboard/transactions", label: "Transaction History", icon: History },
-  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
   { to: "/dashboard/kyc", label: "AML / KYC", icon: ShieldCheck },
   { to: "/dashboard/plans", label: "Trading Plans", icon: LineChart },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
@@ -28,6 +29,7 @@ interface Profile {
   username: string | null;
   avatar_url: string | null;
   account_level: string;
+  status: string;
 }
 
 const NavItems = ({ onClick }: { onClick?: () => void }) => (
@@ -68,7 +70,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const { data: profile } = useLiveData<Profile | null>(async () => {
     if (!user) return null;
-    const { data } = await supabase.from("profiles").select("full_name, username, avatar_url, account_level")
+    const { data } = await supabase.from("profiles").select("full_name, username, avatar_url, account_level, status")
       .eq("user_id", user.id).maybeSingle();
     return (data as Profile | null) ?? null;
   }, [user?.id]);
@@ -82,6 +84,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  const isSuspended = profile?.status === "suspended";
+  const isOverview = location.pathname === "/dashboard";
+  const allowedWhileSuspended = isOverview; // can see balance only
 
   const handleSignOut = async () => {
     await signOut();
@@ -176,7 +182,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </aside>
 
-        <main className="min-w-0">{children}</main>
+        <main className="min-w-0">
+          {isSuspended && !allowedWhileSuspended ? (
+            <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 max-w-2xl">
+              <h2 className="font-display text-2xl mb-2 text-destructive">Account Suspended</h2>
+              <p className="text-[14px] text-muted-foreground mb-4">
+                Your account has been suspended. Withdrawals, deposits, and other actions are blocked. You can still view your balance on the dashboard overview.
+              </p>
+              <p className="text-[13px]">Contact support: <a className="text-primary underline" href="mailto:support@teslavest.com">support@teslavest.com</a></p>
+            </div>
+          ) : children}
+        </main>
       </div>
     </div>
   );

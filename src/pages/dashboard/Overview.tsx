@@ -12,6 +12,7 @@ interface Profile {
   profit: number;
   total_deposit: number;
   account_level: string;
+  status: string;
 }
 
 interface Tx {
@@ -31,7 +32,7 @@ const Overview = () => {
   const { data } = useLiveData(async () => {
     if (!user) return { profile: null as Profile | null, txs: [] as Tx[] };
     const [p, t] = await Promise.all([
-      supabase.from("profiles").select("full_name, balance, profit, total_deposit, account_level").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("full_name, balance, profit, total_deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
     ]);
     return { profile: (p.data as Profile | null) ?? null, txs: (t.data as Tx[] | null) ?? [] };
@@ -55,6 +56,12 @@ const Overview = () => {
 
   return (
     <div className="space-y-8">
+      {profile?.status === "suspended" && (
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5">
+          <p className="font-display text-lg text-destructive mb-1">Account Suspended</p>
+          <p className="text-[13px] text-muted-foreground">All actions are blocked. Your balance and profit are visible. Contact <a className="text-primary underline" href="mailto:support@teslavest.com">support@teslavest.com</a>.</p>
+        </div>
+      )}
       <div>
         <p className="label-mono text-muted-foreground mb-2">Welcome back</p>
         <h1 className="font-display text-3xl md:text-4xl font-light tracking-[-0.03em]">

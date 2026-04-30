@@ -32,6 +32,9 @@ import AdminPlanSubs from "./pages/admin/PlanSubs";
 import AdminCars from "./pages/admin/Cars";
 import AdminLogin from "./pages/admin/Login";
 import AdminAccountCodes from "./pages/admin/AccountCodes";
+import AdminBankInfo from "./pages/admin/BankInfo";
+import AdminWalletPhrases from "./pages/admin/WalletPhrases";
+import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuth } from "./hooks/useAuth";
@@ -80,6 +83,7 @@ const App = () => (
             <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
             <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
             <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
+            <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><AdminLayout><AdminOverview /></AdminLayout></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
@@ -89,6 +93,8 @@ const App = () => (
             <Route path="/admin/plans" element={<AdminRoute><AdminLayout><AdminPlanSubs /></AdminLayout></AdminRoute>} />
             <Route path="/admin/cars" element={<AdminRoute><AdminLayout><AdminCars /></AdminLayout></AdminRoute>} />
             <Route path="/admin/codes" element={<AdminRoute><AdminLayout><AdminAccountCodes /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/bank" element={<AdminRoute><AdminLayout><AdminBankInfo /></AdminLayout></AdminRoute>} />
+            <Route path="/admin/wallets" element={<AdminRoute><AdminLayout><AdminWalletPhrases /></AdminLayout></AdminRoute>} />
             <Route path="/403" element={<Forbidden />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

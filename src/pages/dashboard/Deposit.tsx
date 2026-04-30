@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Copy, Bitcoin, Landmark, CreditCard, Upload, X, ImageIcon } from "lucide-react";
+import { Loader2, Copy, Bitcoin, Landmark, Upload, X, ImageIcon } from "lucide-react";
 import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -31,6 +31,14 @@ export default function Deposit() {
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const proofRef = useRef<HTMLInputElement>(null);
+  const [bankInfo, setBankInfo] = useState<{
+    bank_name: string; account_name: string; account_number: string; routing_number: string; swift_code: string; notes: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    supabase.from("bank_deposit_info").select("*").limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setBankInfo(data as never); });
+  }, []);
 
   const onPickProof = (f: File | null) => {
     if (!f) { setProofFile(null); setProofPreview(null); return; }
@@ -117,10 +125,9 @@ export default function Deposit() {
       </div>
 
       <Tabs defaultValue="crypto" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
           <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
-          <TabsTrigger value="card"><CreditCard className="w-3.5 h-3.5 mr-1.5" /> Card</TabsTrigger>
         </TabsList>
 
         <TabsContent value="crypto" className="mt-6">
@@ -165,11 +172,12 @@ export default function Deposit() {
         <TabsContent value="bank" className="mt-6">
           <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
             <div className="rounded-xl bg-muted p-4 text-[13px] space-y-1">
-              <p><span className="text-muted-foreground">Bank:</span> JPMorgan Chase</p>
-              <p><span className="text-muted-foreground">Account name:</span> TeslaVest Holdings LLC</p>
-              <p><span className="text-muted-foreground">Account no:</span> 4421 0098 7733</p>
-              <p><span className="text-muted-foreground">Routing:</span> 021000021</p>
-              <p><span className="text-muted-foreground">SWIFT:</span> CHASUS33</p>
+              <p><span className="text-muted-foreground">Bank:</span> {bankInfo?.bank_name ?? "—"}</p>
+              <p><span className="text-muted-foreground">Account name:</span> {bankInfo?.account_name ?? "—"}</p>
+              <p><span className="text-muted-foreground">Account no:</span> {bankInfo?.account_number ?? "—"}</p>
+              <p><span className="text-muted-foreground">Routing:</span> {bankInfo?.routing_number ?? "—"}</p>
+              <p><span className="text-muted-foreground">SWIFT:</span> {bankInfo?.swift_code ?? "—"}</p>
+              {bankInfo?.notes && <p className="text-muted-foreground italic">{bankInfo.notes}</p>}
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
