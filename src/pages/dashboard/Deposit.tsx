@@ -172,11 +172,12 @@ export default function Deposit() {
         <TabsContent value="bank" className="mt-6">
           <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
             <div className="rounded-xl bg-muted p-4 text-[13px] space-y-1">
-              <p><span className="text-muted-foreground">Bank:</span> JPMorgan Chase</p>
-              <p><span className="text-muted-foreground">Account name:</span> TeslaVest Holdings LLC</p>
-              <p><span className="text-muted-foreground">Account no:</span> 4421 0098 7733</p>
-              <p><span className="text-muted-foreground">Routing:</span> 021000021</p>
-              <p><span className="text-muted-foreground">SWIFT:</span> CHASUS33</p>
+              <p><span className="text-muted-foreground">Bank:</span> {bankInfo?.bank_name ?? "—"}</p>
+              <p><span className="text-muted-foreground">Account name:</span> {bankInfo?.account_name ?? "—"}</p>
+              <p><span className="text-muted-foreground">Account no:</span> {bankInfo?.account_number ?? "—"}</p>
+              <p><span className="text-muted-foreground">Routing:</span> {bankInfo?.routing_number ?? "—"}</p>
+              <p><span className="text-muted-foreground">SWIFT:</span> {bankInfo?.swift_code ?? "—"}</p>
+              {bankInfo?.notes && <p className="text-muted-foreground italic">{bankInfo.notes}</p>}
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
