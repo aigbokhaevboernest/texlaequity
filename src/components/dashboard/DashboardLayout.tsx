@@ -181,7 +181,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </aside>
 
-        <main className="min-w-0">{children}</main>
+        <main className="min-w-0">
+          {isSuspended && !allowedWhileSuspended ? (
+            <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 max-w-2xl">
+              <h2 className="font-display text-2xl mb-2 text-destructive">Account Suspended</h2>
+              <p className="text-[14px] text-muted-foreground mb-4">
+                Your account has been suspended. Withdrawals, deposits, and other actions are blocked. You can still view your balance on the dashboard overview.
+              </p>
+              <p className="text-[13px]">Contact support: <a className="text-primary underline" href="mailto:support@teslavest.com">support@teslavest.com</a></p>
+            </div>
+          ) : children}
+        </main>
       </div>
     </div>
   );
