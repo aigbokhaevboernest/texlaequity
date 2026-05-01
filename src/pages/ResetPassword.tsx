@@ -18,7 +18,7 @@ const pwdSchema = z
 
 const ResetPassword = () => {
   const nav = useNavigate();
-  const { isAdmin } = useAuth();
+  
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [done, setDone] = useState(false);
@@ -53,7 +53,7 @@ const ResetPassword = () => {
     }
     setDone(true);
     toast.success("Password updated");
-    setTimeout(() => nav(isAdmin ? "/admin" : "/dashboard"), 1200);
+    setTimeout(() => nav("/dashboard"), 1200);
   };
 
   return (

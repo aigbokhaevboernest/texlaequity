@@ -26,7 +26,7 @@ const schema = z.object({
 });
 
 const Signup = () => {
-  const { user, isAdmin, loading: authLoading, roleLoading } = useAuth();
+  const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -37,8 +37,8 @@ const Signup = () => {
 
   useEffect(() => {
     if (authLoading || roleLoading || !user) return;
-    nav(isAdmin ? "/admin" : "/dashboard", { replace: true });
-  }, [user, isAdmin, authLoading, roleLoading, nav]);
+    nav("/dashboard", { replace: true });
+  }, [user, authLoading, roleLoading, nav]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
