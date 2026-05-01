@@ -1,14 +1,13 @@
 import { useState, useEffect, ReactNode } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLiveData } from "@/hooks/useLiveData";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
-  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Shield, Wallet,
+  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet,
 } from "lucide-react";
 
 const items = [
@@ -57,16 +56,14 @@ const NavItems = ({ onClick }: { onClick?: () => void }) => (
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const nav = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (authLoading || adminLoading) return;
+    if (authLoading) return;
     if (!user) nav("/login", { replace: true });
-    else if (isAdmin) nav("/admin", { replace: true });
-  }, [user, isAdmin, authLoading, adminLoading, nav]);
+  }, [user, authLoading, nav]);
 
   const { data: profile } = useLiveData<Profile | null>(async () => {
     if (!user) return null;
@@ -77,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
-  if (authLoading || adminLoading || !user || isAdmin) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -141,14 +138,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   <NavItems onClick={() => setOpen(false)} />
-                  {isAdmin && (
-                    <div className="px-2 pb-2">
-                      <Link to="/admin" onClick={() => setOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors">
-                        <Shield className="w-4 h-4" /> Admin Console
-                      </Link>
-                    </div>
-                  )}
                 </div>
                 <div className="border-t border-border p-2">
                   <button
@@ -169,11 +158,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="rounded-2xl border border-border bg-card/60 backdrop-blur p-1">
             <NavItems />
           </div>
-          {isAdmin && (
-            <Link to="/admin" className="mt-3 flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors">
-              <Shield className="w-4 h-4" /> Admin Console
-            </Link>
-          )}
           <button
             onClick={handleSignOut}
             className="mt-3 w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-medium text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"

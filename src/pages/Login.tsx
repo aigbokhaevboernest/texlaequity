@@ -18,7 +18,7 @@ const loginSchema = z.object({
 });
 
 const Login = () => {
-  const { user, isAdmin, loading: authLoading, roleLoading } = useAuth();
+  const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState(
@@ -31,16 +31,8 @@ const Login = () => {
 
   useEffect(() => {
     if (authLoading || roleLoading || !user) return;
-    if (isAdmin) {
-      // Admins must use the dedicated /admin login door.
-      supabase.auth.signOut().then(() => {
-        toast.error("Admin accounts must sign in at /admin");
-        nav("/admin", { replace: true });
-      });
-      return;
-    }
     nav("/dashboard", { replace: true });
-  }, [user, isAdmin, authLoading, roleLoading, nav]);
+  }, [user, authLoading, roleLoading, nav]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

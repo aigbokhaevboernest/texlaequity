@@ -1,12 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEffect, useState } from "react";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useIsAdmin();
   const nav = useNavigate();
   const [scrolled, setScrolled] = useState(false);
 
@@ -41,7 +39,7 @@ const Navbar = () => {
           <div className="flex items-center gap-1">
             {user ? (
               <>
-                <Button variant="ghost" size="sm" onClick={() => nav(isAdmin ? "/admin" : "/dashboard")} className="text-[13px]">
+                <Button variant="ghost" size="sm" onClick={() => nav("/dashboard")} className="text-[13px]">
                   Dashboard
                 </Button>
                 <Button variant="ghost" size="sm" onClick={async () => { await signOut(); nav("/"); }} className="text-[13px]">
