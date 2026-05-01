@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client.ts";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp, Banknote, Star, Car as CarIcon, ExternalLink, Loader2 } from "lucide-react";
