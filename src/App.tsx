@@ -33,7 +33,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <IntroAnimation />
+          
           <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Index />} />
