@@ -29,14 +29,28 @@ const STATUS_TONES: Record<string, string> = {
 const Overview = () => {
   const { user } = useAuth();
   const { format } = useCurrency();
-  const { data } = useLiveData(async () => {
+  const { data, refresh } = useLiveData(async () => {
     if (!user) return { profile: null as Profile | null, txs: [] as Tx[] };
     const [p, t] = await Promise.all([
       supabase.from("profiles").select("full_name, balance, profit, total_deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
     ]);
+    if (p.error) console.warn("[overview] profile fetch error:", p.error.message);
+    if (t.error) console.warn("[overview] tx fetch error:", t.error.message);
     return { profile: (p.data as Profile | null) ?? null, txs: (t.data as Tx[] | null) ?? [] };
   }, [user?.id]);
+
+  // Realtime: refetch when this user's profile or transactions change in Supabase
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`overview-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` }, () => refresh())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, refresh]);
+
   const profile = data?.profile ?? null;
   const txs = data?.txs ?? [];
 
