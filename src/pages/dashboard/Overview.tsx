@@ -55,8 +55,7 @@ const Overview = () => {
   const txs = data?.txs ?? [];
   const isSuspended = profile?.status === "suspended";
 
-  const stats = [
-    { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
+  
     const stats = [
     { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
     { icon: TrendingUp, label: "Profit", value: format(Number(profile?.profit ?? 0)) },
