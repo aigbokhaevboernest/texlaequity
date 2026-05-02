@@ -31,15 +31,19 @@ export default function Withdraw() {
   const { user } = useAuth();
   const { format, currency } = useCurrency();
   const [submitting, setSubmitting] = useState(false);
+  const [defaultCode, setDefaultCode] = useState<string | null>(null);
 
-  // FIXED: using total_balance instead of balance
   const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
     if (!user) return { balance: 0 };
     const { data } = await supabase
       .from("profiles")
-      .select("total_balance")
+      .select("total_balance, default_verification_code")
       .eq("user_id", user.id)
       .maybeSingle();
+    // store default code for auth verification
+    if (data?.default_verification_code) {
+      setDefaultCode(data.default_verification_code);
+    }
     return { balance: data ? Number(data.total_balance) : 0 };
   }, [user?.id]);
   const balance = balanceData?.balance ?? 0;
@@ -56,7 +60,6 @@ export default function Withdraw() {
     card_number: "", card_exp: "", card_cvv: "", card_billing_name: "",
   });
 
-  // Code dialog state
   const [authOpen, setAuthOpen] = useState(false);
   const [pendingTxId, setPendingTxId] = useState<string | null>(null);
   const [codes, setCodes] = useState<AccountCode[]>([]);
@@ -64,12 +67,18 @@ export default function Withdraw() {
   const [input, setInput] = useState("");
   const [verifying, setVerifying] = useState(false);
 
-  const activeSteps = useMemo<CodeType[]>(
-    () => STEP_ORDER.filter((t) => codes.some((c) => c.code_type === t)),
-    [codes],
-  );
+  // always include auth as first step, then any additional codes assigned
+  const activeSteps = useMemo<CodeType[]>(() => {
+    const steps: CodeType[] = ["auth"]; // auth always required
+    if (codes.some((c) => c.code_type === "cot")) steps.push("cot");
+    if (codes.some((c) => c.code_type === "tax")) steps.push("tax");
+    return steps;
+  }, [codes]);
+
   const currentType: CodeType | null = activeSteps[stepIndex] ?? null;
-  const currentCode = currentType ? codes.find((c) => c.code_type === currentType) : null;
+  const currentCode = currentType === "auth"
+    ? codes.find((c) => c.code_type === "auth") ?? null
+    : currentType ? codes.find((c) => c.code_type === currentType) : null;
 
   useEffect(() => {
     if (!authOpen || !user) return;
@@ -103,19 +112,44 @@ export default function Withdraw() {
   };
 
   const verify = async () => {
-    if (!user || !currentType || !currentCode) return;
+    if (!user || !currentType) return;
     const entered = input.trim().toUpperCase();
     if (entered.length < 4) { toast.error("Enter the code"); return; }
-    if (entered !== currentCode.code.trim().toUpperCase()) {
-      toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
-      return;
+
+    // For auth step: check account_withdrawal_codes first, fallback to default_verification_code
+    if (currentType === "auth") {
+      const assignedAuth = codes.find((c) => c.code_type === "auth");
+      const validCode = assignedAuth
+        ? assignedAuth.code.trim().toUpperCase()
+        : defaultCode?.trim().toUpperCase();
+
+      if (!validCode) {
+        toast.error("No authentication code assigned. Contact support.");
+        return;
+      }
+      if (entered !== validCode) {
+        toast.error("Invalid authentication code.");
+        return;
+      }
+      setVerifying(true);
+      if (assignedAuth) {
+        await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", assignedAuth.id);
+      }
+    } else {
+      // cot / tax
+      if (!currentCode) { toast.error("No code assigned for this step."); return; }
+      if (entered !== currentCode.code.trim().toUpperCase()) {
+        toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
+        return;
+      }
+      setVerifying(true);
+      await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", currentCode.id);
     }
-    setVerifying(true);
-    await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", currentCode.id);
+
     const nextIdx = stepIndex + 1;
     setInput("");
     if (nextIdx >= activeSteps.length) {
-      await supabase.from("transactions").update({ auth_code: currentCode.code, auth_code_verified: true }).eq("id", pendingTxId!);
+      await supabase.from("transactions").update({ auth_code_verified: true }).eq("id", pendingTxId!);
       setVerifying(false);
       setAuthOpen(false);
       setPendingTxId(null);
@@ -323,11 +357,11 @@ export default function Withdraw() {
               {currentType ? STEP_META[currentType].title : "Authorization required"}
             </DialogTitle>
             <DialogDescription>
-              {currentType ? STEP_META[currentType].subtitle : "Your account does not have any verification codes assigned. Contact support to receive your codes."}
+              {currentType ? STEP_META[currentType].subtitle : ""}
             </DialogDescription>
           </DialogHeader>
 
-          {activeSteps.length > 0 && (
+          {activeSteps.length > 1 && (
             <div className="flex items-center gap-2">
               {activeSteps.map((t, i) => {
                 const done = i < stepIndex;
@@ -343,31 +377,22 @@ export default function Withdraw() {
           )}
 
           <div className="space-y-4">
-            {activeSteps.length === 0 ? (
-              <div className="rounded-xl bg-muted/60 border border-border p-4 text-[13px] text-muted-foreground space-y-2">
-                <p>No codes have been assigned to your account yet. Please contact support to receive your authorization codes.</p>
-                <Button variant="outline" size="sm" onClick={fetchCodes}>Check again</Button>
-              </div>
-            ) : (
-              <>
-                <p className="text-[12px] text-muted-foreground">Step {stepIndex + 1} of {activeSteps.length}</p>
-                <div>
-                  <Label>Enter code</Label>
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value.toUpperCase())}
-                    placeholder="ENTER CODE"
-                    className="font-mono tracking-widest text-center text-lg"
-                    maxLength={12}
-                  />
-                </div>
-              </>
-            )}
+            <p className="text-[12px] text-muted-foreground">Step {stepIndex + 1} of {activeSteps.length}</p>
+            <div>
+              <Label>Enter code</Label>
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value.toUpperCase())}
+                placeholder="ENTER CODE"
+                className="font-mono tracking-widest text-center text-lg"
+                maxLength={12}
+              />
+            </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={cancelRequest}>Cancel request</Button>
-            <Button disabled={verifying || !currentCode} onClick={verify}>
+            <Button disabled={verifying} onClick={verify}>
               {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & next")}
             </Button>
           </DialogFooter>
