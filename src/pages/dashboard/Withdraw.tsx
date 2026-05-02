@@ -31,10 +31,16 @@ export default function Withdraw() {
   const { user } = useAuth();
   const { format, currency } = useCurrency();
   const [submitting, setSubmitting] = useState(false);
+
+  // FIXED: using total_balance instead of balance
   const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
     if (!user) return { balance: 0 };
-    const { data } = await supabase.from("profiles").select("balance").eq("user_id", user.id).maybeSingle();
-    return { balance: data ? Number(data.balance) : 0 };
+    const { data } = await supabase
+      .from("profiles")
+      .select("total_balance")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    return { balance: data ? Number(data.total_balance) : 0 };
   }, [user?.id]);
   const balance = balanceData?.balance ?? 0;
 
@@ -65,7 +71,6 @@ export default function Withdraw() {
   const currentType: CodeType | null = activeSteps[stepIndex] ?? null;
   const currentCode = currentType ? codes.find((c) => c.code_type === currentType) : null;
 
-  // One-shot fetch when dialog opens (NO polling — manual refresh button instead)
   useEffect(() => {
     if (!authOpen || !user) return;
     fetchCodes();
@@ -131,7 +136,6 @@ export default function Withdraw() {
 
   const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
 
-  // Submit "Others" method
   const submitOther = () => {
     const m = other.method;
     const body: Record<string, unknown> = {};
@@ -168,7 +172,9 @@ export default function Withdraw() {
       <div>
         <p className="label-mono text-muted-foreground mb-2">Cash out</p>
         <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Withdraw</h1>
-        <p className="text-muted-foreground text-[14px] mt-1">Available balance: <span className="text-foreground font-medium">{format(balance)}</span></p>
+        <p className="text-muted-foreground text-[14px] mt-1">
+          Available balance: <span className="text-foreground font-medium">{format(balance)}</span>
+        </p>
       </div>
 
       <Tabs defaultValue="crypto">
@@ -261,7 +267,6 @@ export default function Withdraw() {
               </div>
             </div>
 
-            {/* Dynamic fields per method */}
             {other.method === "cashapp" && (
               <div>
                 <Label>Cash App tag</Label>
