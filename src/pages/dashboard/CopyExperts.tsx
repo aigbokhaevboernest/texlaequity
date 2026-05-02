@@ -109,18 +109,18 @@ export default function CopyExperts() {
             <Stat
               icon={Award}
               label="Win rate"
-              value={`${expert.win_rate}%`}
+              value={`${expert.win_rate ?? 0}%`}
               accent="text-emerald-600"
             />
             <Stat
               icon={TrendingUp}
               label="Total trades"
-              value={expert.total_trades.toLocaleString()}
+              value={(expert.total_trades ?? 0).toLocaleString()}
             />
             <Stat
               icon={Users}
               label="Copiers"
-              value={expert.followers_count.toLocaleString()}
+              value={(expert.followers_count ?? 0).toLocaleString()}
             />
           </div>
 
