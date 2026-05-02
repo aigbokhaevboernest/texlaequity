@@ -87,7 +87,7 @@ if (profile?.status === "blocked") {
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-elegant">
             <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
           </div>
-          <span className="font-display font-bold text-xl">TeslaVest</span>
+          <span className="font-display font-bold text-xl">Tesla</span>
         </Link>
 
         <div className="glass rounded-3xl p-8 shadow-elegant">
@@ -102,9 +102,7 @@ if (profile?.status === "blocked") {
             <div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  Forgot password?
-                </Link>
+                
               </div>
               <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
