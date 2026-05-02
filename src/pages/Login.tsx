@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ const loginSchema = z.object({
 const Login = () => {
   const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
+const isBlocked = new URLSearchParams(location.search).get("blocked") === "true";
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState(
     typeof window !== "undefined" ? localStorage.getItem(REMEMBER_KEY) ?? "" : ""
@@ -57,6 +59,21 @@ const Login = () => {
       toast.error(msg);
       return;
     }
+
+    // Check if blocked
+const { data: { user: loggedUser } } = await supabase.auth.getUser();
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("status")
+  .eq("user_id", loggedUser?.id!)
+  .maybeSingle();
+
+if (profile?.status === "blocked") {
+  await supabase.auth.signOut();
+  toast.error("Your account has been restricted. Please contact support.");
+  return;
+}
+
     if (remember) localStorage.setItem(REMEMBER_KEY, cleanEmail);
     else localStorage.removeItem(REMEMBER_KEY);
     toast.success("Welcome back");
