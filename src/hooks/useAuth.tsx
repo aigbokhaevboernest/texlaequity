@@ -98,13 +98,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // 2. THEN check existing session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
+  // 2. THEN check existing session
+supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+  if (s?.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("status")
+      .eq("user_id", s.user.id)
+      .maybeSingle();
+
+    if (profile?.status === "blocked") {
+      await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
       setLoading(false);
-      fetchRole(s?.user?.id, "INITIAL");
-    });
+      setRoleLoading(false);
+      window.location.href = "/login?blocked=true";
+      return;
+    }
+  }
+
+  setSession(s);
+  setUser(s?.user ?? null);
+  setLoading(false);
+  fetchRole(s?.user?.id, "INITIAL");
+});
 
     return () => subscription.unsubscribe();
   }, []);
