@@ -57,8 +57,13 @@ const Overview = () => {
 
   const stats = [
     { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
-    { icon: TrendingUp, label: "Profit", value: isSuspended ? "————" : format(Number(profile?.profit ?? 0)) },
-    { icon: Banknote, label: "Total Deposit", value: isSuspended ? "————" : format(Number(profile?.deposit ?? 0)) },
+    const stats = [
+    { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
+    { icon: TrendingUp, label: "Profit", value: format(Number(profile?.profit ?? 0)) },
+    { icon: Banknote, label: "Total Deposit", value: format(Number(profile?.deposit ?? 0)) },
+    { icon: Star, label: "Account Level", value: profile?.account_level ?? "Basic" },
+  ];
+
     { icon: Star, label: "Account Level", value: profile?.account_level ?? "Basic" },
   ];
 
