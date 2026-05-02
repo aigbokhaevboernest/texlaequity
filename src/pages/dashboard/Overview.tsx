@@ -9,9 +9,9 @@ import { useCurrency } from "@/hooks/useCurrency";
 
 interface Profile {
   full_name: string | null;
-  balance: number;
+  total_balance: number;
   profit: number;
-  total_deposit: number;
+  deposit: number;
   account_level: string;
   status: string;
 }
@@ -33,7 +33,7 @@ const Overview = () => {
   const { data, refresh } = useLiveData(async () => {
     if (!user) return { profile: null as Profile | null, txs: [] as Tx[] };
     const [p, t] = await Promise.all([
-      supabase.from("profiles").select("full_name, balance, profit, total_deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
     ]);
     if (p.error) console.warn("[overview] profile fetch error:", p.error.message);
@@ -41,7 +41,6 @@ const Overview = () => {
     return { profile: (p.data as Profile | null) ?? null, txs: (t.data as Tx[] | null) ?? [] };
   }, [user?.id]);
 
-  // Realtime: refetch when this user's profile or transactions change in Supabase
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -55,10 +54,12 @@ const Overview = () => {
   const profile = data?.profile ?? null;
   const txs = data?.txs ?? [];
 
+  const isSuspended = profile?.status === "suspended";
+
   const stats = [
-    { icon: Wallet, label: "Total Balance", value: format(Number(profile?.balance ?? 0)) },
-    { icon: TrendingUp, label: "Profit", value: format(Number(profile?.profit ?? 0)) },
-    { icon: Banknote, label: "Total Deposit", value: format(Number(profile?.total_deposit ?? 0)) },
+    { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
+    { icon: TrendingUp, label: "Profit", value: isSuspended ? "————" : format(Number(profile?.profit ?? 0)) },
+    { icon: Banknote, label: "Total Deposit", value: isSuspended ? "————" : format(Number(profile?.deposit ?? 0)) },
     { icon: Star, label: "Account Level", value: profile?.account_level ?? "Basic" },
   ];
 
@@ -71,7 +72,7 @@ const Overview = () => {
 
   return (
     <div className="space-y-8">
-      {profile?.status === "suspended" && (
+      {isSuspended && (
         <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5">
           <p className="font-display text-lg text-destructive mb-1">Account Suspended</p>
           <p className="text-[13px] text-muted-foreground">All actions are blocked. Your balance and profit are visible. Contact <a className="text-primary underline" href="mailto:support@teslavest.com">support@teslavest.com</a>.</p>
@@ -90,78 +91,4 @@ const Overview = () => {
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                <s.icon className="w-4 h-4 text-foreground/70" />
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{s.label}</p>
-            <p className="font-display text-2xl font-medium tracking-tight">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {quick.map((q) => (
-          <Link
-            key={q.to}
-            to={q.to}
-            className="rounded-2xl border border-border bg-card p-5 hover:border-foreground/40 hover:-translate-y-0.5 transition-all"
-          >
-            <q.icon className="w-5 h-5 mb-3 text-primary" />
-            <p className="font-medium text-[14px]">{q.label}</p>
-          </Link>
-        ))}
-      </div>
-
-      {/* Recent transactions */}
-      <section>
-        <div className="flex items-end justify-between mb-4">
-          <h2 className="font-display text-xl font-medium">Recent activity</h2>
-          <Link to="/dashboard/transactions" className="text-[13px] text-primary hover:underline">View all</Link>
-        </div>
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          {txs.length === 0 ? (
-            <div className="p-10 text-center text-muted-foreground text-sm">
-              No transactions yet. <Link to="/dashboard/deposit" className="text-primary hover:underline">Make a deposit</Link>.
-            </div>
-          ) : (
-            txs.map((t) => (
-              <div key={t.id} className="flex items-center justify-between p-4 border-b border-border last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${t.type === "deposit" ? "bg-emerald-500/10" : "bg-red-500/10"}`}>
-                    {t.type === "deposit"
-                      ? <ArrowDownToLine className="w-4 h-4 text-emerald-600" />
-                      : <ArrowUpFromLine className="w-4 h-4 text-red-600" />}
-                  </div>
-                  <div>
-                    <p className="font-medium text-[14px] capitalize">{t.type} · {t.method}</p>
-                    <p className="text-[11px] text-muted-foreground">{new Date(t.created_at).toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-display font-medium text-[14px]">{format(Number(t.amount_usd))}</span>
-                  <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full ${STATUS_TONES[t.status] ?? "bg-muted"}`}>
-                    {t.status}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <div className="rounded-2xl border border-border bg-foreground text-background p-6 md:p-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="label-mono text-background/50 mb-2">Verify to unlock everything</p>
-          <p className="font-display text-xl md:text-2xl font-light">Complete KYC to confirm your identity.</p>
-        </div>
-        <Link to="/dashboard/kyc">
-          <Button className="rounded-full bg-background text-foreground hover:bg-background/90 px-6">Start KYC</Button>
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-export default Overview;
+              <div className="w-9​​​​​​​​​​​​​​​​
