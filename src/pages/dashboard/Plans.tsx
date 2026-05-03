@@ -31,36 +31,8 @@ export default function Plans() {
       .then(({ data }) => { if (data) setPlans(data as unknown as Plan[]); });
   }, []);
 
-  const subscribe = async () => {
-    if (!user || !selected) return;
-    const a = amountSchema.safeParse(amount);
-    if (!a.success) { toast.error(a.error.errors[0].message); return; }
-    if (a.data < selected.min_amount_usd || a.data > selected.max_amount_usd) {
-      toast.error(`Range: ${format(selected.min_amount_usd)} – ${format(selected.max_amount_usd)}`); return;
-    }
-    setLoading(true);
-    // Check balance
-    const { data: profile } = await supabase
-      .from("profiles").select("balance").eq("user_id", user.id).maybeSingle();
-    const bal = Number((profile as { balance: number } | null)?.balance ?? 0);
-    if (a.data > bal) {
-      setLoading(false);
-      toast.error(`Insufficient balance. You have ${format(bal)} — please deposit first.`);
-      return;
-    }
-    const expected = a.data * (1 + Number(selected.roi_percent) / 100);
-    const ends = new Date(Date.now() + selected.duration_days * 86400000).toISOString();
-    const { error } = await supabase.from("plan_subscriptions").insert({
-      user_id: user.id, plan_id: selected.id, amount_usd: a.data,
-      expected_return_usd: expected, ends_at: ends, status: "active",
-    });
-    if (error) { setLoading(false); toast.error(error.message); return; }
-    // Deduct from balance
-    await supabase.from("profiles").update({ balance: bal - a.data }).eq("user_id", user.id);
-    setLoading(false);
-    toast.success(`Subscribed to ${selected.name}. ${format(a.data)} deducted from balance.`);
-    setSelected(null); setAmount("");
-  };
+  // Per spec: "Buy plan" button redirects to deposit page (no balance deduction here)
+  const goDeposit = () => { window.location.href = "/dashboard/deposit"; };
 
   return (
     <div className="space-y-6">
