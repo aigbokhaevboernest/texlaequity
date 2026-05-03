@@ -14,6 +14,14 @@ interface Profile {
   deposit: number;
   account_level: string;
   status: string;
+  assigned_expert_id: string | null;
+}
+
+interface Expert {
+  id: string;
+  name: string;
+  handle: string;
+  specialty: string | null;
 }
 
 interface Tx {
@@ -31,14 +39,24 @@ const Overview = () => {
   const { user } = useAuth();
   const { format } = useCurrency();
   const { data, refresh } = useLiveData(async () => {
-    if (!user) return { profile: null as Profile | null, txs: [] as Tx[] };
+    if (!user) return { profile: null as Profile | null, txs: [] as Tx[], expert: null as Expert | null };
     const [p, t] = await Promise.all([
-      supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status, assigned_expert_id").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
     ]);
     if (p.error) console.warn("[overview] profile fetch error:", p.error.message);
     if (t.error) console.warn("[overview] tx fetch error:", t.error.message);
-    return { profile: (p.data as Profile | null) ?? null, txs: (t.data as Tx[] | null) ?? [] };
+    const profile = (p.data as Profile | null) ?? null;
+    let expert: Expert | null = null;
+    if (profile?.assigned_expert_id) {
+      const { data: ex } = await supabase
+        .from("expert_traders")
+        .select("id, name, handle, specialty")
+        .eq("id", profile.assigned_expert_id)
+        .maybeSingle();
+      expert = (ex as Expert | null) ?? null;
+    }
+    return { profile, txs: (t.data as Tx[] | null) ?? [], expert };
   }, [user?.id]);
 
   useEffect(() => {
@@ -53,12 +71,13 @@ const Overview = () => {
 
   const profile = data?.profile ?? null;
   const txs = data?.txs ?? [];
+  const expert = data?.expert ?? null;
   const isSuspended = profile?.status === "suspended";
 
   const stats = [
     { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
     { icon: TrendingUp, label: "Profit", value: format(Number(profile?.profit ?? 0)) },
-    { icon: Banknote, label: "Total Deposit", value: format(Number(profile?.deposit ?? 0)) },
+    { icon: Banknote, label: "Deposit", value: format(Number(profile?.deposit ?? 0)) },
     { icon: Star, label: "Account Level", value: profile?.account_level ?? "Basic" },
   ];
 
@@ -68,6 +87,8 @@ const Overview = () => {
     { to: "/dashboard/copy-experts", label: "Copy Experts", icon: Users },
     { to: "/dashboard/plans", label: "Trading Plans", icon: LineChart },
   ];
+
+  const firstName = profile?.full_name?.trim()?.split(" ")[0];
 
   return (
     <div className="space-y-8">
@@ -86,10 +107,25 @@ const Overview = () => {
       <div>
         <p className="label-mono text-muted-foreground mb-2">Welcome back</p>
         <h1 className="font-display text-3xl md:text-4xl font-light tracking-[-0.03em]">
-          {profile?.full_name?.split(" ")[0] ?? "Trader"}.
+          {firstName ? `${firstName}.` : "Welcome."}
         </h1>
         <p className="text-muted-foreground text-[14px] mt-1">Here's a snapshot of your portfolio.</p>
       </div>
+
+      {expert && (
+        <Link to="/dashboard/copy-experts" className="block rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 hover:border-emerald-500/60 transition-colors">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-display font-semibold">
+              {expert.name.split(" ").map((s) => s[0]).join("")}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-medium">You are copying</p>
+              <p className="font-display text-lg font-medium truncate">{expert.name} <span className="text-muted-foreground text-[12px] font-normal">{expert.handle}</span></p>
+              {expert.specialty && <p className="text-[12px] text-muted-foreground truncate">{expert.specialty}</p>}
+            </div>
+          </div>
+        </Link>
+      )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((s) => (
