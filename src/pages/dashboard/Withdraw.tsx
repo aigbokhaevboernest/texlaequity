@@ -400,7 +400,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
     </DialogContent>
   </Dialog>
 </div>
-```
+
 
 );
 }
