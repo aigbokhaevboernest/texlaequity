@@ -160,7 +160,6 @@ if (nextIdx >= activeSteps.length) {
   setVerifying(false);
   toast.success(`${STEP_META[currentType].title} accepted.`);
 }
-```
 
 };
 
