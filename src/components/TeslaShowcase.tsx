@@ -34,16 +34,16 @@ const TeslaShowcase = () => {
   };
 
   return (
-    <section id="vehicles" className="py-32 relative">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-10 mb-16">
-        <div className="flex items-end justify-between flex-wrap gap-6">
+    <section id="vehicles" className="py-24 md:py-32 relative">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-10 mb-12 md:mb-16">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div className="max-w-2xl">
-            <p className="label-mono text-foreground/40 mb-4">01 — The Garage</p>
-            <h2 className="font-display text-4xl md:text-6xl font-light tracking-[-0.035em] text-foreground leading-[1]">
+            <p className="label-mono text-foreground/40 mb-3 md:mb-4">01 — The Garage</p>
+            <h2 className="font-display text-[34px] sm:text-5xl md:text-6xl font-light tracking-[-0.035em] text-foreground leading-[1.05]">
               Drive what your<br />investments earn.
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start md:self-auto">
             <button
               onClick={() => scroll("l")}
               className="w-10 h-10 rounded-full border border-border hover:bg-foreground/5 transition-colors flex items-center justify-center"
