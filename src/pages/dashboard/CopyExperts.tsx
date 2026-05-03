@@ -21,7 +21,7 @@ export default function CopyExperts() {
   const { user } = useAuth();
   const { format } = useCurrency();
   const [expert, setExpert] = useState<Expert | null>(null);
-  const [deposit, setDeposit] = useState<number>(0); // ADDED
+  const [activated, setActivated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,11 +30,15 @@ export default function CopyExperts() {
       setLoading(true);
       const { data: profile } = await supabase
         .from("profiles")
-        .select("assigned_expert_id, total_deposit") // CHANGED: added total_deposit
+        .select("assigned_expert_id, deposit, profit, total_balance")
         .eq("user_id", user.id)
         .maybeSingle();
-      const expertId = (profile as { assigned_expert_id: string | null; total_deposit: number | null } | null)?.assigned_expert_id;
-      setDeposit(Number((profile as any)?.total_deposit ?? 0)); // ADDED
+      const p = profile as { assigned_expert_id: string | null; deposit: number | null; profit: number | null; total_balance: number | null } | null;
+      const expertId = p?.assigned_expert_id;
+      const dep = Number(p?.deposit ?? 0);
+      const prof = Number(p?.profit ?? 0);
+      const bal = Number(p?.total_balance ?? 0);
+      setActivated(dep > 0 || prof > 0 || bal > 0);
       if (!expertId) {
         setExpert(null);
         setLoading(false);
@@ -97,8 +101,7 @@ export default function CopyExperts() {
             <Stat icon={TrendingUp} label="Min copy" value={format(Number(expert.min_copy_amount ?? 0))} />
           </div>
 
-          {/* ADDED: Copy status block */}
-          {deposit > 0 ? (
+          {activated ? (
             <div className="mt-6 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-4">
               <div className="flex items-center gap-2 justify-center">
                 <Copy className="w-4 h-4 text-emerald-600" />
