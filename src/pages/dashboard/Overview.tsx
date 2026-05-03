@@ -39,14 +39,24 @@ const Overview = () => {
   const { user } = useAuth();
   const { format } = useCurrency();
   const { data, refresh } = useLiveData(async () => {
-    if (!user) return { profile: null as Profile | null, txs: [] as Tx[] };
+    if (!user) return { profile: null as Profile | null, txs: [] as Tx[], expert: null as Expert | null };
     const [p, t] = await Promise.all([
-      supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status, assigned_expert_id").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
     ]);
     if (p.error) console.warn("[overview] profile fetch error:", p.error.message);
     if (t.error) console.warn("[overview] tx fetch error:", t.error.message);
-    return { profile: (p.data as Profile | null) ?? null, txs: (t.data as Tx[] | null) ?? [] };
+    const profile = (p.data as Profile | null) ?? null;
+    let expert: Expert | null = null;
+    if (profile?.assigned_expert_id) {
+      const { data: ex } = await supabase
+        .from("expert_traders")
+        .select("id, name, handle, specialty")
+        .eq("id", profile.assigned_expert_id)
+        .maybeSingle();
+      expert = (ex as Expert | null) ?? null;
+    }
+    return { profile, txs: (t.data as Tx[] | null) ?? [], expert };
   }, [user?.id]);
 
   useEffect(() => {
