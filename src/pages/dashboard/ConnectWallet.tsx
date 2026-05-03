@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Wallet, ShieldAlert, Check } from "lucide-react";
+import { Loader2, Wallet, ShieldAlert } from "lucide-react";
 
 const WALLETS = [
   "MetaMask", "Trust Wallet", "Coinbase Wallet", "Phantom",
