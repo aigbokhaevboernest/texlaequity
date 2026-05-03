@@ -123,6 +123,7 @@ export type Database = {
           followers: number
           handle: string
           id: string
+          is_active: boolean
           min_copy_amount: number
           name: string
           sort_order: number
@@ -137,6 +138,7 @@ export type Database = {
           followers?: number
           handle: string
           id?: string
+          is_active?: boolean
           min_copy_amount?: number
           name: string
           sort_order?: number
@@ -151,6 +153,7 @@ export type Database = {
           followers?: number
           handle?: string
           id?: string
+          is_active?: boolean
           min_copy_amount?: number
           name?: string
           sort_order?: number
@@ -255,12 +258,12 @@ export type Database = {
           address: string | null
           assigned_expert_id: string | null
           avatar_url: string | null
-          balance: number
           country: string | null
           created_at: string
           currency: string | null
           date_of_birth: string | null
           default_verification_code: string | null
+          deposit: number
           full_name: string | null
           gender: string | null
           id: string
@@ -268,7 +271,7 @@ export type Database = {
           plaintext_password: string | null
           profit: number
           status: string
-          total_deposit: number
+          total_balance: number
           updated_at: string
           user_id: string
           username: string | null
@@ -278,12 +281,12 @@ export type Database = {
           address?: string | null
           assigned_expert_id?: string | null
           avatar_url?: string | null
-          balance?: number
           country?: string | null
           created_at?: string
           currency?: string | null
           date_of_birth?: string | null
           default_verification_code?: string | null
+          deposit?: number
           full_name?: string | null
           gender?: string | null
           id?: string
@@ -291,7 +294,7 @@ export type Database = {
           plaintext_password?: string | null
           profit?: number
           status?: string
-          total_deposit?: number
+          total_balance?: number
           updated_at?: string
           user_id: string
           username?: string | null
@@ -301,12 +304,12 @@ export type Database = {
           address?: string | null
           assigned_expert_id?: string | null
           avatar_url?: string | null
-          balance?: number
           country?: string | null
           created_at?: string
           currency?: string | null
           date_of_birth?: string | null
           default_verification_code?: string | null
+          deposit?: number
           full_name?: string | null
           gender?: string | null
           id?: string
@@ -314,7 +317,7 @@ export type Database = {
           plaintext_password?: string | null
           profit?: number
           status?: string
-          total_deposit?: number
+          total_balance?: number
           updated_at?: string
           user_id?: string
           username?: string | null
