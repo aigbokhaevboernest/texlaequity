@@ -116,7 +116,6 @@ if (!user || !currentType) return;
 const entered = input.trim().toUpperCase();
 if (entered.length < 4) { toast.error("Enter the code"); return; }
 
-```
 // For auth step: check account_withdrawal_codes first, fallback to default_verification_code
 if (currentType === "auth") {
   const assignedAuth = codes.find((c) => c.code_type === "auth");
