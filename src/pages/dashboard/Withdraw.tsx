@@ -212,7 +212,6 @@ Available balance: <span className="text-foreground font-medium">{format(balance
 </p>
 </div>
 
-```
   <Tabs defaultValue="crypto">
     <TabsList className="grid w-full max-w-2xl grid-cols-3">
       <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
