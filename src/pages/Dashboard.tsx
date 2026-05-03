@@ -1,16 +1,16 @@
-import { useEffect, useState } from “react”;
-import { useNavigate } from “react-router-dom”;
-import { useAuth } from “@/hooks/useAuth”;
-import { supabase } from “@/integrations/supabase/client.ts”;
-import Navbar from “@/components/Navbar”;
-import { Button } from “@/components/ui/button”;
-import { Wallet, TrendingUp, Banknote, Star, Car as CarIcon, ExternalLink, Loader2 } from “lucide-react”;
-import { carImages, formatUSD, toBTC } from “@/lib/cars”;
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from “@/components/ui/dialog”;
-import { Input } from “@/components/ui/input”;
-import { Label } from “@/components/ui/label”;
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from “@/components/ui/select”;
-import { toast } from “sonner”;
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client.ts";
+import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Wallet, TrendingUp, Banknote, Star, Car as CarIcon, ExternalLink, Loader2 } from "lucide-react";
+import { carImages, formatUSD, toBTC } from "@/lib/cars";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface Profile {
 full_name: string | null;
@@ -32,11 +32,11 @@ id: string; car_id: string; status: string; amount_usd: number; created_at: stri
 }
 
 const STATUS_COLORS: Record<string, string> = {
-pending: “bg-yellow-500/15 text-yellow-700”,
-in_transit: “bg-blue-500/15 text-blue-700”,
-approved: “bg-green-500/15 text-green-700”,
-on_hold: “bg-orange-500/15 text-orange-700”,
-delivered: “bg-emerald-500/15 text-emerald-700”,
+pending: "bg-yellow-500/15 text-yellow-700",
+in_transit: "bg-blue-500/15 text-blue-700",
+approved: "bg-green-500/15 text-green-700",
+on_hold: "bg-orange-500/15 text-orange-700",
+delivered: "bg-emerald-500/15 text-emerald-700",
 };
 
 const Dashboard = () => {
@@ -47,10 +47,10 @@ const [cars, setCars] = useState<Car[]>([]);
 const [orders, setOrders] = useState<Order[]>([]);
 const [selectedCar, setSelectedCar] = useState<Car | null>(null);
 const [submitting, setSubmitting] = useState(false);
-const [purchase, setPurchase] = useState({ name: “”, address: “”, phone: “”, payment_method: “wallet” });
+const [purchase, setPurchase] = useState({ name: "", address: "", phone: "", payment_method: "wallet" });
 
 useEffect(() => {
-if (!authLoading && !user) nav(”/login”);
+if (!authLoading && !user) nav("/login");
 }, [user, authLoading, nav]);
 
 useEffect(() => {
@@ -71,7 +71,7 @@ const loadData = () => {
 
 loadData();
 
-// Realtime subscription — updates balance/badge instantly when admin changes it
+// Realtime subscription - updates balance/badge instantly when admin changes it
 const channel = supabase
   .channel("profile-realtime")
   .on(
@@ -90,17 +90,17 @@ return () => { supabase.removeChannel(channel); };
 
 const openBuy = (car: Car) => {
 setSelectedCar(car);
-setPurchase({ name: profile?.full_name || “”, address: “”, phone: “”, payment_method: “wallet” });
+setPurchase({ name: profile?.full_name || "", address: "", phone: "", payment_method: "wallet" });
 };
 
 const submitOrder = async () => {
 if (!user || !selectedCar) return;
 if (!purchase.name || !purchase.address || !purchase.phone) {
-toast.error(“Please fill all fields”);
+toast.error("Please fill all fields");
 return;
 }
 setSubmitting(true);
-const { data, error } = await supabase.from(“tesla_orders”).insert({
+const { data, error } = await supabase.from("tesla_orders").insert({
 user_id: user.id,
 car_id: selectedCar.id,
 buyer_name: purchase.name,
@@ -108,13 +108,13 @@ address: purchase.address,
 phone: purchase.phone,
 payment_method: purchase.payment_method,
 amount_usd: selectedCar.price_usd,
-status: “pending”,
+status: "pending",
 }).select().single();
 setSubmitting(false);
 if (error) { toast.error(error.message); return; }
-if (data) setOrders([data as Order, …orders]);
+if (data) setOrders([data as Order, ...orders]);
 setSelectedCar(null);
-toast.success(“Order placed! We’ll review and update its status.”);
+toast.success("Order placed! We'll review and update its status.");
 };
 
 if (authLoading || !user) {
@@ -126,10 +126,10 @@ return (
 }
 
 const stats = [
-{ icon: Wallet, label: “Total Balance”, value: formatUSD(Number(profile?.total_balance ?? 0)) },
-{ icon: TrendingUp, label: “Profit”, value: formatUSD(Number(profile?.profit ?? 0)) },
-{ icon: Banknote, label: “Total Deposit”, value: formatUSD(Number(profile?.deposit ?? 0)) },
-{ icon: Star, label: “Account Level”, value: profile?.account_level ?? “Basic” },
+{ icon: Wallet, label: "Total Balance", value: formatUSD(Number(profile?.total_balance ?? 0)) },
+{ icon: TrendingUp, label: "Profit", value: formatUSD(Number(profile?.profit ?? 0)) },
+{ icon: Banknote, label: "Total Deposit", value: formatUSD(Number(profile?.deposit ?? 0)) },
+{ icon: Star, label: "Account Level", value: profile?.account_level ?? "Basic" },
 ];
 
 return (
@@ -139,9 +139,9 @@ return (
 <div className="container mx-auto px-6">
 <div className="mb-8">
 <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : “”}.
+Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}.
 </h1>
-<p className="text-muted-foreground mt-1">Here’s an overview of your wealth and Tesla orders.</p>
+<p className="text-muted-foreground mt-1">Here's an overview of your wealth and Tesla orders.</p>
 </div>
 
 ```
