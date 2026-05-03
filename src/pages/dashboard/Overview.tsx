@@ -14,6 +14,14 @@ interface Profile {
   deposit: number;
   account_level: string;
   status: string;
+  assigned_expert_id: string | null;
+}
+
+interface Expert {
+  id: string;
+  name: string;
+  handle: string;
+  specialty: string | null;
 }
 
 interface Tx {
