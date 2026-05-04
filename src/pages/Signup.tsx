@@ -93,7 +93,7 @@ const Signup = () => {
 
     // Step 2: Insert profile row
     if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         user_id: data.user.id,
         full_name: form.full_name.trim(),
         username: form.username.trim(),
