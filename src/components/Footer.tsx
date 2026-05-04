@@ -3,9 +3,7 @@ const Footer = () => (
     <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
       <div className="grid md:grid-cols-12 gap-10 mb-16">
         <div className="md:col-span-5">
-          <p className="font-display font-semibold text-[17px] mb-4">
-            <span className="text-primary">Tesla</span>
-          </p>
+          <img src="/tesla-icon.png" alt="Tesla" className="h-10 w-auto mb-4" />
           <p className="text-sm text-foreground/55 max-w-sm leading-relaxed font-light">
             A platform where digital wealth meets electric mobility. Earn, grow, and drive the future.
           </p>

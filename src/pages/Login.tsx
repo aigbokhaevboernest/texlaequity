@@ -83,11 +83,8 @@ if (profile?.status === "blocked") {
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
-        <Link to="/" className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-elegant">
-            <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
-          </div>
-          <span className="font-display font-bold text-xl">Tesla</span>
+        <Link to="/" className="flex items-center justify-center mb-8">
+          <img src="/tesla-wordmark.png" alt="Tesla" className="h-8 w-auto" />
         </Link>
 
         <div className="glass rounded-3xl p-8 shadow-elegant">
