@@ -14,7 +14,7 @@ const countries = [
   "France", "Japan", "Singapore", "United Arab Emirates",
   "South Africa", "Brazil", "India", "others"]
 
-const currencies = [<option value="">— Select Country —</option>"USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL", "INR"];
+const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL", "INR"];
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
