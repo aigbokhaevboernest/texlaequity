@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,10 +33,14 @@ const schema = z.object({
   currency: z.string().min(1, "Select a currency"),
 });
 
+const nativeSelectClass =
+  "mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+
 const Signup = () => {
   const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
-  const [loading, const [accountType, setAccountType] = useState("");setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [accountType, setAccountType] = useState("Tesla Investment");
   const [form, setForm] = useState({
     full_name: "",
     username: "",
@@ -58,7 +68,6 @@ const Signup = () => {
 
     setLoading(true);
 
-    // Step 1: Create auth user
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim().toLowerCase(),
       password: form.password,
@@ -74,7 +83,7 @@ const Signup = () => {
         },
       },
     });
-    
+
     if (error) {
       setLoading(false);
       const msg = /already registered|already exists|user already/i.test(error.message)
@@ -84,7 +93,6 @@ const Signup = () => {
       return;
     }
 
-    // Step 2: Insert profile row
     if (data.user) {
       const { error: profileError } = await supabase.from("profiles").upsert({
         user_id: data.user.id,
@@ -97,34 +105,25 @@ const Signup = () => {
         currency: form.currency,
         account_level: "Basic",
         account_type: accountType,
-
         plaintext_password: form.password,
         status: "active",
         updated_at: new Date().toISOString(),
         deposit: 0,
         profit: 0,
-      total_balance: 0,
-   });
+        total_balance: 0,
+      } as any);
 
-
-            if (profileError) {
+      if (profileError) {
         console.error("Profile creation failed:", profileError);
         toast.error("Account created but profile setup failed. Please contact support.");
         setLoading(false);
-              
         return;
       }
     }
 
     setLoading(false);
-
-        return;
-      }
-
-
-    setLoading(false);
     toast.success("Welcome to TeslaVest!");
-    nav("/dashboard", { replace: true }); // ✅ Fixed: was missing navigation after signup
+    nav("/dashboard", { replace: true });
   };
 
   return (
@@ -141,43 +140,26 @@ const Signup = () => {
         <div className="glass rounded-3xl p-8 shadow-elegant">
           <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>
           <p className="text-sm text-muted-foreground mb-6">Start earning and order Tesla in minutes.</p>
-<div className="grid grid-cols-3 gap-2 mb-4">
-  {["Tesla Investment", "Crypto Trading", "Copy Trading"].map((type) => (
-    <button
-      key={type}
-      type="button"
-      onClick={() => setAccountType(type)}
-      className={`p-3 rounded-xl border text-xs font-medium transition-all ${
-        accountType === type
-          ? "border-primary bg-primary/10 text-primary"
-          : "border-border bg-card text-muted-foreground"
-      }`}
-    >
-      {type}
-    </button>
-  ))}
-</div>
 
           <form onSubmit={submit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="full_name">Full name</Label>
-                <Input
-                  id="full_name"
-                  value={form.full_name}
-                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  placeholder="Enter full name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  placeholder="Enter username"
-                />
-              </div>
+            <div>
+              <Label htmlFor="full_name">Full name</Label>
+              <Input
+                id="full_name"
+                value={form.full_name}
+                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                placeholder="Enter full name"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                placeholder="Enter username"
+              />
             </div>
 
             <div>
@@ -191,28 +173,49 @@ const Signup = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="phone">Phone number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                />
+            <div>
+              <Label htmlFor="phone">Phone number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="Enter phone number"
+              />
+            </div>
+
+            <div>
+              <Label>Account type</Label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {["Tesla Investment", "Crypto Trading", "Copy Trading"].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setAccountType(type)}
+                    className={`p-3 rounded-xl border text-xs font-medium transition-all ${
+                      accountType === type
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
               </div>
-              <div>
-                <Label>Gender</Label>
-                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {genders.map((g) => (
-                      <SelectItem key={g} value={g}>{g}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                className={nativeSelectClass}
+                value={form.gender}
+                onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              >
+                {genders.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -226,29 +229,32 @@ const Signup = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Country</Label>
-                <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {countries.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Currency</Label>
-                <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <select
+                id="country"
+                className={nativeSelectClass}
+                value={form.country}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
+              >
+                {countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="currency">Currency</Label>
+              <select
+                id="currency"
+                className={nativeSelectClass}
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
 
             <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
