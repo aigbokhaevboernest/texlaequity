@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Zap, Loader2 } from "@lucide-react"; // ✅ Fixed: added missing opening quote
+import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const countries = [
