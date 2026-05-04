@@ -1,15 +1,7 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+p, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-const [accountType, setAccountType] = useState("");
 
 const countries = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany",
@@ -38,7 +30,7 @@ const schema = z.object({
 const Signup = () => {
   const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, const [accountType, setAccountType] = useState("");setLoading] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     username: "",
@@ -79,9 +71,10 @@ const Signup = () => {
           currency: form.currency,
           gender: form.gender,
           phone: form.phone,
-        
+        },
+      },
     });
-
+    
     if (error) {
       setLoading(false);
       const msg = /already registered|already exists|user already/i.test(error.message)
@@ -103,7 +96,8 @@ const Signup = () => {
         country: form.country,
         currency: form.currency,
         account_level: "Basic",
-        account_type: "Standard", // ✅ Fixed: was undefined variable `accountType`
+        account_type: accountType,
+
         plaintext_password: form.password,
         status: "active",
         updated_at: new Date().toISOString(),
@@ -113,10 +107,17 @@ const Signup = () => {
    });
 
 
-      if (profileError) {
+            if (profileError) {
         console.error("Profile creation failed:", profileError);
         toast.error("Account created but profile setup failed. Please contact support.");
         setLoading(false);
+              
+        return;
+      }
+    }
+
+    setLoading(false);
+
         return;
       }
 
