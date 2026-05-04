@@ -110,7 +110,7 @@ const Signup = () => {
         deposit: 0,
         profit: 0,
       total_balance: 0,
-    }, { onConflict: "user_id" });
+   });
 
       });
 
