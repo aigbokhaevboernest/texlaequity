@@ -1,16 +1,16 @@
 import { useState, useEffect } from “react";
 import { Link, useNavigate } from "react-router-dom";
-import { z } from "zod";
+import { z } from “zod”;
 import { supabase } from “@/integrations/supabase/client”;
 import { Button } from “@/components/ui/button”;
 import { Input } from “@/components/ui/input”;
 import { Label } from “@/components/ui/label”;
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from “@/components/ui/select”;
-import { toast } from "sonner";
-import { Zap, Loader2 } from @lucide-react";
+import { toast } from “sonner”;
+import { Zap, Loader2 } from “lucide-react”;
 import { useAuth } from “@/hooks/useAuth”;
 
-const countries = [“United States”, "United Kingdom”, “Canada”, “Australia”, “Germany”, “France”, “Japan”, “Singapore”, “United Arab Emirates”, “Nigeria”, “South Africa”, “Brazil”, “India”, “Other”];
+const countries = [“United States”, “United Kingdom”, “Canada”, “Australia”, “Germany”, “France”, “Japan”, “Singapore”, “United Arab Emirates”, “Nigeria”, “South Africa”, “Brazil”, “India”, “Other”];
 const currencies = [“USD”, “EUR”, “GBP”, “AUD”, “CAD”, “JPY”, “SGD”, “AED”, “NGN”, “BRL”, “INR”];
 const genders = [“Male”, “Female”, “Non-binary”, “Prefer not to say”];
 
