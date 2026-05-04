@@ -79,8 +79,7 @@ const Signup = () => {
           currency: form.currency,
           gender: form.gender,
           phone: form.phone,
-        },
-      },
+        
     });
 
     if (error) {
@@ -113,7 +112,6 @@ const Signup = () => {
       total_balance: 0,
    });
 
-      });
 
       if (profileError) {
         console.error("Profile creation failed:", profileError);
@@ -121,7 +119,7 @@ const Signup = () => {
         setLoading(false);
         return;
       }
-    }
+
 
     setLoading(false);
     toast.success("Welcome to TeslaVest!");
