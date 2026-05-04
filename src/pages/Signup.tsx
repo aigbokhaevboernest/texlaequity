@@ -1,4 +1,4 @@
-p, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
