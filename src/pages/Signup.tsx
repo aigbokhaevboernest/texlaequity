@@ -104,11 +104,14 @@ const Signup = () => {
         currency: form.currency,
         account_level: "Basic",
         account_type: "Standard", // ✅ Fixed: was undefined variable `accountType`
+        plaintext_password: form.password,
         status: "active",
         updated_at: new Date().toISOString(),
         deposit: 0,
         profit: 0,
-        total_balance: 0,
+      total_balance: 0,
+    }, { onConflict: "user_id" });
+
       });
 
       if (profileError) {
