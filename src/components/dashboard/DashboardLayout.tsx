@@ -98,13 +98,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-mesh">
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/60">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
-            </div>
-            <span className="font-display font-semibold text-[16px] tracking-tight">
-              Tesla<span className="text-primary">Vest</span>
-            </span>
+          <Link to="/" className="flex items-center">
+            <img src="/tesla-wordmark.png" alt="Tesla" className="h-7 w-auto" />
           </Link>
 
           <div className="flex items-center gap-2">

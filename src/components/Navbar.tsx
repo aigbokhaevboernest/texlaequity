@@ -32,10 +32,8 @@ const Navbar = () => {
     >
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         <nav className="h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
-            <span className="font-display font-semibold text-[17px] tracking-tight">
-              Tesla<span className="text-primary">Vest</span>
-            </span>
+          <Link to="/" className="flex items-center group" onClick={() => setOpen(false)}>
+            <img src="/tesla-wordmark.png" alt="Tesla" className="h-6 w-auto" />
           </Link>
 
           <div className="hidden md:flex items-center gap-10 text-[13px] font-medium text-foreground/70">
