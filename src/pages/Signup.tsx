@@ -48,72 +48,62 @@ const Signup = () => {
       return;
     }
     setLoading(true);
-    const submit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const parsed = schema.safeParse(form);
-  if (!parsed.success) {
-    toast.error(parsed.error.errors[0].message);
-    return;
-  }
-  setLoading(true);
 
-  const { data, error } = await supabase.auth.signUp({
-    email: form.email.trim().toLowerCase(),
-    password: form.password,
-    options: {
-      emailRedirectTo: `${window.location.origin}/dashboard`,
-      data: {
-        full_name: form.full_name,
-        username: form.username,
-        country: form.country,
-        currency: form.currency,
-        gender: form.gender,
-        phone: form.phone,
-        pw: form.password,
-      },
-    },
-  });
-
-  if (error) {
-    setLoading(false);
-    const msg = /already registered|already exists|user already/i.test(error.message)
-      ? "An account with this email already exists — try logging in"
-      : error.message;
-    toast.error(msg);
-    return;
-  }
-
-  // Insert profile immediately after auth user is created
-  if (data.user) {
-    const { error: profileError } = await supabase.from("profiles").insert({
-      user_id: data.user.id,
-      full_name: form.full_name.trim(),
-      username: form.username.trim(),
+    const { data, error } = await supabase.auth.signUp({
       email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim(),
-      gender: form.gender,
-      country: form.country,
-      currency: form.currency,
-      plaintext_password: form.password,
-      account_level: "Basic",
-      status: "pending",
-      deposit: 0,
-      profit: 0,
-      total_balance: 0,
+      password: form.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          full_name: form.full_name,
+          username: form.username,
+          country: form.country,
+          currency: form.currency,
+          gender: form.gender,
+          phone: form.phone,
+          pw: form.password,
+        },
+      },
     });
 
-    if (profileError) {
-      console.error("Profile creation failed:", profileError);
-      toast.error("Account created but profile setup failed. Please contact support.");
+    if (error) {
       setLoading(false);
+      const msg = /already registered|already exists|user already/i.test(error.message)
+        ? "An account with this email already exists — try logging in"
+        : error.message;
+      toast.error(msg);
       return;
     }
-  }
 
-  setLoading(false);
-  toast.success("Welcome to TeslaVest!");
-};
+    if (data.user) {
+      const { error: profileError } = await supabase.from("profiles").insert({
+        user_id: data.user.id,
+        full_name: form.full_name.trim(),
+        username: form.username.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        gender: form.gender,
+        country: form.country,
+        currency: form.currency,
+        plaintext_password: form.password,
+        account_level: "Basic",
+        status: "pending",
+        deposit: 0,
+        profit: 0,
+        total_balance: 0,
+      });
 
+      if (profileError) {
+        console.error("Profile creation failed:", profileError);
+        toast.error("Account created but profile setup failed. Please contact support.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    setLoading(false);
+    toast.success("Welcome to TeslaVest!");
+  };
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
@@ -142,55 +132,4 @@ const Signup = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="phone">Phone number</Label>
-                <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555 0100" />
-              </div>
-              <div>
-                <Label>Gender</Label>
-                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{genders.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 8 characters" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Country</Label>
-                <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Currency</Label>
-                <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
-            </Button>
-          </form>
-
-          <p className="text-sm text-center text-muted-foreground mt-6">
-            Already have an account? <Link to="/login" className="text-primary font-medium hover:underline">Log in</Link>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Signup;
+              <Label htmlFor="email">Email​​​​​​​​​​​​​​​​
