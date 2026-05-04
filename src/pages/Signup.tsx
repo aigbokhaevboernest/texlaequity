@@ -122,7 +122,7 @@ const Signup = () => {
     }
 
     setLoading(false);
-    toast.success("Welcome to TeslaVest!");
+    toast.success("Welcome to Tesla!");
     nav("/dashboard", { replace: true });
   };
 
