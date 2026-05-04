@@ -88,11 +88,14 @@ if (data.user) {
     currency: form.currency,
     plaintext_password: form.password,
     account_level: "Basic",
-    status: "pending",
+    account_type: accountType,
+    status: "active",
+    updated_at: new Date().toISOString(),
     deposit: 0,
     profit: 0,
     total_balance: 0,
   });
+
 
   if (profileError) {
     console.error("Profile creation failed:", profileError);
