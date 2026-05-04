@@ -5,10 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 const countries = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany",
-  "France", "Japan", "Singapore", "United Arab Emirates", "Nigeria",
+  "France", "Japan", "Singapore", "United Arab Emirates",
   "South Africa", "Brazil", "India", "Other",
 ];
-const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "NGN", "BRL", "INR"];
+const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL", "INR"];
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
