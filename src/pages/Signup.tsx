@@ -47,9 +47,9 @@ const Signup = () => {
     email: "",
     password: "",
     phone: "",
-    gender: "Male",
-    country: "United States",
-    currency: "USD",
+    gender: "-Select Gender",
+    country: "-Select Country-",
+    currency: "-Select Currency-",
   });
 
   useEffect(() => {
