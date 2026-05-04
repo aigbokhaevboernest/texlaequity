@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+const [accountType, setAccountType] = useState("");
 
 const countries = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany",
@@ -141,6 +142,22 @@ const Signup = () => {
         <div className="glass rounded-3xl p-8 shadow-elegant">
           <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>
           <p className="text-sm text-muted-foreground mb-6">Start earning and order Tesla in minutes.</p>
+<div className="grid grid-cols-3 gap-2 mb-4">
+  {["Tesla Investment", "Crypto Trading", "Copy Trading"].map((type) => (
+    <button
+      key={type}
+      type="button"
+      onClick={() => setAccountType(type)}
+      className={`p-3 rounded-xl border text-xs font-medium transition-all ${
+        accountType === type
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-card text-muted-foreground"
+      }`}
+    >
+      {type}
+    </button>
+  ))}
+</div>
 
           <form onSubmit={submit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
