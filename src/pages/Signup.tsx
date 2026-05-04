@@ -12,13 +12,13 @@ import { useAuth } from “@/hooks/useAuth”;
 
 const countries = [
 “United States”,“United Kingdom”,“Canada”,“Australia”,“Germany”,“France”,“Japan”,
-“Singapore”,“United Arab Emirates”,“Nigeria”,“South Africa”,“Brazil”,“India”,
+“Singapore”,“United Arab Emirates”,“South Africa”,“Brazil”,“India”,
 “China”,“Italy”,“Spain”,“Netherlands”,“Switzerland”,“Saudi Arabia”,“Mexico”,
 “Indonesia”,“Turkey”,“Argentina”,“Egypt”,“Pakistan”,“Bangladesh”,“Philippines”,“Other”,
 ];
 
 const currencies = [
-“USD”,“EUR”,“GBP”,“AUD”,“CAD”,“JPY”,“SGD”,“AED”,“NGN”,“ZAR”,
+“USD”,“EUR”,“GBP”,“AUD”,“CAD”,“JPY”,“SGD”,“AED”,“ZAR”,
 “BRL”,“INR”,“CNY”,“CHF”,“SAR”,“MXN”,“IDR”,“TRY”,“ARS”,“EGP”,
 ];
 
