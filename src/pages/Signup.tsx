@@ -15,7 +15,7 @@ const countries = [
   "South Africa", "Brazil", "India", "others"]
 
 const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL", "INR"];
-const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
+const genders = ["-Select gender-", "Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Min 2 characters").max(100),
@@ -134,12 +134,12 @@ const Signup = () => {
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-elegant">
             <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
           </div>
-          <span className="font-display font-bold text-xl">TeslaVest</span>
+          <span className="font-display font-bold text-xl">Tesla Equity</span>
         </Link>
 
         <div className="glass rounded-3xl p-8 shadow-elegant">
           <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>
-          <p className="text-sm text-muted-foreground mb-6">Start earning and order Tesla in minutes.</p>
+          <p className="text-sm text-muted-foreground mb-6">Signup to start earning.</p>
 
           <form onSubmit={submit} className="space-y-4">
             <div>
