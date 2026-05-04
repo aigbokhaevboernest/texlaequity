@@ -109,7 +109,6 @@ toast.success("Welcome to TeslaVest!");
 };
 
 return (
-
 <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
 <div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
 <div className="w-full max-w-md relative">
