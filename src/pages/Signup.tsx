@@ -124,12 +124,104 @@ const Signup = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="full_name">Full name</Label>
-                <Input id="full_name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Ada Lovelace" />
+                <Input
+                  id="full_name"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  placeholder="Ada Lovelace"
+                />
               </div>
               <div>
                 <Label htmlFor="username">Username</Label>
-                <Input id="username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="ada" />
+                <Input
+                  id="username"
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  placeholder="ada"
+                />
               </div>
             </div>
+
             <div>
-              <Label htmlFor="email">Email​​​​​​​​​​​​​​​​
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="phone">Phone number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+1 555 0100"
+                />
+              </div>
+              <div>
+                <Label>Gender</Label>
+                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {genders.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Min 8 characters"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Country</Label>
+                <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Currency</Label>
+                <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
+            </Button>
+          </form>
+
+          <p className="text-sm text-center text-muted-foreground mt-6">
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary font-medium hover:underline">
+              Log in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Signup;
