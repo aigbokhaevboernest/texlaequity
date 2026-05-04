@@ -128,7 +128,7 @@ const Signup = () => {
                   id="full_name"
                   value={form.full_name}
                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  placeholder="Ada Lovelace"
+                  placeholder=" enter full name"
                 />
               </div>
               <div>
@@ -137,7 +137,7 @@ const Signup = () => {
                   id="username"
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  placeholder="ada"
+                  placeholder="enter username"
                 />
               </div>
             </div>
@@ -149,7 +149,7 @@ const Signup = () => {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="you@example.com"
+                placeholder="enter email"
               />
             </div>
 
@@ -161,7 +161,7 @@ const Signup = () => {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+1 555 0100"
+                  placeholder="enter phone number"
                 />
               </div>
               <div>
@@ -182,7 +182,7 @@ const Signup = () => {
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Min 8 characters"
+                placeholder="enter password"
               />
             </div>
 
