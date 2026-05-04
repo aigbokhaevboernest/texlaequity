@@ -47,7 +47,7 @@ const Signup = () => {
     email: "",
     password: "",
     phone: "",
-    gender: "-Select Gender",
+    gender: "-Select Gender-",
     country: "-Select Country-",
     currency: "-Select Currency-",
   });
