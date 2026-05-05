@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const traders = [
   { rank: 1, name: "Elon Musk", handle: "@elonmusk", roi: "+342%", win: "94%", followers: "1.2M", featured: true },
@@ -11,6 +12,7 @@ const traders = [
 ];
 
 const Leaderboard = () => {
+  const nav = useNavigate();
   return (
     <section id="leaderboard" className="py-32 relative">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
@@ -57,6 +59,7 @@ const Leaderboard = () => {
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => nav("/signup")}
                   className="rounded-full text-[12px] font-medium hover:bg-foreground hover:text-background transition-colors group/btn"
                 >
                   Copy

@@ -7,6 +7,10 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import Inventory from "./pages/Inventory.tsx";
+import FaqPage from "./pages/Faq.tsx";
+import Terms from "./pages/Terms.tsx";
+import Policies from "./pages/Policies.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -39,6 +43,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/policies" element={<Policies />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
