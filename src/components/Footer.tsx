@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const Footer = () => (
   <footer className="pt-24 pb-10 border-t border-border bg-surface/30">
     <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
@@ -11,26 +13,24 @@ const Footer = () => (
         <div className="md:col-span-2">
           <p className="label-mono text-foreground/40 mb-4">Quick Links</p>
           <ul className="space-y-2.5 text-[13px] text-foreground/70">
-            <li><a href="#" className="hover:text-foreground transition-colors">Home</a></li>
-            <li><a href="#inventory" className="hover:text-foreground transition-colors">Inventory</a></li>
-            <li><a href="#about" className="hover:text-foreground transition-colors">About Us</a></li>
-            <li><a href="#services" className="hover:text-foreground transition-colors">Services</a></li>
-            <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
+            <li><Link to="/" className="hover:text-foreground transition-colors">Home</Link></li>
+            <li><Link to="/inventory" className="hover:text-foreground transition-colors">Inventory</Link></li>
+            <li><Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
           </ul>
         </div>
         <div className="md:col-span-2">
           <p className="label-mono text-foreground/40 mb-4">Platform</p>
           <ul className="space-y-2.5 text-[13px] text-foreground/70">
-            <li><a href="#inventory" className="hover:text-foreground transition-colors">Vehicles</a></li>
-            <li><a href="#plans" className="hover:text-foreground transition-colors">Plans</a></li>
-            <li><a href="#leaderboard" className="hover:text-foreground transition-colors">Traders</a></li>
+            <li><Link to="/inventory" className="hover:text-foreground transition-colors">Vehicles</Link></li>
+            <li><a href="/#plans" className="hover:text-foreground transition-colors">Plans</a></li>
+            <li><a href="/#leaderboard" className="hover:text-foreground transition-colors">Traders</a></li>
           </ul>
         </div>
         <div className="md:col-span-3">
           <p className="label-mono text-foreground/40 mb-4">Legal</p>
           <ul className="space-y-2.5 text-[13px] text-foreground/70">
-            <li><a href="#terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</a></li>
-            <li><a href="#privacy" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
+            <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</Link></li>
+            <li><Link to="/policies" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
           </ul>
         </div>
       </div>
