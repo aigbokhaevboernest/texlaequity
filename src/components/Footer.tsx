@@ -9,27 +9,28 @@ const Footer = () => (
           </p>
         </div>
         <div className="md:col-span-2">
-          <p className="label-mono text-foreground/40 mb-4">Platform</p>
+          <p className="label-mono text-foreground/40 mb-4">Quick Links</p>
           <ul className="space-y-2.5 text-[13px] text-foreground/70">
-            <li><a href="#vehicles" className="hover:text-foreground transition-colors">Vehicles</a></li>
-            <li><a href="#plans" className="hover:text-foreground transition-colors">Plans</a></li>
-            <li><a href="#leaderboard" className="hover:text-foreground transition-colors">Traders</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Home</a></li>
+            <li><a href="#inventory" className="hover:text-foreground transition-colors">Inventory</a></li>
+            <li><a href="#about" className="hover:text-foreground transition-colors">About Us</a></li>
+            <li><a href="#services" className="hover:text-foreground transition-colors">Services</a></li>
+            <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
           </ul>
         </div>
         <div className="md:col-span-2">
-          <p className="label-mono text-foreground/40 mb-4">Company</p>
+          <p className="label-mono text-foreground/40 mb-4">Platform</p>
           <ul className="space-y-2.5 text-[13px] text-foreground/70">
-            <li><a href="#" className="hover:text-foreground transition-colors">About</a></li>
-            <li><a href="#" className="hover:text-foreground transition-colors">Security</a></li>
-            <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
+            <li><a href="#inventory" className="hover:text-foreground transition-colors">Vehicles</a></li>
+            <li><a href="#plans" className="hover:text-foreground transition-colors">Plans</a></li>
+            <li><a href="#leaderboard" className="hover:text-foreground transition-colors">Traders</a></li>
           </ul>
         </div>
         <div className="md:col-span-3">
           <p className="label-mono text-foreground/40 mb-4">Legal</p>
           <ul className="space-y-2.5 text-[13px] text-foreground/70">
-            <li><a href="#" className="hover:text-foreground transition-colors">Terms of service</a></li>
-            <li><a href="#" className="hover:text-foreground transition-colors">Privacy policy</a></li>
-            <li><a href="#" className="hover:text-foreground transition-colors">Risk disclosure</a></li>
+            <li><a href="#terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</a></li>
+            <li><a href="#privacy" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
