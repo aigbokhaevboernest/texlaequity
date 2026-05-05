@@ -1,8 +1,12 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LiveStats from "@/components/LiveStats";
-import TeslaShowcase from "@/components/TeslaShowcase";
+import TeslaInventory from "@/components/TeslaInventory";
 import InvestmentPlans from "@/components/InvestmentPlans";
+import About from "@/components/About";
+import Services from "@/components/Services";
+import Faq from "@/components/Faq";
+import { Terms, Privacy } from "@/components/Legal";
 import Leaderboard from "@/components/Leaderboard";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
@@ -14,9 +18,14 @@ const Index = () => {
       <main>
         <Hero />
         <LiveStats />
-        <TeslaShowcase />
+        <TeslaInventory />
         <InvestmentPlans />
         <Leaderboard />
+        <About />
+        <Services />
+        <Faq />
+        <Terms />
+        <Privacy />
         <CTASection />
       </main>
       <Footer />

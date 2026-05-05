@@ -18,11 +18,30 @@ const Navbar = () => {
   }, []);
 
   const links = [
-    { href: "#vehicles", label: "Vehicles" },
+    { href: "#inventory", label: "Inventory" },
     { href: "#plans", label: "Invest" },
-    { href: "#leaderboard", label: "Traders" },
-    { href: "#stats", label: "Stats" },
+    { href: "#about", label: "About Us" },
+    { href: "#services", label: "Services" },
+    { href: "#faq", label: "FAQ" },
   ];
+
+  const [activeHash, setActiveHash] = useState<string>("");
+  useEffect(() => {
+    const ids = links.map((l) => l.href.slice(1));
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveHash(`#${e.target.id}`);
+        });
+      },
+      { rootMargin: "-40% 0px -55% 0px", threshold: 0 }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <header
