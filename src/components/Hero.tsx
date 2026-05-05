@@ -67,7 +67,7 @@ const Hero = () => {
               onClick={() => nav("/dashboard")}
               className="rounded-full px-7 h-11 text-[14px] font-medium bg-transparent border-foreground/15 hover:bg-foreground/5"
             >
-              Order Tesla
+              Login
             </Button>
           </motion.div>
         </div>
