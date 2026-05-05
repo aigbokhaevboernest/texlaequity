@@ -18,11 +18,30 @@ const Navbar = () => {
   }, []);
 
   const links = [
-    { href: "#vehicles", label: "Vehicles" },
+    { href: "#inventory", label: "Inventory" },
     { href: "#plans", label: "Invest" },
-    { href: "#leaderboard", label: "Traders" },
-    { href: "#stats", label: "Stats" },
+    { href: "#about", label: "About Us" },
+    { href: "#services", label: "Services" },
+    { href: "#faq", label: "FAQ" },
   ];
+
+  const [activeHash, setActiveHash] = useState<string>("");
+  useEffect(() => {
+    const ids = links.map((l) => l.href.slice(1));
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveHash(`#${e.target.id}`);
+        });
+      },
+      { rootMargin: "-40% 0px -55% 0px", threshold: 0 }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <header
@@ -38,7 +57,13 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center gap-10 text-[13px] font-medium text-foreground/70">
             {links.map((l) => (
-              <a key={l.href} href={l.href} className="hover:text-foreground transition-colors">{l.label}</a>
+              <a
+                key={l.href}
+                href={l.href}
+                className={`hover:text-foreground transition-colors ${activeHash === l.href ? "text-foreground" : ""}`}
+              >
+                {l.label}
+              </a>
             ))}
           </div>
 
@@ -57,22 +82,24 @@ const Navbar = () => {
                 <Button variant="ghost" size="sm" onClick={() => nav("/login")} className="text-[13px] hidden md:inline-flex">
                   Log in
                 </Button>
-                {/* Mobile primary CTA: Order Tesla -> login */}
-                <Button
-                  size="sm"
-                  onClick={() => nav("/login")}
-                  className="text-[13px] rounded-full px-4 h-8 md:hidden"
+                {/* Mobile primary CTA: Order Tesla -> mailto */}
+                <a
+                  href="mailto:jameshilterson@gmail.com?subject=Tesla%20Order%20Inquiry&body=Hello%2C%20I%27m%20interested%20in%20ordering%20a%20Tesla.%20Please%20contact%20me."
+                  className="md:hidden"
                 >
-                  Order Tesla
-                </Button>
+                  <Button size="sm" className="text-[13px] rounded-full px-4 h-8">
+                    Order Tesla
+                  </Button>
+                </a>
                 {/* Desktop primary CTA */}
-                <Button
-                  size="sm"
-                  onClick={() => nav("/signup")}
-                  className="text-[13px] rounded-full px-4 h-8 hidden md:inline-flex"
+                <a
+                  href="mailto:jameshilterson@gmail.com?subject=Tesla%20Order%20Inquiry&body=Hello%2C%20I%27m%20interested%20in%20ordering%20a%20Tesla.%20Please%20contact%20me."
+                  className="hidden md:inline-flex"
                 >
-                  order Tesla
-                </Button>
+                  <Button size="sm" className="text-[13px] rounded-full px-4 h-8">
+                    Order Tesla
+                  </Button>
+                </a>
               </>
             )}
             {/* Hamburger menu (mobile only) */}
