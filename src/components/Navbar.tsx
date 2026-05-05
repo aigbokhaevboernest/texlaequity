@@ -71,7 +71,7 @@ const Navbar = () => {
                   onClick={() => nav("/signup")}
                   className="text-[13px] rounded-full px-4 h-8 hidden md:inline-flex"
                 >
-                  Get started
+                  order Tesla
                 </Button>
               </>
             )}
