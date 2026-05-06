@@ -21,8 +21,8 @@ export const convertFromUSD = (usd: number, currency: string): number => {
 const rate = FX_RATES_PER_USD[currency] ?? 1;
 return Number(usd) * rate;
 };
-export const formatMoney = (usd: number, currency = "USD"): string => {
-const code = FX_RATES_PER_USD[currency] ? currency : "USD";
+export const formatMoney = (usd: number, currency = “USD”): string => {
+const code = FX_RATES_PER_USD[currency] ? currency : “USD”;
 const value = convertFromUSD(usd, code);
 // JPY/NGN/INR look better without decimals at large values
 const noDecimals = [“JPY”, “NGN”, “INR”].includes(code) || Math.abs(value) >= 1000;
