@@ -95,13 +95,43 @@ fetchCodes();
 }, [authOpen, user?.id]);
 
 const fetchCodes = async () => {
-if (!user) return;
-const { data } = await supabase
-.from("account_withdrawal_codes")
-.select("id, code_type, code, verified")
-.eq("user_id", user.id);
-if (data) setCodes(data as AccountCode[]);
+  if (!user) return;
+  const { data } = await supabase
+    .from("account_withdrawal_codes")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (data) {
+    const rows: AccountCode[] = [];
+    if ((data as any).auth_code) {
+      rows.push({
+        id: (data as any).id,
+        code_type: "auth",
+        code: (data as any).auth_code,
+        verified: false,
+      });
+    }
+    if ((data as any).cot_required && (data as any).cot_code) {
+      rows.push({
+        id: (data as any).id,
+        code_type: "cot",
+        code: (data as any).cot_code,
+        verified: false,
+      });
+    }
+    if ((data as any).tax_required && (data as any).tax_code) {
+      rows.push({
+        id: (data as any).id,
+        code_type: "tax",
+        code: (data as any).tax_code,
+        verified: false,
+      });
+    }
+    setCodes(rows);
+  }
 };
+
 
 const submit = async (method: string, body: Record<string, unknown>, amt: string) => {
 if (!user) return;
@@ -163,7 +193,7 @@ if (nextIdx >= activeSteps.length) {
   setAuthOpen(false);
   setPendingTxId(null);
   refreshBalance();
-  toast.success("All codes verified. Withdrawal is under final review.");
+  toast.success("codes verified. Withdrawal is under final review.");
 } else {
   setStepIndex(nextIdx);
   setVerifying(false);
