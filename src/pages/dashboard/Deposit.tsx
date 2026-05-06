@@ -18,7 +18,7 @@ const wallets: Record<string, string> = {
   USDT: "0x04B613E07bDC52C83a5e7F47548D7fB4a157bDCa",
 };
 
-const amountSchema = z.coerce.number().positive("Amount must be positive").max(1_000_000, "Too large");
+const amountSchema = z.coerce.number().positive("Amount must be positive");
 
 export default function Deposit() {
   const { user } = useAuth();
