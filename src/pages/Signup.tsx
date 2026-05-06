@@ -28,13 +28,28 @@ const countries = [
 "Taiwan","Tajikistan","Tanzania","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkmenistan","Tuvalu",
 "Uganda","Ukraine","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Yemen","Zambia","Zimbabwe","others"]
 
-const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL","ZAR", "INR","AFN","ALL","AMD","ANG","AOA","ARS","AWG","AZN",
-"BAM","BBD","BDT","BGN","BHD","BIF","BMD","BND","BOB","BOV","BSD","BTN","BWP","BYN","BZD",
-"CDF","CHE","CHF","CHW","CLF","CLP","CNY","COP","COU","CRC","CUC","CUP","CVE","CZK",
-"DJF","DKK","DOP","DZD","EGP","ERN","ETB","FJD","FKP","GEL","GHS","GIP","GMD","GNF","GTQ","GYD",
-"HKD","HNL","HTG","HUF","IDR","ILS","IQD","IRR","ISK","JMD","JOD","KES","KGS","KHR","KMF","KPW","KRW","KWD","KYD","KZT","LAK","LBP","LKR","LRD","LSL","LYD","MAD","MDL","MGA","MKD","MMK","MNT","MOP","MRU","MUR","MVR","MWK","MXN","MXV","MYR","MZN","NAD","NIO","NOK","NPR","NZD",
-"OMR","PAB","PEN","PGK","PHP","PKR","PLN","PYG","QAR","RON","RSD","RUB","RWF","SAR","SBD","SCR","SDG","SEK","SHP","SLE","SOS","SRD","SSP","STN","SVC","SYP","SZL","THB","TJS","TMT","TND","TOP","TRY","TTD","TWD","TZS","UAH","UGX","USD","USN","UYI","UYU","UYW","UZS","VED","VES","VND","VUV","WST","XAF","XAG","XAU","XBA","XBB","XBC","XBD","XCD","XDR","XOF","XPD","XPF","XPT","XSU","XTS","XUA","XXX",
-"YER","ZMW","ZWL" ];
+const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL","ZAR", "INR","AFN-Afghan Afghani-؋","ALL-Albanian Lek-L","AMD-Armenian Dram-֏","ANG-Netherlands Antillean Guilder-ƒ","AOA-Angolan Kwanza-Kz","ARS-Argentine Peso-$","AWG-Aruban Florin-ƒ","AZN-Azerbaijani Manat-₼",
+"BAM-Bosnia-Herzegovina Convertible Mark-KM","BBD-Barbadian Dollar-$","BDT-Bangladeshi Taka-৳","BGN-Bulgarian Lev-лв","BHD-Bahraini Dinar-.د.ب","BIF-Burundian Franc-FBu","BMD-Bermudian Dollar-$","BND-Brunei Dollar-$","BOB-Bolivian Boliviano-Bs","BOV-Bolivian Mvdol-BOV","BSD-Bahamian Dollar-$","BTN-Bhutanese Ngultrum-Nu.","BWP-Botswana Pula-P","BYN-Belarusian Ruble-Br","BZD-Belize Dollar-BZ$",
+"CDF-Congolese Franc-FC","CHE-WIR Euro-CHE","CHF-Swiss Franc-CHF","CHW-WIR Franc-CHW","CLF-Chilean Unit of Account (UF)-UF","CLP-Chilean Peso-$","CNY-Chinese Yuan-¥","COP-Colombian Peso-$","COU-Colombian Unit of Value-COU","CRC-Costa Rican Colón-₡","CUC-Cuban Convertible Peso-$","CUP-Cuban Peso-$","CVE-Cape Verdean Escudo-$","CZK-Czech Koruna-Kč",
+"DJF-Djiboutian Franc-Fdj","DKK-Danish Krone-kr","DOP-Dominican Peso-RD$","DZD-Algerian Dinar-دج",
+"EGP-Egyptian Pound-£","ERN-Eritrean Nakfa-Nfk","ETB-Ethiopian Birr-ብር",
+"FJD-Fijian Dollar-$","FKP-Falkland Islands Pound-£","GEL-Georgian Lari-₾","GHS-Ghanaian Cedi-₵","GIP-Gibraltar Pound-£","GMD-Gambian Dalasi-D","GNF-Guinean Franc-FG","GTQ-Guatemalan Quetzal-Q","GYD-Guyanese Dollar-$",
+"HKD-Hong Kong Dollar-$","HNL-Honduran Lempira-L","HTG-Haitian Gourde-G","HUF-Hungarian Forint-Ft","IDR-Indonesian Rupiah-Rp","ILS-Israeli New Shekel-₪","IQD-Iraqi Dinar-ع.د","IRR-Iranian Rial-﷼","ISK-Icelandic Króna-kr","JMD-Jamaican Dollar-$","JOD-Jordanian Dinar-د.ا","KES-Kenyan Shilling-KSh","KGS-Kyrgyzstani Som-сом","KHR-Cambodian Riel-៛","KMF-Comorian Franc-CF","KPW-North Korean Won-₩","KRW-South Korean Won-₩","KWD-Kuwaiti Dinar-د.ك","KYD-Cayman Islands Dollar-$","KZT-Kazakhstani Tenge-₸",
+"LAK-Lao Kip-₭","LBP-Lebanese Pound-ل.ل","LKR-Sri Lankan Rupee-₨","LRD-Liberian Dollar-$","LSL-Lesotho Loti-L","LYD-Libyan Dinar-ل.د",
+"MAD-Moroccan Dirham-د.م","MDL-Moldovan Leu-L","MGA-Malagasy Ariary-Ar","MKD-Macedonian Denar-ден","MMK-Myanmar Kyat-K","MNT-Mongolian Tögrög-₮","MOP-Macanese Pataca-P","MRU-Mauritanian Ouguiya-UM","MUR-Mauritian Rupee-₨","MVR-Maldivian Rufiyaa-ރ.","MWK-Malawian Kwacha-MK","MXN-Mexican Peso-$","MXV-Mexican Unidad de Inversion-MXV","MYR-Malaysian Ringgit-RM","MZN-Mozambican Metical-MT",
+"NAD-Namibian Dollar-$","NGN-Nigerian Naira-₦","NIO-Nicaraguan Córdoba-C$","NOK-Norwegian Krone-kr","NPR-Nepalese Rupee-₨","NZD-New Zealand Dollar-$",
+"OMR-Omani Rial-ر.ع.",
+"PAB-Panamanian Balboa-B/.","PEN-Peruvian Sol-S/","PGK-Papua New Guinean Kina-K","PHP-Philippine Peso-₱","PKR-Pakistani Rupee-₨","PLN-Polish Złoty-zł","PYG-Paraguayan Guaraní-₲",
+"QAR-Qatari Riyal-ر.ق",
+"RON-Romanian Leu-lei","RSD-Serbian Dinar-дин","RUB-Russian Ruble-₽","RWF-Rwandan Franc-FR",
+"SAR-Saudi Riyal-ر.س","SBD-Solomon Islands Dollar-$","SCR-Seychellois Rupee-₨","SDG-Sudanese Pound-£","SEK-Swedish Krona-kr","SHP-Saint Helena Pound-£","SLE-Sierra Leonean Leone-Le","SOS-Somali Shilling-Sh","SRD-Surinamese Dollar-$","SSP-South Sudanese Pound-£","STN-São Tomé and Príncipe Dobra-Db","SVC-Salvadoran Colón-₡","SYP-Syrian Pound-£","SZL-Eswatini Lilangeni-L",
+"THB-Thai Baht-฿","TJS-Tajikistani Somoni-ЅМ","TMT-Turkmenistani Manat-m","TND-Tunisian Dinar-د.ت","TOP-Tongan Paʻanga-T$","TRY-Turkish Lira-₺","TTD-Trinidad and Tobago Dollar-TT$","TWD-New Taiwan Dollar-NT$","TZS-Tanzanian Shilling-TSh",
+"UAH-Ukrainian Hryvnia-₴","UGX-Ugandan Shilling-USh","USD-United States Dollar-$","USN-US Dollar (Next day)-USN","UYI-Uruguay Peso en Unidades Indexadas-UYI","UYU-Uruguayan Peso-$","UYW-Uruguay Unidad Previsional-UYW","UZS-Uzbekistani Som-so'm",
+"VED-Venezuelan Digital Bolívar-Bs.D","VES-Venezuelan Bolívar-Bs.","VND-Vietnamese Đồng-₫","VUV-Vanuatu Vatu-VT",
+"WST-Samoan Tala-WS$",
+"XAF-CFA Franc BEAC-FCFA","XAG-Silver-oz","XAU-Gold-oz","XBA-European Composite Unit-EURCO","XBB-European Monetary Unit-EMU","XBC-European Unit of Account 9-EUA","XBD-European Unit of Account 17-EUA","XCD-East Caribbean Dollar-$","XDR-Special Drawing Rights-SDR","XOF-CFA Franc BCEAO-CFA","XPD-Palladium-oz","XPF-CFP Franc-₣","XPT-Platinum-oz","XSU-SUCRE-SUCRE","XTS-Testing Code-XTS","XUA-ADB Unit of Account-XUA","XXX-No Currency-—",
+"YER-Yemeni Rial-﷼",
+"ZMW-Zambian Kwacha-ZK","ZWL-Zimbabwean Dollar-Z$" ];
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
