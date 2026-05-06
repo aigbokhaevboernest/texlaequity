@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLiveData } from "@/hooks/useLiveData";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
   ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet,
