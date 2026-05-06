@@ -1,12 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { formatMoney } from "@/lib/currency";
+
+// Currency symbols (display only — no FX conversion)
+const SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", AUD: "A$", CAD: "C$", JPY: "¥",
+  SGD: "S$", AED: "AED ", NGN: "₦", BRL: "R$", INR: "₹",
+};
 
 /**
- * Returns the current user's preferred currency code (from profiles.currency)
- * and a `format(usd)` helper that converts a USD amount to that currency
- * for display. Listens to profile changes so updates propagate live.
+ * Returns the user's registration currency (profiles.currency) and a
+ * `format(amount)` helper that displays the raw stored number with that
+ * currency's symbol — NO conversion is performed.
  */
 export function useCurrency() {
   const { user } = useAuth();
@@ -31,6 +36,16 @@ export function useCurrency() {
     return () => { active = false; supabase.removeChannel(channel); };
   }, [user?.id]);
 
-  const format = useCallback((usd: number) => formatMoney(Number(usd ?? 0), currency), [currency]);
+  const format = useCallback((amount: number) => {
+    const n = Number(amount ?? 0);
+    const sym = SYMBOLS[currency] ?? "";
+    const noDecimals = ["JPY", "NGN", "INR"].includes(currency) || Math.abs(n) >= 1000;
+    const formatted = n.toLocaleString("en-US", {
+      maximumFractionDigits: noDecimals ? 0 : 2,
+      minimumFractionDigits: 0,
+    });
+    return sym ? `${sym}${formatted}` : `${currency} ${formatted}`;
+  }, [currency]);
+
   return { currency, format };
 }
