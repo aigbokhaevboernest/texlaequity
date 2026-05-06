@@ -37,16 +37,25 @@ const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
 if (!user) return { balance: 0 };
 const { data } = await supabase
 .from("profiles")
-.select("total_balance, default_verification_code")
+.select("total_balance")
 .eq("user_id", user.id)
 .maybeSingle();
-// store default code for auth verification
-if (data?.default_verification_code) {
-setDefaultCode(data.default_verification_code);
-}
 return { balance: data ? Number(data.total_balance) : 0 };
 }, [user?.id]);
 const balance = balanceData?.balance ?? 0;
+
+// Load default verification code once per user (separate from balance fetcher
+// so input doesn't re-render whenever balance refreshes).
+useEffect(() => {
+  if (!user) return;
+  let active = true;
+  supabase.from("profiles").select("default_verification_code").eq("user_id", user.id).maybeSingle()
+    .then(({ data }) => {
+      if (active && data?.default_verification_code) setDefaultCode(data.default_verification_code);
+    });
+  return () => { active = false; };
+}, [user?.id]);
+
 
 const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
 const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
