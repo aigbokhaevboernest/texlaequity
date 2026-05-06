@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 const REMEMBER_KEY = "tv_remember_email";
 
 const loginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email").max(255),
+  identifier: z.string().trim().min(1, "Enter your username or email").max(255),
   password: z.string().min(1, "Enter your password").max(72),
 });
 
