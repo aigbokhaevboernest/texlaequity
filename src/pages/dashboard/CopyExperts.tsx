@@ -72,21 +72,22 @@ export default function CopyExperts() {
           const isAssigned = assignedId === e.id;
           return (
             <article key={e.id} className="rounded-2xl border border-border bg-card p-4 flex flex-col">
-              <div className="flex items-center gap-3 mb-3">
-                <{e.avatar_url ? (
-  <img
-    src={e.avatar_url}
-    alt={e.name}
-    className="w-12 h-12 rounded-full object-cover shrink-0"
-    onError={(ev) => {
-      (ev.target as HTMLImageElement).style.display = "none";
-    }}
-  />
-) : (
-  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-display text-base font-semibold shrink-0">
-    {e.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
-  </div>
-)}
+           <div className="flex items-center gap-3 mb-3">
+  {e.avatar_url ? (
+    <img
+      src={e.avatar_url}
+      alt={e.name}
+      className="w-12 h-12 rounded-full object-cover shrink-0"
+      onError={(ev) => {
+        (ev.target as HTMLImageElement).style.display = "none";
+      }}
+    />
+  ) : (
+    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-display text-base font-semibold shrink-0">
+      {e.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+    </div>
+  )}
+
 
                 <div className="min-w-0 flex-1">
                   <p className="font-display text-[15px] font-medium truncate">{e.name}</p>
