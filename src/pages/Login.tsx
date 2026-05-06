@@ -92,7 +92,7 @@ if (profile?.status === "blocked") {
   return;
 }
 
-    if (remember) localStorage.setItem(REMEMBER_KEY, cleanEmail);
+    if (remember) localStorage.setItem(REMEMBER_KEY, identifier);
     else localStorage.removeItem(REMEMBER_KEY);
     toast.success("Welcome back");
   };
