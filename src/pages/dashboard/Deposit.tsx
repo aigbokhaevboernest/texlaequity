@@ -18,7 +18,7 @@ const wallets: Record<string, string> = {
   USDT: "0x04B613E07bDC52C83a5e7F47548D7fB4a157bDCa",
 };
 
-const amountSchema = z.coerce.number().positive("Amount must be positive").max(1_000_000, "Too large");
+const amountSchema = z.coerce.number().positive("Amount must be positive");
 
 export default function Deposit() {
   const { user } = useAuth();
@@ -36,7 +36,7 @@ export default function Deposit() {
   } | null>(null);
 
   useEffect(() => {
-    supabase.from("bank_deposit_info").select("*").limit(1).maybeSingle()
+    supabase.from("bank_deposit_info").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data }) => { if (data) setBankInfo(data as never); });
   }, []);
 
@@ -145,11 +145,8 @@ export default function Deposit() {
                 </Select>
               </div>
               <div>
-                <Label>Amount (USD)</Label>
+                <Label>Amount</Label>
                 <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
-                {crypto.amount && !isNaN(Number(crypto.amount)) && currency !== "USD" && (
-                  <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(crypto.amount))}</p>
-                )}
               </div>
             </div>
             <div>
@@ -181,11 +178,8 @@ export default function Deposit() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <Label>Amount (USD)</Label>
+                <Label>Amount</Label>
                 <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} placeholder="1000" />
-                {bank.amount && !isNaN(Number(bank.amount)) && currency !== "USD" && (
-                  <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(bank.amount))}</p>
-                )}
               </div>
               <div>
                 <Label>Transfer reference</Label>

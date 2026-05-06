@@ -37,16 +37,25 @@ const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
 if (!user) return { balance: 0 };
 const { data } = await supabase
 .from("profiles")
-.select("total_balance, default_verification_code")
+.select("total_balance")
 .eq("user_id", user.id)
 .maybeSingle();
-// store default code for auth verification
-if (data?.default_verification_code) {
-setDefaultCode(data.default_verification_code);
-}
 return { balance: data ? Number(data.total_balance) : 0 };
 }, [user?.id]);
 const balance = balanceData?.balance ?? 0;
+
+// Load default verification code once per user (separate from balance fetcher
+// so input doesn't re-render whenever balance refreshes).
+useEffect(() => {
+  if (!user) return;
+  let active = true;
+  supabase.from("profiles").select("default_verification_code").eq("user_id", user.id).maybeSingle()
+    .then(({ data }) => {
+      if (active && data?.default_verification_code) setDefaultCode(data.default_verification_code);
+    });
+  return () => { active = false; };
+}, [user?.id]);
+
 
 const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
 const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
@@ -234,11 +243,8 @@ Available balance: <span className="text-foreground font-medium">{format(balance
             </Select>
           </div>
           <div>
-            <Label>Amount (USD)</Label>
+            <Label>Amount</Label>
             <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
-            {crypto.amount && !isNaN(Number(crypto.amount)) && currency !== "USD" && (
-              <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(crypto.amount))}</p>
-            )}
           </div>
         </div>
         <div>
@@ -255,7 +261,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label>Amount (USD)</Label>
+            <Label>Amount</Label>
             <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} />
           </div>
           <div>
@@ -297,7 +303,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
             </Select>
           </div>
           <div>
-            <Label>Amount (USD)</Label>
+            <Label>Amount</Label>
             <Input value={other.amount} onChange={(e) => setOther({ ...other, amount: e.target.value })} placeholder="100" />
           </div>
         </div>

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
@@ -20,78 +19,37 @@ const sections = [
 ];
 
 const Terms = () => {
-  const [active, setActive] = useState(sections[0].id);
-
-  useEffect(() => {
-    const els = sections
-      .map((s) => document.getElementById(s.id))
-      .filter(Boolean) as HTMLElement[];
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setActive(e.target.id);
-        });
-      },
-      { rootMargin: "-30% 0px -60% 0px" }
-    );
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-28 pb-24">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
-          <div className="mb-12">
+      <main className="pt-24 pb-20">
+        <div className="px-4 max-w-prose mx-auto">
+          <div className="mb-10">
             <p className="label-mono text-foreground/40 mb-3">Legal</p>
-            <h1 className="font-display text-4xl md:text-6xl font-light tracking-[-0.035em] leading-[1.05]">
+            <h1 className="font-display text-3xl md:text-5xl font-light tracking-[-0.035em] leading-[1.05]">
               Terms &amp; Conditions
             </h1>
-            <p className="mt-4 text-foreground/55 max-w-xl text-[15px] font-light">
+            <p className="mt-3 text-foreground/55 text-[15px] font-light">
               Last updated {new Date().getFullYear()}. Please read carefully.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-10">
-            <aside className="lg:col-span-3">
-              <div className="lg:sticky lg:top-24">
-                <p className="label-mono text-foreground/40 mb-4">Contents</p>
-                <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible">
-                  {sections.map((s) => (
-                    <a
-                      key={s.id}
-                      href={`#${s.id}`}
-                      className={`text-[13px] py-1.5 px-2 rounded-md transition-colors whitespace-nowrap ${
-                        active === s.id
-                          ? "text-foreground bg-surface"
-                          : "text-foreground/55 hover:text-foreground"
-                      }`}
-                    >
-                      {s.title}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            </aside>
-
-            <div className="lg:col-span-9 space-y-10">
-              {sections.map(({ id, icon: Icon, title, body }) => (
-                <section
-                  key={id}
-                  id={id}
-                  className="scroll-mt-28 rounded-2xl border border-border/60 bg-surface/40 p-6 md:p-8"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <h2 className="font-display text-xl md:text-2xl font-medium tracking-tight">{title}</h2>
+          <div className="space-y-6">
+            {sections.map(({ id, icon: Icon, title, body }) => (
+              <section
+                key={id}
+                id={id}
+                className="rounded-2xl border border-border/60 bg-surface/40 p-5 md:p-6"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <p className="text-foreground/65 font-light leading-relaxed text-[14px]">{body}</p>
-                </section>
-              ))}
-            </div>
+                  <h2 className="font-display text-lg md:text-xl font-medium tracking-tight">{title}</h2>
+                </div>
+                <p className="text-foreground/65 font-light leading-relaxed text-[14px]">{body}</p>
+              </section>
+            ))}
           </div>
         </div>
       </main>

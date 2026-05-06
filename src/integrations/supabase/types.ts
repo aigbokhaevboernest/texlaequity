@@ -264,6 +264,7 @@ export type Database = {
           date_of_birth: string | null
           default_verification_code: string | null
           deposit: number
+          email: string | null
           full_name: string | null
           gender: string | null
           id: string
@@ -287,6 +288,7 @@ export type Database = {
           date_of_birth?: string | null
           default_verification_code?: string | null
           deposit?: number
+          email?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
@@ -310,6 +312,7 @@ export type Database = {
           date_of_birth?: string | null
           default_verification_code?: string | null
           deposit?: number
+          email?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
