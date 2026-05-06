@@ -180,9 +180,6 @@ export default function Deposit() {
               <div>
                 <Label>Amount</Label>
                 <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} placeholder="1000" />
-                {bank.amount && !isNaN(Number(bank.amount)) && currency !== "USD" && (
-                  <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(bank.amount))}</p>
-                )}
               </div>
               <div>
                 <Label>Transfer reference</Label>
