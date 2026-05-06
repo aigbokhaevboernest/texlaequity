@@ -234,7 +234,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
             </Select>
           </div>
           <div>
-            <Label>Amount (USD)</Label>
+            <Label>Amount</Label>
             <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
             {crypto.amount && !isNaN(Number(crypto.amount)) && currency !== "USD" && (
               <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(crypto.amount))}</p>
@@ -255,7 +255,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label>Amount (USD)</Label>
+            <Label>Amount</Label>
             <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} />
           </div>
           <div>
@@ -297,7 +297,7 @@ Available balance: <span className="text-foreground font-medium">{format(balance
             </Select>
           </div>
           <div>
-            <Label>Amount (USD)</Label>
+            <Label>Amount</Label>
             <Input value={other.amount} onChange={(e) => setOther({ ...other, amount: e.target.value })} placeholder="100" />
           </div>
         </div>

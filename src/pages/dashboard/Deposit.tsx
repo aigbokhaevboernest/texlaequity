@@ -145,7 +145,7 @@ export default function Deposit() {
                 </Select>
               </div>
               <div>
-                <Label>Amount (USD)</Label>
+                <Label>Amount</Label>
                 <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function Deposit() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <Label>Amount (USD)</Label>
+                <Label>Amount</Label>
                 <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} placeholder="1000" />
                 {bank.amount && !isNaN(Number(bank.amount)) && currency !== "USD" && (
                   <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(bank.amount))}</p>
