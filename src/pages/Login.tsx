@@ -38,15 +38,33 @@ const isBlocked = new URLSearchParams(location.search).get("blocked") === "true"
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanEmail = email.trim().toLowerCase();
-    const parsed = loginSchema.safeParse({ email: cleanEmail, password });
+    const identifier = email.trim();
+    const parsed = loginSchema.safeParse({ identifier: identifier.toLowerCase(), password });
     if (!parsed.success) {
       toast.error(parsed.error.errors[0].message);
       return;
     }
     setLoading(true);
+
+    let loginEmail = parsed.data.identifier;
+    if (!loginEmail.includes("@")) {
+      // Treat as username — look up email
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("email" as never)
+        .eq("username", identifier)
+        .maybeSingle();
+      const found = (prof as { email?: string } | null)?.email;
+      if (!found) {
+        setLoading(false);
+        toast.error("No account found with that username.");
+        return;
+      }
+      loginEmail = found;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email,
+      email: loginEmail,
       password: parsed.data.password,
     });
     setLoading(false);
