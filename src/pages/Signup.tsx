@@ -47,9 +47,9 @@ const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL
 "UAH-Ukrainian Hryvnia-₴","UGX-Ugandan Shilling-USh","USD-United States Dollar-$","USN-US Dollar (Next day)-USN","UYI-Uruguay Peso en Unidades Indexadas-UYI","UYU-Uruguayan Peso-$","UYW-Uruguay Unidad Previsional-UYW","UZS-Uzbekistani Som-so'm",
 "VED-Venezuelan Digital Bolívar-Bs.D","VES-Venezuelan Bolívar-Bs.","VND-Vietnamese Đồng-₫","VUV-Vanuatu Vatu-VT",
 "WST-Samoan Tala-WS$",
-"XAF-CFA Franc BEAC-FCFA","XAG-Silver-oz","XAU-Gold-oz","XBA-European Composite Unit-EURCO","XBB-European Monetary Unit-EMU","XBC-European Unit of Account 9-EUA","XBD-European Unit of Account 17-EUA","XCD-East Caribbean Dollar-$","XDR-Special Drawing Rights-SDR","XOF-CFA Franc BCEAO-CFA","XPD-Palladium-oz","XPF-CFP Franc-₣","XPT-Platinum-oz","XSU-SUCRE-SUCRE","XTS-Testing Code-XTS","XUA-ADB Unit of Account-XUA","XXX-No Currency-—",
+"XAF-CFA Franc BEAC-FCFA","XAG-Silver-oz","XBA-European Composite Unit-EURCO","XBB-European Monetary Unit-EMU","XBD-European Unit of Account 17-EUA","XCD-East Caribbean Dollar-$","XDR-Special Drawing Rights-SDR","XOF-CFA Franc BCEAO-CFA","XPD-Palladium-oz","XPF-CFP Franc-₣","XPT-Platinum-oz","XSU-SUCRE-SUCRE",
 "YER-Yemeni Rial-﷼",
-"ZMW-Zambian Kwacha-ZK","ZWL-Zimbabwean Dollar-Z$" ];
+"ZMW-Zambian Kwacha-ZK","ZWL-Zimbabwean Dollar-Z$","Others"];
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
