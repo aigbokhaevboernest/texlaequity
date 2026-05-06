@@ -60,6 +60,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const nav = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  useAutoLogout();
 
   useEffect(() => {
     if (authLoading) return;
