@@ -50,10 +50,16 @@ export default function Kyc() {
       const { data, error } = await supabase.from("kyc_submissions").insert({
         user_id: user.id, document_type: docType, document_number: docNumber,
         id_front_url, id_back_url, selfie_url, status: "pending",
-      }).select().single();
+      }).select("id, document_type, status, created_at, rejection_reason").maybeSingle();
       if (error) throw error;
-      setSubmission(data as Submission);
-      toast.success("KYC submitted. We'll review within 24h.");
+      setSubmission((data as Submission) ?? {
+        id: crypto.randomUUID(),
+        document_type: docType,
+        status: "pending",
+        created_at: new Date().toISOString(),
+        rejection_reason: null,
+      });
+      toast.success("KYC submitted. Pending review.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
