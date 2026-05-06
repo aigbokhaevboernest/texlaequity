@@ -236,9 +236,6 @@ Available balance: <span className="text-foreground font-medium">{format(balance
           <div>
             <Label>Amount</Label>
             <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
-            {crypto.amount && !isNaN(Number(crypto.amount)) && currency !== "USD" && (
-              <p className="text-[11px] text-muted-foreground mt-1">≈ {format(Number(crypto.amount))}</p>
-            )}
           </div>
         </div>
         <div>
