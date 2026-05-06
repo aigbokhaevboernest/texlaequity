@@ -12,7 +12,21 @@ import { useAuth } from "@/hooks/useAuth";
 const countries = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany",
   "France", "Japan", "Singapore", "United Arab Emirates",
-  "South Africa", "Brazil", "India", "others"]
+  "South Africa", "Brazil", "India", "China","Italy","Russia","South Korea","Spain","Mexico","Indonesia","Netherlands","Saudi Arabia","Turkey","Switzerland","Poland","Sweden","Belgium","Argentina","Israel","Austria","Thailand","Norway","Philippines","Bangladesh","Vietnam","Malaysia","Denmark","Colombia","South Africa","Ireland","Finland","Portugal","Chile","Egypt","Nigeria","Pakistan","Afghanistan","Albania","Algeria","Andorra","Angola","Armenia","Azerbaijan","Bahamas","Bahrain","Barbados","Belarus","Belize","Benin","Bhutan","Bolivia",
+"Bosnia and Herzegovina","Botswana","Brunei","Bulgaria","Burkina Faso","Burundi",
+"Cambodia","Cameroon","Cape Verde","Central African Republic","Chad",
+"Comoros","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic",
+"Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia",
+"Fiji","Finland","Gabon","Gambia","Georgia","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana",
+"Haiti","Honduras","Hungary","Iceland","Iran","Iraq","Ireland","Israel",
+"Jamaica","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan",
+"Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg",
+"Madagascar","Malawi","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar",
+"Namibia","Nauru","Nepal","New Zealand","Nicaragua","Niger","North Korea","North Macedonia",
+"Oman","Palau","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Portugal",
+"Qatar","Romania","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Senegal","Serbia","Seychelles","Sierra Leone","Slovakia","Slovenia","Solomon Islands","Somalia","South Sudan","Sri Lanka","Sudan","Suriname",
+"Taiwan","Tajikistan","Tanzania","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkmenistan","Tuvalu",
+"Uganda","Ukraine","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Yemen","Zambia","Zimbabwe","others"]
 
 const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL", "INR"];
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
