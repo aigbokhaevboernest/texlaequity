@@ -36,7 +36,7 @@ export default function Deposit() {
   } | null>(null);
 
   useEffect(() => {
-    supabase.from("bank_deposit_info").select("*").limit(1).maybeSingle()
+    supabase.from("bank_deposit_info").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data }) => { if (data) setBankInfo(data as never); });
   }, []);
 
