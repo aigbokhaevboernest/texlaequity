@@ -33,9 +33,12 @@ export default function Kyc() {
   }, [user]);
 
   const upload = async (file: File, key: string) => {
-    const path = `${user!.id}/${Date.now()}-${key}-${file.name}`;
-    const { error } = await supabase.storage.from("kyc-documents").upload(path, file, { upsert: false });
-    if (error) throw error;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
+    const path = `${user!.id}/${Date.now()}-${key}-${safeName}`;
+    const { error } = await supabase.storage
+      .from("kyc-documents")
+      .upload(path, file, { upsert: true, contentType: file.type || "application/octet-stream" });
+    if (error) throw new Error(`Upload failed (${key}): ${error.message}`);
     return path;
   };
 

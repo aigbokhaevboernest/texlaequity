@@ -57,7 +57,7 @@ const Overview = () => {
       expert = (ex as Expert | null) ?? null;
     }
     return { profile, txs: (t.data as Tx[] | null) ?? [], expert };
-  }, [user?.id]);
+  }, [user?.id], { cacheKey: user ? `overview:${user.id}` : undefined });
 
   useEffect(() => {
     if (!user) return;

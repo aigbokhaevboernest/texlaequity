@@ -15,13 +15,33 @@ const SYMBOLS: Record<string, string> = {
  */
 export function useCurrency() {
   const { user } = useAuth();
-  const [currency, setCurrency] = useState<string>("USD");
+  const cacheKey = user ? `currency:${user.id}` : null;
+  const [currency, setCurrency] = useState<string>(() => {
+    if (typeof window === "undefined") return "USD";
+    try {
+      // Per-user cache first, then last-known fallback so refresh never flickers to USD
+      const uid = user?.id;
+      if (uid) {
+        const v = localStorage.getItem(`currency:${uid}`);
+        if (v) return v;
+      }
+      return localStorage.getItem("currency:last") || "USD";
+    } catch { return "USD"; }
+  });
 
   useEffect(() => {
-    if (!user) { setCurrency("USD"); return; }
+    if (!user) return;
     let active = true;
     supabase.from("profiles").select("currency").eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => { if (active && data?.currency) setCurrency(data.currency); });
+      .then(({ data }) => {
+        if (active && data?.currency) {
+          setCurrency(data.currency);
+          try {
+            localStorage.setItem(`currency:${user.id}`, data.currency);
+            localStorage.setItem("currency:last", data.currency);
+          } catch { /* ignore */ }
+        }
+      });
 
     const channel = supabase
       .channel(`profile-currency-${user.id}`)
@@ -29,7 +49,13 @@ export function useCurrency() {
         { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
         (payload) => {
           const next = (payload.new as { currency?: string })?.currency;
-          if (next) setCurrency(next);
+          if (next) {
+            setCurrency(next);
+            try {
+              localStorage.setItem(`currency:${user.id}`, next);
+              localStorage.setItem("currency:last", next);
+            } catch { /* ignore */ }
+          }
         })
       .subscribe();
 
