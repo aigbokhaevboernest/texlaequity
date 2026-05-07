@@ -8,10 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-import { SUPPORTED_CURRENCIES } from "@/lib/currency";
+import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
-const currencies = SUPPORTED_CURRENCIES;
 
 export default function Settings() {
   const { user } = useAuth();
