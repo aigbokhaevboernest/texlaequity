@@ -40,7 +40,6 @@ const Overview = () => {
   const { format } = useCurrency();
   const { data, refresh } = useLiveData(async () => {
     if (!user) return { profile: null as Profile | null, txs: [] as Tx[], expert: null as Expert | null };
-    void 0;
     const [p, t] = await Promise.all([
       supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status, assigned_expert_id").eq("user_id", user.id).maybeSingle(),
       supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
@@ -58,7 +57,7 @@ const Overview = () => {
       expert = (ex as Expert | null) ?? null;
     }
     return { profile, txs: (t.data as Tx[] | null) ?? [], expert };
-  }, [user?.id]);
+  }, [user?.id], { cacheKey: user ? `overview:${user.id}` : undefined });
 
   useEffect(() => {
     if (!user) return;
