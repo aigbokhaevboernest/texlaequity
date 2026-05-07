@@ -246,7 +246,9 @@ const Signup = () => {
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
                 {currencies.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c.code} value={c.code}>
+                    {c.symbol ? `${c.code} — ${c.name} (${c.symbol})` : c.code}
+                  </option>
                 ))}
               </select>
             </div>
