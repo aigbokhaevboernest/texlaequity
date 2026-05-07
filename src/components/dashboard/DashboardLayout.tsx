@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const { data } = await supabase.from("profiles").select("full_name, username, avatar_url, account_level, status")
       .eq("user_id", user.id).maybeSingle();
     return (data as Profile | null) ?? null;
-  }, [user?.id]);
+  }, [user?.id], { cacheKey: user ? `dashLayout:${user.id}` : undefined });
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
