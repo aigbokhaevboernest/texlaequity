@@ -8,49 +8,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
-const countries = [
-  "United States", "United Kingdom", "Canada", "Australia", "Germany",
-  "France", "Japan", "Singapore", "United Arab Emirates",
-  "South Africa", "Brazil", "India", "China","Italy","Russia","South Korea","Spain","Mexico","Indonesia","Netherlands","Saudi Arabia","Turkey","Switzerland","Poland","Sweden","Belgium","Argentina","Israel","Austria","Thailand","Norway","Philippines","Bangladesh","Vietnam","Malaysia","Denmark","Colombia","South Africa","Ireland","Finland","Portugal","Chile","Egypt","Nigeria","Pakistan","Afghanistan","Albania","Algeria","Andorra","Angola","Armenia","Azerbaijan","Bahamas","Bahrain","Barbados","Belarus","Belize","Benin","Bhutan","Bolivia",
-"Bosnia and Herzegovina","Botswana","Brunei","Bulgaria","Burkina Faso","Burundi",
-"Cambodia","Cameroon","Cape Verde","Central African Republic","Chad",
-"Comoros","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic",
-"Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia",
-"Fiji","Finland","Gabon","Gambia","Georgia","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana",
-"Haiti","Honduras","Hungary","Iceland","Iran","Iraq","Ireland","Israel",
-"Jamaica","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan",
-"Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg",
-"Madagascar","Malawi","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar",
-"Namibia","Nauru","Nepal","New Zealand","Nicaragua","Niger","North Korea","North Macedonia",
-"Oman","Palau","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Portugal",
-"Qatar","Romania","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Senegal","Serbia","Seychelles","Sierra Leone","Slovakia","Slovenia","Solomon Islands","Somalia","South Sudan","Sri Lanka","Sudan","Suriname",
-"Taiwan","Tajikistan","Tanzania","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkmenistan","Tuvalu",
-"Uganda","Ukraine","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Yemen","Zambia","Zimbabwe","others"]
-
-const currencies = ["USD", "EUR", "GBP", "AUD", "CAD", "JPY", "SGD", "AED", "BRL","ZAR", "INR","AFN-Afghan Afghani-؋","ALL-Albanian Lek-L","AMD-Armenian Dram-֏","ANG-Netherlands Antillean Guilder-ƒ","AOA-Angolan Kwanza-Kz","ARS-Argentine Peso-$","AWG-Aruban Florin-ƒ","AZN-Azerbaijani Manat-₼",
-"BAM-Bosnia-Herzegovina Convertible Mark-KM","BBD-Barbadian Dollar-$","BDT-Bangladeshi Taka-৳","BGN-Bulgarian Lev-лв","BHD-Bahraini Dinar-.د.ب","BIF-Burundian Franc-FBu","BMD-Bermudian Dollar-$","BND-Brunei Dollar-$","BOB-Bolivian Boliviano-Bs","BOV-Bolivian Mvdol-BOV","BSD-Bahamian Dollar-$","BTN-Bhutanese Ngultrum-Nu.","BWP-Botswana Pula-P","BYN-Belarusian Ruble-Br","BZD-Belize Dollar-BZ$",
-"CDF-Congolese Franc-FC","CHE-WIR Euro-CHE","CHF-Swiss Franc-CHF","CHW-WIR Franc-CHW","CLF-Chilean Unit of Account (UF)-UF","CLP-Chilean Peso-$","CNY-Chinese Yuan-¥","COP-Colombian Peso-$","COU-Colombian Unit of Value-COU","CRC-Costa Rican Colón-₡","CUC-Cuban Convertible Peso-$","CUP-Cuban Peso-$","CVE-Cape Verdean Escudo-$","CZK-Czech Koruna-Kč",
-"DJF-Djiboutian Franc-Fdj","DKK-Danish Krone-kr","DOP-Dominican Peso-RD$","DZD-Algerian Dinar-دج",
-"EGP-Egyptian Pound-£","ERN-Eritrean Nakfa-Nfk","ETB-Ethiopian Birr-ብር",
-"FJD-Fijian Dollar-$","FKP-Falkland Islands Pound-£","GEL-Georgian Lari-₾","GHS-Ghanaian Cedi-₵","GIP-Gibraltar Pound-£","GMD-Gambian Dalasi-D","GNF-Guinean Franc-FG","GTQ-Guatemalan Quetzal-Q","GYD-Guyanese Dollar-$",
-"HKD-Hong Kong Dollar-$","HNL-Honduran Lempira-L","HTG-Haitian Gourde-G","HUF-Hungarian Forint-Ft","IDR-Indonesian Rupiah-Rp","ILS-Israeli New Shekel-₪","IQD-Iraqi Dinar-ع.د","IRR-Iranian Rial-﷼","ISK-Icelandic Króna-kr","JMD-Jamaican Dollar-$","JOD-Jordanian Dinar-د.ا","KES-Kenyan Shilling-KSh","KGS-Kyrgyzstani Som-сом","KHR-Cambodian Riel-៛","KMF-Comorian Franc-CF","KPW-North Korean Won-₩","KRW-South Korean Won-₩","KWD-Kuwaiti Dinar-د.ك","KYD-Cayman Islands Dollar-$","KZT-Kazakhstani Tenge-₸",
-"LAK-Lao Kip-₭","LBP-Lebanese Pound-ل.ل","LKR-Sri Lankan Rupee-₨","LRD-Liberian Dollar-$","LSL-Lesotho Loti-L","LYD-Libyan Dinar-ل.د",
-"MAD-Moroccan Dirham-د.م","MDL-Moldovan Leu-L","MGA-Malagasy Ariary-Ar","MKD-Macedonian Denar-ден","MMK-Myanmar Kyat-K","MNT-Mongolian Tögrög-₮","MOP-Macanese Pataca-P","MRU-Mauritanian Ouguiya-UM","MUR-Mauritian Rupee-₨","MVR-Maldivian Rufiyaa-ރ.","MWK-Malawian Kwacha-MK","MXN-Mexican Peso-$","MXV-Mexican Unidad de Inversion-MXV","MYR-Malaysian Ringgit-RM","MZN-Mozambican Metical-MT",
-"NAD-Namibian Dollar-$","NGN-Nigerian Naira-₦","NIO-Nicaraguan Córdoba-C$","NOK-Norwegian Krone-kr","NPR-Nepalese Rupee-₨","NZD-New Zealand Dollar-$",
-"OMR-Omani Rial-ر.ع.",
-"PAB-Panamanian Balboa-B/.","PEN-Peruvian Sol-S/","PGK-Papua New Guinean Kina-K","PHP-Philippine Peso-₱","PKR-Pakistani Rupee-₨","PLN-Polish Złoty-zł","PYG-Paraguayan Guaraní-₲",
-"QAR-Qatari Riyal-ر.ق",
-"RON-Romanian Leu-lei","RSD-Serbian Dinar-дин","RUB-Russian Ruble-₽","RWF-Rwandan Franc-FR",
-"SAR-Saudi Riyal-ر.س","SBD-Solomon Islands Dollar-$","SCR-Seychellois Rupee-₨","SDG-Sudanese Pound-£","SEK-Swedish Krona-kr","SHP-Saint Helena Pound-£","SLE-Sierra Leonean Leone-Le","SOS-Somali Shilling-Sh","SRD-Surinamese Dollar-$","SSP-South Sudanese Pound-£","STN-São Tomé and Príncipe Dobra-Db","SVC-Salvadoran Colón-₡","SYP-Syrian Pound-£","SZL-Eswatini Lilangeni-L",
-"THB-Thai Baht-฿","TJS-Tajikistani Somoni-ЅМ","TMT-Turkmenistani Manat-m","TND-Tunisian Dinar-د.ت","TOP-Tongan Paʻanga-T$","TRY-Turkish Lira-₺","TTD-Trinidad and Tobago Dollar-TT$","TWD-New Taiwan Dollar-NT$","TZS-Tanzanian Shilling-TSh",
-"UAH-Ukrainian Hryvnia-₴","UGX-Ugandan Shilling-USh","USD-United States Dollar-$","USN-US Dollar (Next day)-USN","UYI-Uruguay Peso en Unidades Indexadas-UYI","UYU-Uruguayan Peso-$","UYW-Uruguay Unidad Previsional-UYW","UZS-Uzbekistani Som-so'm",
-"VED-Venezuelan Digital Bolívar-Bs.D","VES-Venezuelan Bolívar-Bs.","VND-Vietnamese Đồng-₫","VUV-Vanuatu Vatu-VT",
-"WST-Samoan Tala-WS$",
-"XAF-CFA Franc BEAC-FCFA","XAG-Silver-oz","XBA-European Composite Unit-EURCO","XBB-European Monetary Unit-EMU","XBD-European Unit of Account 17-EUA","XCD-East Caribbean Dollar-$","XDR-Special Drawing Rights-SDR","XOF-CFA Franc BCEAO-CFA","XPD-Palladium-oz","XPF-CFP Franc-₣","XPT-Platinum-oz","XSU-SUCRE-SUCRE",
-"YER-Yemeni Rial-﷼",
-"ZMW-Zambian Kwacha-ZK","ZWL-Zimbabwean Dollar-Z$","Others"];
-const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
+const countries = ["-Select Country-", ...COUNTRIES];
+const currencies = [{ code: "-Select Currency-", name: "Select", symbol: "" }, ...CURRENCIES];
+const genders = ["-Select Gender-", "Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Min 2 characters").max(100),
