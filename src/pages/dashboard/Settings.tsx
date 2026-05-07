@@ -85,10 +85,16 @@ export default function Settings() {
             <Label>Currency</Label>
             <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="sm:col-span-2"><Label>Country</Label><Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div>
+          <div className="sm:col-span-2">
+            <Label>Country</Label>
+            <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v })}>
+              <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+              <SelectContent>{COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
           <div className="sm:col-span-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
         </div>
         <Button onClick={save} disabled={loading} className="rounded-full">
