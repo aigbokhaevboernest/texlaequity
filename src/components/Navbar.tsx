@@ -25,12 +25,11 @@ const Navbar = () => {
     { to: "/policies", label: "Privacy" },
   ];
 
-  // Dark blue palette (Tesla-like deep midnight blue)
+  // Dark blue palette (Tesla-like deep midnight blue) — always visible
   const navBase = "bg-[#0a1530]/95 backdrop-blur-xl border-b border-white/10 text-white";
-  const navTop = pathname === "/" && !scrolled && !open ? "bg-transparent text-white" : navBase;
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${navTop}`}>
+    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${navBase}`}>
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         <nav className="h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center" onClick={() => setOpen(false)}>
