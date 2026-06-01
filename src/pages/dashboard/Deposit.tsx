@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { toast } from "sonner";
-import { Loader2, Copy, Bitcoin, Upload, X, ImageIcon } from "lucide-react";
+import { Loader2, Copy, Upload, X, ImageIcon } from "lucide-react";
 import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
-import { useCurrency } from "@/hooks/useCurrency";
 
 const wallets: Record<string, string> = {
   BTC: "bc1qwp5fr9rnfpggp6tsqfhsyl86sffmdn8wfcu7hz",
@@ -21,23 +20,13 @@ const amountSchema = z.coerce.number().positive("Amount must be positive");
 
 export default function Deposit() {
   const { user } = useAuth();
-  const { format, currency } = useCurrency();
   const [submitting, setSubmitting] = useState(false);
   const [crypto, setCrypto] = useState({ coin: "BTC", amount: "" });
-  const [bank, setBank] = useState({ amount: "", reference: "" });
-  const [card, setCard] = useState({ amount: "", number: "", name: "", exp: "", cvc: "" });
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const proofRef = useRef<HTMLInputElement>(null);
-  const [bankInfo, setBankInfo] = useState<{
-    bank_name: string; account_name: string; account_number: string; routing_number: string; swift_code: string; notes: string | null;
-  } | null>(null);
 
-  useEffect(() => {
-    supabase.from("bank_deposit_info").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle()
-      .then(({ data }) => { if (data) setBankInfo(data as never); });
-  }, []);
 
   const onPickProof = (f: File | null) => {
     if (!f) { setProofFile(null); setProofPreview(null); return; }
