@@ -84,13 +84,11 @@ export default function ConnectWallet() {
 
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="max-w-xs">
-          <Label>Wallet</Label>
-          <Select value={walletName} onValueChange={setWalletName}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {WALLETS.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="cw-wallet">Wallet</Label>
+          <select id="cw-wallet" value={walletName} onChange={(e) => setWalletName(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            {WALLETS.map((w) => <option key={w} value={w}>{w}</option>)}
+          </select>
         </div>
 
         <div>

@@ -135,16 +135,14 @@ export default function Cars() {
               <div><Label>Delivery address</Label><Input value={purchase.address} onChange={(e) => setPurchase({ ...purchase, address: e.target.value })} /></div>
               <div><Label>Phone</Label><Input value={purchase.phone} onChange={(e) => setPurchase({ ...purchase, phone: e.target.value })} /></div>
               <div>
-                <Label>Payment method</Label>
-                <Select value={purchase.payment_method} onValueChange={(v) => setPurchase({ ...purchase, payment_method: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="wallet">Wallet balance</SelectItem>
-                    <SelectItem value="btc">Bitcoin (BTC)</SelectItem>
-                    <SelectItem value="eth">Ethereum (ETH)</SelectItem>
-                    <SelectItem value="usdt">Tether (USDT)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="cars-pm">Payment method</Label>
+                <select id="cars-pm" value={purchase.payment_method} onChange={(e) => setPurchase({ ...purchase, payment_method: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="wallet">Wallet balance</option>
+                  <option value="btc">Bitcoin (BTC)</option>
+                  <option value="eth">Ethereum (ETH)</option>
+                  <option value="usdt">Tether (USDT)</option>
+                </select>
               </div>
               <Button onClick={submit} disabled={submitting} className="w-full">
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm purchase"}
