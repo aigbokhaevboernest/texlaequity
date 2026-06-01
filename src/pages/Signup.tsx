@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import TransitionOverlay from "@/components/TransitionOverlay";
 import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
 const countries = COUNTRIES;
@@ -125,6 +126,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
+      <TransitionOverlay />
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">

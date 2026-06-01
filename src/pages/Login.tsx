@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import TransitionOverlay from "@/components/TransitionOverlay";
 
 const REMEMBER_KEY = "tv_remember_email";
 
@@ -99,6 +100,7 @@ if (profile?.status === "blocked") {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
+      <TransitionOverlay />
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
@@ -111,8 +113,8 @@ if (profile?.status === "blocked") {
 
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+              <Label htmlFor="email">Username or Email</Label>
+              <Input id="email" type="text" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="username or you@example.com" required />
             </div>
             <div>
               <div className="flex items-center justify-between">
