@@ -118,19 +118,28 @@ const Overview = () => {
       </div>
 
       {expert && (
-        <Link to="/dashboard/copy-experts" className="block rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 hover:border-emerald-500/60 transition-colors">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-display font-semibold">
-              {expert.name.split(" ").map((s) => s[0]).join("")}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-medium">You are copying</p>
-              <p className="font-display text-lg font-medium truncate">{expert.name} <span className="text-muted-foreground text-[12px] font-normal">{expert.handle}</span></p>
-              {expert.specialty && <p className="text-[12px] text-muted-foreground truncate">{expert.specialty}</p>}
-            </div>
-          </div>
-        </Link>
-      )}
+  <Link
+    to="/dashboard/copy-experts"
+    className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-[1.03] transition-all duration-200 shadow-sm"
+  >
+    {/* Live pulse dot */}
+    <span className="relative flex h-2.5 w-2.5 shrink-0">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+    </span>
+
+    {/* Avatar */}
+    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground text-[8px] font-bold shrink-0">
+      {expert.name.split(" ").map((s) => s[0]).join("")}
+    </span>
+
+    {/* Text */}
+    <span className="text-[13px] text-muted-foreground whitespace-nowrap">
+      You're Copying <span className="text-foreground font-semibold">{expert.name}</span>
+    </span>
+  </Link>
+)}
+
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((s) => (
