@@ -260,7 +260,11 @@ return (
 <p className="label-mono text-muted-foreground mb-2">Cash out</p>
 <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Withdraw</h1>
 <p className="text-muted-foreground text-[14px] mt-1">
-Available balance: <span className="text-foreground font-medium">{format(balance)}</span>
+Available balance: {balanceReady && currencyReady ? (
+  <span className="text-foreground font-medium">{format(balance)}</span>
+) : (
+  <span className="inline-block align-middle h-4 w-20 rounded bg-muted animate-pulse" />
+)}
 </p>
 </div>
 
