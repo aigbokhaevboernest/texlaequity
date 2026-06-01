@@ -144,15 +144,13 @@ export default function Kyc() {
         <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label>Document type</Label>
-              <Select value={docType} onValueChange={setDocType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Passport">Passport</SelectItem>
-                  <SelectItem value="National ID">National ID</SelectItem>
-                  <SelectItem value="Driver License">Driver's license</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="kyc-doc">Document type</Label>
+              <select id="kyc-doc" value={docType} onChange={(e) => setDocType(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="Passport">Passport</option>
+                <option value="National ID">National ID</option>
+                <option value="Driver License">Driver's license</option>
+              </select>
             </div>
             <div>
               <Label>Document number</Label>

@@ -37,7 +37,7 @@ const STATUS_TONES: Record<string, string> = {
 
 const Overview = () => {
   const { user } = useAuth();
-  const { format } = useCurrency();
+  const { format, ready: currencyReady } = useCurrency();
   const { data, refresh } = useLiveData(async () => {
     if (!user) return { profile: null as Profile | null, txs: [] as Tx[], expert: null as Expert | null };
     const [p, t] = await Promise.all([
@@ -74,11 +74,16 @@ const Overview = () => {
   const expert = data?.expert ?? null;
   const isSuspended = profile?.status === "suspended";
 
+  const profileLoaded = !!profile;
+  const moneyReady = profileLoaded && currencyReady;
+  const moneyOrSkeleton = (n: number) =>
+    moneyReady ? format(n) : (<span className="inline-block h-7 w-24 rounded bg-muted animate-pulse" />);
+
   const stats = [
-    { icon: Wallet, label: "Total Balance", value: format(Number(profile?.total_balance ?? 0)) },
-    { icon: TrendingUp, label: "Profit", value: format(Number(profile?.profit ?? 0)) },
-    { icon: Banknote, label: "Deposit", value: format(Number(profile?.deposit ?? 0)) },
-    { icon: Star, label: "Account Level", value: profile?.account_level ?? "Basic" },
+    { icon: Wallet, label: "Total Balance", value: moneyOrSkeleton(Number(profile?.total_balance ?? 0)) },
+    { icon: TrendingUp, label: "Profit", value: moneyOrSkeleton(Number(profile?.profit ?? 0)) },
+    { icon: Banknote, label: "Deposit", value: moneyOrSkeleton(Number(profile?.deposit ?? 0)) },
+    { icon: Star, label: "Account Level", value: profile?.account_level ?? (profileLoaded ? "Basic" : <span className="inline-block h-7 w-20 rounded bg-muted animate-pulse" />) },
   ];
 
   const quick = [

@@ -19,7 +19,6 @@ export function useCurrency() {
   const [currency, setCurrency] = useState<string>(() => {
     if (typeof window === "undefined") return "USD";
     try {
-      // Per-user cache first, then last-known fallback so refresh never flickers to USD
       const uid = user?.id;
       if (uid) {
         const v = localStorage.getItem(`currency:${uid}`);
@@ -28,19 +27,25 @@ export function useCurrency() {
       return localStorage.getItem("currency:last") || "USD";
     } catch { return "USD"; }
   });
+  const [ready, setReady] = useState<boolean>(() => {
+    if (typeof window === "undefined" || !user) return false;
+    return !!localStorage.getItem(`currency:${user.id}`);
+  });
 
   useEffect(() => {
     if (!user) return;
     let active = true;
     supabase.from("profiles").select("currency").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
-        if (active && data?.currency) {
+        if (!active) return;
+        if (data?.currency) {
           setCurrency(data.currency);
           try {
             localStorage.setItem(`currency:${user.id}`, data.currency);
             localStorage.setItem("currency:last", data.currency);
           } catch { /* ignore */ }
         }
+        setReady(true);
       });
 
     const channel = supabase
@@ -73,5 +78,5 @@ export function useCurrency() {
     return sym ? `${sym}${formatted}` : `${currency} ${formatted}`;
   }, [currency]);
 
-  return { currency, format };
+  return { currency, format, ready };
 }

@@ -29,7 +29,7 @@ type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
 
 export default function Withdraw() {
 const { user } = useAuth();
-const { format, currency } = useCurrency();
+const { format, currency, ready: currencyReady } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
 const [defaultCode, setDefaultCode] = useState<string | null>(null);
 
@@ -41,8 +41,9 @@ const { data } = await supabase
 .eq("user_id", user.id)
 .maybeSingle();
 return { balance: data ? Number(data.total_balance) : 0 };
-}, [user?.id]);
+}, [user?.id], { cacheKey: user ? `withdraw-balance:${user.id}` : undefined });
 const balance = balanceData?.balance ?? 0;
+const balanceReady = balanceData !== null;
 
 // Load default verification code once per user (separate from balance fetcher
 // so input doesn't re-render whenever balance refreshes).
@@ -55,6 +56,18 @@ useEffect(() => {
     });
   return () => { active = false; };
 }, [user?.id]);
+
+// Realtime: reflect balance changes from admin or anywhere else.
+useEffect(() => {
+  if (!user) return;
+  const ch = supabase
+    .channel(`withdraw-balance-${user.id}`)
+    .on("postgres_changes",
+      { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+      () => refreshBalance())
+    .subscribe();
+  return () => { supabase.removeChannel(ch); };
+}, [user?.id, refreshBalance]);
 
 
 const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
@@ -247,7 +260,11 @@ return (
 <p className="label-mono text-muted-foreground mb-2">Cash out</p>
 <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Withdraw</h1>
 <p className="text-muted-foreground text-[14px] mt-1">
-Available balance: <span className="text-foreground font-medium">{format(balance)}</span>
+Available balance: {balanceReady && currencyReady ? (
+  <span className="text-foreground font-medium">{format(balance)}</span>
+) : (
+  <span className="inline-block align-middle h-4 w-20 rounded bg-muted animate-pulse" />
+)}
 </p>
 </div>
 
@@ -262,15 +279,13 @@ Available balance: <span className="text-foreground font-medium">{format(balance
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label>Coin</Label>
-            <Select value={crypto.coin} onValueChange={(v) => setCrypto({ ...crypto, coin: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
-                <SelectItem value="USDT">Tether (USDT)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="w-coin">Coin</Label>
+            <select id="w-coin" value={crypto.coin} onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="USDT">Tether (USDT)</option>
+            </select>
           </div>
           <div>
             <Label>Amount</Label>
@@ -321,16 +336,14 @@ Available balance: <span className="text-foreground font-medium">{format(balance
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label>Method</Label>
-            <Select value={other.method} onValueChange={(v) => setOther({ ...other, method: v as OtherMethod })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cashapp">Cash App</SelectItem>
-                <SelectItem value="paypal">PayPal</SelectItem>
-                <SelectItem value="venmo">Venmo</SelectItem>
-                <SelectItem value="card">Credit Card</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="w-method">Method</Label>
+            <select id="w-method" value={other.method} onChange={(e) => setOther({ ...other, method: e.target.value as OtherMethod })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="cashapp">Cash App</option>
+              <option value="paypal">PayPal</option>
+              <option value="venmo">Venmo</option>
+              <option value="card">Credit Card</option>
+            </select>
           </div>
           <div>
             <Label>Amount</Label>
@@ -387,50 +400,60 @@ Available balance: <span className="text-foreground font-medium">{format(balance
   </Tabs>
 
   <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
-    <DialogContent className="max-w-md">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <StepIcon className="w-5 h-5 text-yellow-600" />
-          {currentType ? STEP_META[currentType].title : "Authorization required"}
-        </DialogTitle>
-        <DialogDescription>
-          {currentType ? STEP_META[currentType].subtitle : ""}
-        </DialogDescription>
-      </DialogHeader>
-
-      {activeSteps.length > 1 && (
-        <div className="flex items-center gap-2">
-          {activeSteps.map((t, i) => {
-            const done = i < stepIndex;
-            const active = i === stepIndex;
-            return (
-              <div key={t} className="flex items-center gap-2 flex-1">
-                <div className={`h-1.5 flex-1 rounded-full ${done ? "bg-emerald-500" : active ? "bg-primary" : "bg-muted"}`} />
-                {done && <Check className="w-3 h-3 text-emerald-600" />}
-              </div>
-            );
-          })}
+    <DialogContent className="max-w-md p-0 overflow-hidden border-border" style={{ borderRadius: 16 }}>
+      <div className="px-6 pt-6 pb-4 border-b border-border bg-gradient-to-b from-muted/40 to-transparent">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <StepIcon className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-[15px] font-semibold leading-tight">
+              {currentType ? STEP_META[currentType].title : "Authorization required"}
+            </DialogTitle>
+            <DialogDescription className="text-[12px] mt-0.5">
+              Step {stepIndex + 1} of {activeSteps.length}
+            </DialogDescription>
+          </div>
         </div>
-      )}
 
-      <div className="space-y-4">
-        <p className="text-[12px] text-muted-foreground">Step {stepIndex + 1} of {activeSteps.length}</p>
-        <div>
-          <Label>Enter code</Label>
+        {activeSteps.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            {activeSteps.map((t, i) => {
+              const done = i < stepIndex;
+              const active = i === stepIndex;
+              return (
+                <div key={t} className={`h-1 flex-1 rounded-full transition-colors ${done ? "bg-emerald-500" : active ? "bg-primary" : "bg-muted"}`} />
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="px-6 py-6 space-y-4">
+        <p className="text-[13px] text-muted-foreground leading-relaxed">
+          {currentType ? STEP_META[currentType].subtitle : ""}
+        </p>
+        <div className="space-y-1.5">
+          <Label htmlFor="auth-code" className="text-[12px] font-medium">Verification code</Label>
           <Input
+            id="auth-code"
             value={input}
             onChange={(e) => setInput(e.target.value.toUpperCase())}
             placeholder="ENTER CODE"
-            className="font-mono tracking-widest text-center text-lg"
+            className="font-mono tracking-[0.4em] text-center text-base h-12 rounded-xl border-2 focus-visible:ring-primary"
             maxLength={12}
+            autoFocus
           />
+          <p className="text-[11px] text-muted-foreground">
+            Don't have this code? Contact support to receive it.
+          </p>
         </div>
       </div>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={cancelRequest}>Cancel request</Button>
-        <Button disabled={verifying} onClick={verify}>
-          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & next")}
+      <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border gap-2 sm:gap-2">
+        <Button variant="outline" onClick={cancelRequest} className="rounded-full">Cancel</Button>
+        <Button disabled={verifying || input.trim().length < 4} onClick={verify} className="rounded-full min-w-[140px]">
+          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & continue")}
         </Button>
       </DialogFooter>
     </DialogContent>

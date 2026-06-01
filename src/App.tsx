@@ -27,12 +27,16 @@ import { AuthProvider } from "./hooks/useAuth";
 import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
+import TransitionOverlay from "./components/TransitionOverlay";
 
 const queryClient = new QueryClient();
+const isFirstLoad = typeof window !== "undefined" && !sessionStorage.getItem("tesla_app_opened");
+if (typeof window !== "undefined") sessionStorage.setItem("tesla_app_opened", "1");
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      {isFirstLoad && <TransitionOverlay />}
       <Toaster />
       <Sonner />
       <BrowserRouter>
