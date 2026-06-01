@@ -123,77 +123,41 @@ export default function Deposit() {
         <p className="text-muted-foreground text-[14px] mt-1">Choose a method. Funds reflect after confirmation.</p>
       </div>
 
-      <Tabs defaultValue="crypto" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
-          <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="crypto" className="mt-6">
-          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label>Coin</Label>
-                <Select value={crypto.coin} onValueChange={(v) => setCrypto({ ...crypto, coin: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                    <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
-                    <SelectItem value="USDT">Tether (USDT)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Amount</Label>
-                <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
-              </div>
-            </div>
-            <div>
-              <Label>Send to wallet address</Label>
-              <div className="flex gap-2">
-                <Input readOnly value={wallets[crypto.coin]} className="font-mono text-xs" />
-                <Button type="button" variant="outline" size="icon" onClick={() => copy(wallets[crypto.coin])}>
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.</p>
-            </div>
-            <ProofUploader required />
-            <Button disabled={submitting || uploadingProof} onClick={() => submit(`Crypto ${crypto.coin}`, crypto.amount, { wallet_address: wallets[crypto.coin] }, { requireProof: true })} className="w-full">
-              {submitting || uploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
+      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="coin">Coin</Label>
+            <select
+              id="coin"
+              value={crypto.coin}
+              onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="USDT">Tether (USDT)</option>
+            </select>
+          </div>
+          <div>
+            <Label>Amount</Label>
+            <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
+          </div>
+        </div>
+        <div>
+          <Label>Send to wallet address</Label>
+          <div className="flex gap-2">
+            <Input readOnly value={wallets[crypto.coin]} className="font-mono text-xs" />
+            <Button type="button" variant="outline" size="icon" onClick={() => copy(wallets[crypto.coin])}>
+              <Copy className="w-3.5 h-3.5" />
             </Button>
           </div>
-        </TabsContent>
-
-        <TabsContent value="bank" className="mt-6">
-          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-            <div className="rounded-xl bg-muted p-4 text-[13px] space-y-1">
-              <p><span className="text-muted-foreground">Bank:</span> {bankInfo?.bank_name ?? "—"}</p>
-              <p><span className="text-muted-foreground">Account name:</span> {bankInfo?.account_name ?? "—"}</p>
-              <p><span className="text-muted-foreground">Account no:</span> {bankInfo?.account_number ?? "—"}</p>
-              <p><span className="text-muted-foreground">Routing:</span> {bankInfo?.routing_number ?? "—"}</p>
-              <p><span className="text-muted-foreground">SWIFT:</span> {bankInfo?.swift_code ?? "—"}</p>
-              {bankInfo?.notes && <p className="text-muted-foreground italic">{bankInfo.notes}</p>}
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label>Amount</Label>
-                <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} placeholder="1000" />
-              </div>
-              <div>
-                <Label>Transfer reference</Label>
-                <Input value={bank.reference} onChange={(e) => setBank({ ...bank, reference: e.target.value })} placeholder="REF#..." />
-              </div>
-            </div>
-            <ProofUploader required />
-            <Button disabled={submitting || uploadingProof} onClick={() => submit("Bank transfer", bank.amount, { bank_details: { reference: bank.reference } }, { requireProof: true })} className="w-full">
-              {submitting || uploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit deposit"}
-            </Button>
-          </div>
-        </TabsContent>
-
-        
-      </Tabs>
+          <p className="text-xs text-muted-foreground mt-2">Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.</p>
+        </div>
+        <ProofUploader required />
+        <Button disabled={submitting || uploadingProof} onClick={() => submit(`Crypto ${crypto.coin}`, crypto.amount, { wallet_address: wallets[crypto.coin] }, { requireProof: true })} className="w-full">
+          {submitting || uploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
+        </Button>
+      </div>
     </div>
   );
 }
