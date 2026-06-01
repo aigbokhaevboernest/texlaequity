@@ -78,5 +78,5 @@ export function useCurrency() {
     return sym ? `${sym}${formatted}` : `${currency} ${formatted}`;
   }, [currency]);
 
-  return { currency, format };
+  return { currency, format, ready };
 }
