@@ -10,9 +10,9 @@ import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
-const countries = ["-Select Country-", ...COUNTRIES];
-const currencies = [{ code: "-Select Currency-", name: "Select", symbol: "" }, ...CURRENCIES];
-const genders = ["-Select Gender-", "Male", "Female", "Non-binary", "Prefer not to say"];
+const countries = COUNTRIES;
+const currencies = CURRENCIES;
+const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Min 2 characters").max(100),
@@ -44,9 +44,9 @@ const Signup = () => {
     email: "",
     password: "",
     phone: "",
-    gender: "-Select Gender-",
-    country: "-Select Country-",
-    currency: "-Select Currency-",
+    gender: "",
+    country: "",
+    currency: "",
   });
 
   useEffect(() => {
@@ -206,6 +206,7 @@ const Signup = () => {
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
               >
+                <option value="" disabled hidden>Select Gender</option>
                 {genders.map((g) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
@@ -231,6 +232,7 @@ const Signup = () => {
                 value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
               >
+                <option value="" disabled hidden>Select Country</option>
                 {countries.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -245,6 +247,7 @@ const Signup = () => {
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
+                <option value="" disabled hidden>Select Currency</option>
                 {currencies.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.symbol ? `${c.code} — ${c.name} (${c.symbol})` : c.code}
