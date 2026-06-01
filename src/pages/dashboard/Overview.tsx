@@ -135,7 +135,7 @@ const Overview = () => {
 
     {/* Text */}
     <span className="text-[13px] text-muted-foreground whitespace-nowrap">
-      You're Copying <span className="text-foreground font-semibold">{expert.name}</span>
+      YOU ARE COPYING <span className="text-foreground font-semibold">{expert.name}</span>
       <span className="text-muted-foreground/50"> {expert.handle}</span>
     </span>
   </Link>
