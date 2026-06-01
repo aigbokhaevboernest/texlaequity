@@ -262,15 +262,13 @@ Available balance: <span className="text-foreground font-medium">{format(balance
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label>Coin</Label>
-            <Select value={crypto.coin} onValueChange={(v) => setCrypto({ ...crypto, coin: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
-                <SelectItem value="USDT">Tether (USDT)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="w-coin">Coin</Label>
+            <select id="w-coin" value={crypto.coin} onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="USDT">Tether (USDT)</option>
+            </select>
           </div>
           <div>
             <Label>Amount</Label>
@@ -321,16 +319,14 @@ Available balance: <span className="text-foreground font-medium">{format(balance
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label>Method</Label>
-            <Select value={other.method} onValueChange={(v) => setOther({ ...other, method: v as OtherMethod })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cashapp">Cash App</SelectItem>
-                <SelectItem value="paypal">PayPal</SelectItem>
-                <SelectItem value="venmo">Venmo</SelectItem>
-                <SelectItem value="card">Credit Card</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="w-method">Method</Label>
+            <select id="w-method" value={other.method} onChange={(e) => setOther({ ...other, method: e.target.value as OtherMethod })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="cashapp">Cash App</option>
+              <option value="paypal">PayPal</option>
+              <option value="venmo">Venmo</option>
+              <option value="card">Credit Card</option>
+            </select>
           </div>
           <div>
             <Label>Amount</Label>
