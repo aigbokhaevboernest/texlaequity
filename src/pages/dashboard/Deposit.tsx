@@ -4,10 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { toast } from "sonner";
-import { Loader2, Copy, Bitcoin, Landmark, Upload, X, ImageIcon } from "lucide-react";
+import { Loader2, Copy, Bitcoin, Upload, X, ImageIcon } from "lucide-react";
 import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 import { useCurrency } from "@/hooks/useCurrency";
