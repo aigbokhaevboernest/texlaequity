@@ -19,7 +19,6 @@ export function useCurrency() {
   const [currency, setCurrency] = useState<string>(() => {
     if (typeof window === "undefined") return "USD";
     try {
-      // Per-user cache first, then last-known fallback so refresh never flickers to USD
       const uid = user?.id;
       if (uid) {
         const v = localStorage.getItem(`currency:${uid}`);
@@ -27,6 +26,10 @@ export function useCurrency() {
       }
       return localStorage.getItem("currency:last") || "USD";
     } catch { return "USD"; }
+  });
+  const [ready, setReady] = useState<boolean>(() => {
+    if (typeof window === "undefined" || !user) return false;
+    return !!localStorage.getItem(`currency:${user.id}`);
   });
 
   useEffect(() => {
