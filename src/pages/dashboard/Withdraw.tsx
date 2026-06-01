@@ -29,7 +29,7 @@ type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
 
 export default function Withdraw() {
 const { user } = useAuth();
-const { format, currency } = useCurrency();
+const { format, currency, ready: currencyReady } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
 const [defaultCode, setDefaultCode] = useState<string | null>(null);
 
