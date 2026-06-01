@@ -41,8 +41,9 @@ const { data } = await supabase
 .eq("user_id", user.id)
 .maybeSingle();
 return { balance: data ? Number(data.total_balance) : 0 };
-}, [user?.id]);
+}, [user?.id], { cacheKey: user ? `withdraw-balance:${user.id}` : undefined });
 const balance = balanceData?.balance ?? 0;
+const balanceReady = balanceData !== null;
 
 // Load default verification code once per user (separate from balance fetcher
 // so input doesn't re-render whenever balance refreshes).
@@ -55,6 +56,18 @@ useEffect(() => {
     });
   return () => { active = false; };
 }, [user?.id]);
+
+// Realtime: reflect balance changes from admin or anywhere else.
+useEffect(() => {
+  if (!user) return;
+  const ch = supabase
+    .channel(`withdraw-balance-${user.id}`)
+    .on("postgres_changes",
+      { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+      () => refreshBalance())
+    .subscribe();
+  return () => { supabase.removeChannel(ch); };
+}, [user?.id, refreshBalance]);
 
 
 const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
