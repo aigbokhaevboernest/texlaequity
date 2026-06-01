@@ -37,13 +37,15 @@ export function useCurrency() {
     let active = true;
     supabase.from("profiles").select("currency").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
-        if (active && data?.currency) {
+        if (!active) return;
+        if (data?.currency) {
           setCurrency(data.currency);
           try {
             localStorage.setItem(`currency:${user.id}`, data.currency);
             localStorage.setItem("currency:last", data.currency);
           } catch { /* ignore */ }
         }
+        setReady(true);
       });
 
     const channel = supabase
