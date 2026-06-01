@@ -60,8 +60,6 @@ export default function Deposit() {
     if (error) { toast.error(error.message); return; }
     toast.success("Deposit request submitted.");
     setCrypto({ coin: "BTC", amount: "" });
-    setBank({ amount: "", reference: "" });
-    setCard({ amount: "", number: "", name: "", exp: "", cvc: "" });
     setProofFile(null); setProofPreview(null);
   };
 
