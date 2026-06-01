@@ -117,10 +117,10 @@ const Overview = () => {
         <p className="text-muted-foreground text-[14px] mt-1">Here's a snapshot of your portfolio.</p>
       </div>
 
-      {expert && (
+     {expert && (
   <Link
     to="/dashboard/copy-experts"
-    className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-[1.03] transition-all duration-200 shadow-sm"
+    className="flex w-full items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-[1.03] transition-all duration-200 shadow-sm"
   >
     {/* Live pulse dot */}
     <span className="relative flex h-2.5 w-2.5 shrink-0">
@@ -136,9 +136,11 @@ const Overview = () => {
     {/* Text */}
     <span className="text-[13px] text-muted-foreground whitespace-nowrap">
       You're Copying <span className="text-foreground font-semibold">{expert.name}</span>
+      <span className="text-muted-foreground/50"> {expert.handle}</span>
     </span>
   </Link>
 )}
+
 
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
