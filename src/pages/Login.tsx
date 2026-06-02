@@ -100,7 +100,6 @@ if (profile?.status === "blocked") {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
-      <TransitionOverlay />
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
