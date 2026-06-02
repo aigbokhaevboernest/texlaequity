@@ -127,7 +127,7 @@ export default function Deposit() {
           </div>
           <div>
             <Label>Amount</Label>
-            <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="100" />
+            <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="" />
           </div>
         </div>
         <div>
