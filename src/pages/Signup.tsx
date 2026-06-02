@@ -24,7 +24,7 @@ const schema = z.object({
     .max(30)
     .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, underscores only"),
   email: z.string().trim().email("Invalid email").max(255),
-  password: z.string().min(8, "Min 8 characters").max(72),
+  password: z.string().min(1, "Enter a password").max(72),
   phone: z.string().trim().min(6, "Enter a valid phone").max(20),
   gender: z.string().min(1, "Select a gender"),
   country: z.string().min(1, "Select a country"),
@@ -126,7 +126,6 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
-      <TransitionOverlay />
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
