@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,10 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import Inventory from "./pages/Inventory.tsx";
+import FaqPage from "./pages/Faq.tsx";
+import Terms from "./pages/Terms.tsx";
+import Policies from "./pages/Policies.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -20,6 +25,7 @@ import Kyc from "./pages/dashboard/Kyc";
 import Cars from "./pages/dashboard/Cars";
 import DashSettings from "./pages/dashboard/Settings";
 import { AuthProvider } from "./hooks/useAuth";
+import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -34,23 +40,28 @@ const App = () => (
         <AuthProvider>
           <ErrorBoundary>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
-              <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
-              <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
-              <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
-              <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
-              <Route path="/dashboard/plans" element={<DashboardLayout><Plans /></DashboardLayout>} />
-              <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
-              <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
-              <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
-              <Route path="/403" element={<Forbidden />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+     <Route path="/" element={<Index />} />
+     <Route path="/login" element={<Login />} />
+     <Route path="/signup" element={<Signup />} />
+     <Route path="/inventory" element={<Inventory />} />
+     <Route path="/faq" element={<FaqPage />} />
+     <Route path="/terms" element={<Terms />} />
+     <Route path="/policies" element={<Policies />} />
+     <Route path="/forgot-password" element={<ForgotPassword />} />
+     <Route path="/reset-password" element={<ResetPassword />} />
+     <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
+     <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
+     <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
+     <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
+     <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
+     <Route path="/dashboard/plans" element={<DashboardLayout><Plans /></DashboardLayout>} />
+     <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
+     <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
+     <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
+     <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
+     <Route path="/403" element={<Forbidden />} />
+     <Route path="*" element={<NotFound />} />
+   </Routes>
           </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
