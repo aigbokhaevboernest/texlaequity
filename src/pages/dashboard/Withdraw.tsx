@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Bitcoin, Landmark, ShieldAlert, Check, ShieldCheck, Percent, Receipt, Wallet } from "lucide-react";
+import { Loader2, Bitcoin, Landmark, ShieldAlert, ShieldCheck, Percent, Receipt, Wallet } from "lucide-react";
 import { z } from "zod";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -410,9 +409,6 @@ Available balance: {balanceReady && currencyReady ? (
             <DialogTitle className="text-[15px] font-semibold leading-tight">
               {currentType ? STEP_META[currentType].title : "Authorization required"}
             </DialogTitle>
-            <DialogDescription className="text-[12px] mt-0.5">
-              Step {stepIndex + 1} of {activeSteps.length}
-            </DialogDescription>
           </div>
         </div>
 

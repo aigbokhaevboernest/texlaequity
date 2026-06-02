@@ -90,7 +90,7 @@ export default function Settings() {
   };
 
   const updatePw = async () => {
-    if (pw.next.length < 8) { toast.error("Min 8 characters"); return; }
+    if (pw.next.length < 1) { toast.error("Enter a password"); return; }
     if (pw.next !== pw.confirm) { toast.error("Passwords don't match"); return; }
     setPwLoading(true);
     const { error } = await supabase.auth.updateUser({ password: pw.next });

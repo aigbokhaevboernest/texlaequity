@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Zap, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import TransitionOverlay from "@/components/TransitionOverlay";
 
 const REMEMBER_KEY = "tv_remember_email";
 
@@ -22,7 +21,6 @@ const Login = () => {
   const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
-const isBlocked = new URLSearchParams(location.search).get("blocked") === "true";
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState(
     typeof window !== "undefined" ? localStorage.getItem(REMEMBER_KEY) ?? "" : ""
@@ -100,7 +98,6 @@ if (profile?.status === "blocked") {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
-      <TransitionOverlay />
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
