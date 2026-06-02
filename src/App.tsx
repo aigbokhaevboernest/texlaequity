@@ -20,7 +20,6 @@ import Kyc from "./pages/dashboard/Kyc";
 import Cars from "./pages/dashboard/Cars";
 import DashSettings from "./pages/dashboard/Settings";
 import { AuthProvider } from "./hooks/useAuth";
-import IntroAnimation from "./components/IntroAnimation";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/Overview";
 import AdminUsers from "./pages/admin/Users";
@@ -42,7 +41,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <IntroAnimation />
           <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Index />} />
