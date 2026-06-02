@@ -11,7 +11,7 @@ import { Zap, Loader2, CheckCircle2 } from "lucide-react";
 
 const pwdSchema = z
   .object({
-    pwd: z.string().min(8, "Password must be at least 8 characters").max(72, "Password too long"),
+    pwd: z.string().min(1, "Enter a password").max(72, "Password too long"),
     confirm: z.string(),
   })
   .refine((d) => d.pwd === d.confirm, { message: "Passwords don't match", path: ["confirm"] });
@@ -87,7 +87,7 @@ const ResetPassword = () => {
           ) : (
             <>
               <h1 className="font-display text-3xl font-light mb-2">Set a new password</h1>
-              <p className="text-sm text-muted-foreground mb-6">Choose a strong password you haven't used before.</p>
+              <p className="text-sm text-muted-foreground mb-6">Set your new password to continue.</p>
               <form onSubmit={submit} className="space-y-4">
                 <div>
                   <Label htmlFor="pwd">New password</Label>
@@ -97,7 +97,7 @@ const ResetPassword = () => {
                     autoComplete="new-password"
                     value={pwd}
                     onChange={(e) => setPwd(e.target.value)}
-                    placeholder="Min 8 characters"
+                    placeholder="Enter new password"
                     required
                   />
                 </div>
