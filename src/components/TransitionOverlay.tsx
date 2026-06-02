@@ -1,18 +1,10 @@
 import { useEffect, useState } from "react";
 
 /**
- * Tesla letter-drop opening animation.
- * Used on first app load and during Login <-> Signup transitions.
- *
- * Timeline (total ~3500ms):
- *   0.0s – 1.4s  letters drop in (staggered, ease-in)
- *   1.3s – 2.0s  underline draws in
- *   1.4s – 2.4s  hold
- *   2.3s – 3.0s  underline erases
- *   2.4s – 3.5s  letters drop out (reverse stagger)
- *   3.5s         overlay fades & unmounts
+ * Single-run Tesla opening animation for first load and auth-route navigation.
+ * Based on the user-provided TESLA letter-drop sequence with underline draw/erase.
  */
-export default function TransitionOverlay({ duration = 3700 }: { duration?: number }) {
+export default function TransitionOverlay({ duration = 2600 }: { duration?: number }) {
   const [phase, setPhase] = useState<"play" | "out" | "gone">("play");
 
   useEffect(() => {
@@ -23,10 +15,23 @@ export default function TransitionOverlay({ duration = 3700 }: { duration?: numb
 
   if (phase === "gone") return null;
 
-  // letter in-delays (stagger), and out-delays (reverse stagger)
-  const letters = ["t", "e", "s1", "l", "a"] as const;
-  const inDelays: Record<string, number> = { t: 100, e: 250, s1: 400, l: 550, a: 700 };
-  const outDelays: Record<string, number> = { t: 3100, e: 2950, s1: 2800, l: 2650, a: 2500 };
+  const letters = ["t", "e", "s1", "s2", "l", "a"] as const;
+  const inDelays: Record<(typeof letters)[number], number> = {
+    t: 80,
+    e: 180,
+    s1: 280,
+    s2: 380,
+    l: 480,
+    a: 580,
+  };
+  const outDelays: Record<(typeof letters)[number], number> = {
+    a: 1460,
+    l: 1560,
+    s2: 1660,
+    s1: 1760,
+    e: 1860,
+    t: 1960,
+  };
 
   return (
     <div
@@ -43,8 +48,8 @@ export default function TransitionOverlay({ duration = 3700 }: { duration?: numb
                 className={`ltr ${k}`}
                 style={{
                   animation: `
-                    letterIn 700ms cubic-bezier(0.55, 0.055, 0.675, 0.19) ${inDelays[k]}ms both,
-                    letterOut 600ms ease-in ${outDelays[k]}ms forwards
+                    letterIn 300ms cubic-bezier(0.55, 0.055, 0.675, 0.19) ${inDelays[k]}ms both,
+                    letterOut 200ms cubic-bezier(.4,0,1,1) ${outDelays[k]}ms forwards
                   `,
                 }}
               />
@@ -55,8 +60,8 @@ export default function TransitionOverlay({ duration = 3700 }: { duration?: numb
               className="underline"
               style={{
                 animation: `
-                  lineIn 700ms ease-out 1300ms both,
-                  lineOut 700ms ease-in 2300ms forwards
+                  lineIn 450ms cubic-bezier(.4,0,.2,1) 830ms both,
+                  lineOut 500ms cubic-bezier(.4,0,1,1) 1460ms forwards
                 `,
               }}
             />
@@ -69,6 +74,8 @@ export default function TransitionOverlay({ duration = 3700 }: { duration?: numb
           position: relative;
           width: 67vmin;
           height: 12vmin;
+          background: transparent;
+          overflow: visible;
         }
         .tesla-anim .title {
           position: relative;
@@ -124,8 +131,15 @@ export default function TransitionOverlay({ duration = 3700 }: { duration?: numb
           width: 8.7vmin; height: 1.5vmin; background: #e81b22;
           top: 3.2vmin; left: 0;
         }
-        /* second part of S (lower curve) — handled inside .s1 via a nested span would be cleaner,
-           but to keep one element we tuck a second curve via a sibling pseudo on .l? Instead use .l below. */
+        .tesla-anim .s2 {
+          width: 8.9vmin; height: 1.4vmin; background: #e81b22;
+          left: 28.2vmin; top: 5.3vmin;
+          border-top-left-radius: 4vmin;
+        }
+        .tesla-anim .s2::before {
+          width: 1.6vmin; height: 4.3vmin; background: #e81b22;
+          left: 7.3vmin; top: -2.9vmin;
+        }
 
         /* L */
         .tesla-anim .l {
@@ -156,36 +170,40 @@ export default function TransitionOverlay({ duration = 3700 }: { duration?: numb
         .tesla-anim .underline-wrap {
           position: relative;
           width: 67vmin;
-          height: 0.5vmin;
-          margin-top: 1vmin;
+          height: 0.45vmin;
+          top: 0.8vmin;
+          overflow: hidden;
+          background: transparent;
         }
         .tesla-anim .underline {
           position: absolute;
           left: 0; top: 0;
-          height: 0.5vmin;
-          width: 0;
+          height: 0.45vmin;
+          width: 67vmin;
           background: #e81b22;
           border-radius: 1vmin;
-          opacity: 0;
+          clip-path: inset(0 100% 0 0);
+          will-change: clip-path;
+          box-shadow: 0 0.3vmin 1vmin rgba(232,27,34,0.5), 0 0.1vmin 0.4vmin rgba(232,27,34,0.35);
         }
 
         @keyframes letterIn {
-          0%   { opacity: 0; transform: translateY(-30px) scaleY(0.7); }
-          60%  { opacity: 1; transform: translateY(4px) scaleY(1.04); }
-          80%  { transform: translateY(-2px) scaleY(0.98); }
+          0%   { opacity: 0; transform: translateY(-20px) scaleY(0.7); }
+          55%  { opacity: 1; transform: translateY(3px) scaleY(1.04); }
+          75%  { opacity: 1; transform: translateY(-2px) scaleY(0.98); }
           100% { opacity: 1; transform: translateY(0) scaleY(1); }
         }
         @keyframes letterOut {
           0%   { opacity: 1; transform: translateY(0) scaleY(1); }
-          100% { opacity: 0; transform: translateY(24px) scaleY(0.7); }
+          100% { opacity: 0; transform: translateY(22px) scaleY(0.65); }
         }
         @keyframes lineIn {
-          0%   { width: 0; opacity: 1; }
-          100% { width: 67vmin; opacity: 1; }
+          0%   { clip-path: inset(0 100% 0 0); }
+          100% { clip-path: inset(0 0% 0 0); }
         }
         @keyframes lineOut {
-          0%   { width: 67vmin; opacity: 1; left: 0; }
-          100% { width: 0; opacity: 1; left: 67vmin; }
+          0%   { clip-path: inset(0 0% 0 0); }
+          100% { clip-path: inset(0 100% 0 0); }
         }
       `}</style>
     </div>
