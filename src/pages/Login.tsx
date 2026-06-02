@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Zap, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const REMEMBER_KEY = "tv_remember_email";
@@ -21,7 +21,6 @@ const Login = () => {
   const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
-const isBlocked = new URLSearchParams(location.search).get("blocked") === "true";
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState(
     typeof window !== "undefined" ? localStorage.getItem(REMEMBER_KEY) ?? "" : ""
