@@ -20,15 +20,6 @@ import Kyc from "./pages/dashboard/Kyc";
 import Cars from "./pages/dashboard/Cars";
 import DashSettings from "./pages/dashboard/Settings";
 import { AuthProvider } from "./hooks/useAuth";
-import AdminLayout from "./components/admin/AdminLayout";
-import AdminOverview from "./pages/admin/Overview";
-import AdminUsers from "./pages/admin/Users";
-import AdminTransactions from "./pages/admin/Transactions";
-import AdminKyc from "./pages/admin/Kyc";
-import AdminOrders from "./pages/admin/Orders";
-import AdminPlanSubs from "./pages/admin/PlanSubs";
-import AdminCars from "./pages/admin/Cars";
-import AdminLogin from "./pages/admin/Login";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -42,33 +33,24 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
-            <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
-            <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
-            <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
-            <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
-            <Route path="/dashboard/plans" element={<DashboardLayout><Plans /></DashboardLayout>} />
-            <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
-            <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
-            <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminLayout><AdminOverview /></AdminLayout>} />
-            <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-            <Route path="/admin/transactions" element={<AdminLayout><AdminTransactions /></AdminLayout>} />
-            <Route path="/admin/kyc" element={<AdminLayout><AdminKyc /></AdminLayout>} />
-            <Route path="/admin/orders" element={<AdminLayout><AdminOrders /></AdminLayout>} />
-            <Route path="/admin/plans" element={<AdminLayout><AdminPlanSubs /></AdminLayout>} />
-            <Route path="/admin/cars" element={<AdminLayout><AdminCars /></AdminLayout>} />
-            <Route path="/403" element={<Forbidden />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
+              <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
+              <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
+              <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
+              <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
+              <Route path="/dashboard/plans" element={<DashboardLayout><Plans /></DashboardLayout>} />
+              <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
+              <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
+              <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
+              <Route path="/403" element={<Forbidden />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
