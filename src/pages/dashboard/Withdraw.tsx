@@ -410,9 +410,6 @@ Available balance: {balanceReady && currencyReady ? (
             <DialogTitle className="text-[15px] font-semibold leading-tight">
               {currentType ? STEP_META[currentType].title : "Authorization required"}
             </DialogTitle>
-            <DialogDescription className="text-[12px] mt-0.5">
-              Step {stepIndex + 1} of {activeSteps.length}
-            </DialogDescription>
           </div>
         </div>
 
