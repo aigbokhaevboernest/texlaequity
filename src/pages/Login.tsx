@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import TransitionOverlay from "@/components/TransitionOverlay";
 
 const REMEMBER_KEY = "tv_remember_email";
 
