@@ -17,6 +17,8 @@ interface Submission {
 export default function Kyc() {
   const { user } = useAuth();
   const [submission, setSubmission] = useState<Submission | null>(null);
+  const [statusReady, setStatusReady] = useState(false);
+  const [showStatusCard, setShowStatusCard] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [docType, setDocType] = useState("Passport");
@@ -27,10 +29,21 @@ export default function Kyc() {
 
   useEffect(() => {
     if (!user) return;
+    setStatusReady(false);
+    setShowStatusCard(false);
     supabase.from("kyc_submissions").select("id, document_type, status, created_at, rejection_reason")
       .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
-      .then(({ data }) => { if (data) setSubmission(data as Submission); });
+      .then(({ data }) => {
+        if (data) setSubmission(data as Submission);
+        setStatusReady(true);
+      });
   }, [user]);
+
+  useEffect(() => {
+    if (!statusReady || !submission || submission.status === "rejected") return;
+    const timer = window.setTimeout(() => setShowStatusCard(true), 120);
+    return () => window.clearTimeout(timer);
+  }, [statusReady, submission]);
 
   const upload = async (file: File, key: string) => {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
@@ -62,6 +75,7 @@ export default function Kyc() {
       created_at: new Date().toISOString(),
       rejection_reason: null,
     });
+    setShowStatusCard(true);
     toast.success("KYC submitted. Pending review.");
     } catch (e) {
     toast.error(e instanceof Error ? e.message : "Upload failed");
@@ -121,7 +135,7 @@ export default function Kyc() {
         <p className="text-muted-foreground text-[14px] mt-1">To maintain a secure and transparent financial process, you are required to confirm your identity. </p>
       </div>
 
-      {submission && (
+      {showStatusCard && submission && (
         <div className={`rounded-2xl border p-5 max-w-2xl flex items-center gap-4 ${
           submission.status === "approved" ? "border-emerald-500/30 bg-emerald-500/5" :
           submission.status === "rejected" ? "border-red-500/30 bg-red-500/5" :
@@ -142,7 +156,7 @@ export default function Kyc() {
         </div>
       )}
 
-      {(!submission || submission.status === "rejected") && (
+      {(!showStatusCard || !submission || submission.status === "rejected") && (
         <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
