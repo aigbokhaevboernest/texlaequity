@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SkeletonBlock } from "@/components/ui/SkeletonBlock";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
@@ -29,7 +28,6 @@ import { AuthProvider } from "./hooks/useAuth";
 import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
-import TransitionOverlay from "./components/TransitionOverlay";
 
 const queryClient = new QueryClient();
 const isFirstLoad = typeof window !== "undefined" && !sessionStorage.getItem("tesla_app_opened");
