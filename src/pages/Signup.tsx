@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Zap, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import TransitionOverlay from "@/components/TransitionOverlay";
 import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
 const countries = COUNTRIES;
