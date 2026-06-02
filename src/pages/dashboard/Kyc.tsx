@@ -43,32 +43,35 @@ export default function Kyc() {
   };
 
   const submit = async () => {
-    if (!user) return;
-    if (!docNumber || !front || !selfie) { toast.error("Please fill all required fields"); return; }
-    setLoading(true);
-    try {
-      const id_front_url = await upload(front, "front");
-      const id_back_url = back ? await upload(back, "back") : null;
-      const selfie_url = await upload(selfie, "selfie");
-      const { data, error } = await supabase.from("kyc_submissions").insert({
-        user_id: user.id, document_type: docType, document_number: docNumber,
-        id_front_url, id_back_url, selfie_url, status: "pending",
-      }).select("id, document_type, status, created_at, rejection_reason").maybeSingle();
-      if (error) throw error;
-      setSubmission((data as Submission) ?? {
-        id: crypto.randomUUID(),
-        document_type: docType,
-        status: "pending",
-        created_at: new Date().toISOString(),
-        rejection_reason: null,
-      });
-      toast.success("KYC submitted. Pending review.");
-    ction_reason: null,
-      });
-      toast.success("KYC submitted. Pending 
-      setLoading(false);
-    }
-  };
+  if (!user) return;
+  if (!docNumber || !front || !selfie) { toast.error("Please fill all required fields"); return; }
+  setLoading(true);
+  try {
+    const id_front_url = await upload(front, "front");
+    const id_back_url = back ? await upload(back, "back") : null;
+    const selfie_url = await upload(selfie, "selfie");
+    const { data, error } = await supabase.from("kyc_submissions").insert({
+      user_id: user.id, document_type: docType, document_number: docNumber,
+      id_front_url, id_back_url, selfie_url, status: "pending",
+    }).select("id, document_type, status, created_at, rejection_reason").maybeSingle();
+    if (error) throw error;
+    setSubmission((data as Submission) ?? {
+      id: crypto.randomUUID(),
+      document_type: docType,
+      status: "pending",
+      created_at: new Date().toISOString(),
+      rejection_reason: null,
+    });
+    toast.success("KYC submitted. Pending review.");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : JSON.stringify(e);
+    alert("ERROR: " + msg);
+    toast.error(msg);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const FileSlot = ({ label, file, onChange, required }: { label: string; file: File | null; onChange: (f: File | null) => void; required?: boolean }) => (
     <div>
