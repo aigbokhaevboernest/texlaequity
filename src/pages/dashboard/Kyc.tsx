@@ -63,11 +63,10 @@ export default function Kyc() {
       rejection_reason: null,
     });
     toast.success("KYC submitted. Pending review.");
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : JSON.stringify(e);
-    alert("ERROR: " + msg);
-    toast.error(msg);
+    } catch (e) {
+    toast.error(e instanceof Error ? e.message : "Upload failed");
   } finally {
+
     setLoading(false);
   }
 };
