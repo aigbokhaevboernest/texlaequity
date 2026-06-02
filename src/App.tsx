@@ -38,10 +38,15 @@ if (typeof window !== "undefined") sessionStorage.setItem("tesla_app_opened", "1
 function RouteTransitionShell() {
   const location = useLocation();
   const [showRouteSkeleton, setShowRouteSkeleton] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const authTransition = useMemo(
     () => ["/login", "/signup"].includes(location.pathname),
     [location.pathname],
   );
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     setShowRouteSkeleton(true);
@@ -51,7 +56,7 @@ function RouteTransitionShell() {
 
   return (
     <>
-      {authTransition && !isFirstLoad && <TransitionOverlay duration={2600} />}
+      {authTransition && hasMounted && !isFirstLoad && <TransitionOverlay duration={2600} />}
       {showRouteSkeleton && !authTransition && (
         <div className="fixed inset-0 z-[70] bg-background/96 backdrop-blur-sm pointer-events-none">
           <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col gap-6 px-4 py-6 lg:px-8">
