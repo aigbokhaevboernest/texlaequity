@@ -1,191 +1,217 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/**
- * Tesla letter-drop opening animation.
- * Used on first app load and during Login <-> Signup transitions.
- *
- * Timeline (total ~3500ms):
- *   0.0s – 1.4s  letters drop in (staggered, ease-in)
- *   1.3s – 2.0s  underline draws in
- *   1.4s – 2.4s  hold
- *   2.3s – 3.0s  underline erases
- *   2.4s – 3.5s  letters drop out (reverse stagger)
- *   3.5s         overlay fades & unmounts
- */
 export default function TransitionOverlay({ duration = 3700 }: { duration?: number }) {
-  const [phase, setPhase] = useState<"play" | "out" | "gone">("play");
+  const [phase, setPhase] = useState<"play" | "gone">("play");
+  const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const underlineRef = useRef<HTMLDivElement | null>(null);
+
+  const letters = ['t', 'e', 's1', 's2', 'l', 'a'] as const;
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("out"), duration - 300);
-    const t2 = setTimeout(() => setPhase("gone"), duration);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t1 = setTimeout(() => setPhase("gone"), duration);
+    return () => clearTimeout(t1);
   }, [duration]);
+
+  useEffect(() => {
+    if (phase !== "play") return;
+
+    const els = letterRefs.current;
+    const underline = underlineRef.current;
+    if (!underline) return;
+
+    const LOOP = 3.4;
+    const IN_DUR = 0.42;
+    const OUT_DUR = 0.35;
+    const STAGGER = 0.10;
+    const HOLD = 0.55;
+
+    const lastInEnd = 0.08 + (letters.length - 1) * STAGGER + IN_DUR;
+    const lineInStart = lastInEnd - 0.05;
+    const lineInDur = 0.45;
+    const lineHold = 0.18;
+    const exitStart = lineInStart + lineInDur + lineHold;
+    const lineOutDur = 0.38;
+
+    // Reset
+    underline.style.clipPath = 'inset(0 100% 0 0)';
+    letters.forEach(k => {
+      const el = els[k];
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-20px) scaleY(0.7)';
+      }
+    });
+
+    const anim = (el: HTMLElement, keyframes: any[], duration: number, delay: number, easing = 'cubic-bezier(.22,.68,0,1.2)') => {
+      return el.animate(keyframes, { duration: duration * 1000, delay: delay * 1000, fill: 'forwards', easing });
+    };
+
+    // Letters IN
+    letters.forEach((k, i) => {
+      const el = els[k];
+      if (!el) return;
+      anim(el, [
+        { opacity: 0, transform: 'translateY(-20px) scaleY(0.7)' },
+        { opacity: 1, transform: 'translateY(3px) scaleY(1.04)', offset: 0.55 },
+        { opacity: 1, transform: 'translateY(-2px) scaleY(0.98)', offset: 0.75 },
+        { opacity: 1, transform: 'translateY(0) scaleY(1)' }
+      ], IN_DUR, 0.08 + i * STAGGER);
+    });
+
+    // Underline DRAW
+    anim(underline, [
+      { clipPath: 'inset(0 100% 0 0)' },
+      { clipPath: 'inset(0 0% 0 0)' }
+    ], lineInDur, lineInStart, 'cubic-bezier(.4,0,.2,1)');
+
+    // Letters OUT (reverse stagger)
+    [...letters].reverse().forEach((k, i) => {
+      const el = els[k];
+      if (!el) return;
+      anim(el, [
+        { opacity: 1, transform: 'translateY(0) scaleY(1)' },
+        { opacity: 0, transform: 'translateY(22px) scaleY(0.65)' }
+      ], OUT_DUR, exitStart + i * STAGGER, 'cubic-bezier(.4,0,1,1)');
+    });
+
+    // Underline ERASE
+    anim(underline, [
+      { clipPath: 'inset(0 0% 0 0)' },
+      { clipPath: 'inset(0 100% 0 0)' }
+    ], lineOutDur, exitStart, 'cubic-bezier(.4,0,1,1)');
+
+  }, [phase]);
 
   if (phase === "gone") return null;
 
-  // letter in-delays (stagger), and out-delays (reverse stagger)
-  const letters = ["t", "e", "s1", "l", "a"] as const;
-  const inDelays: Record<string, number> = { t: 100, e: 250, s1: 400, l: 550, a: 700 };
-  const outDelays: Record<string, number> = { t: 3100, e: 2950, s1: 2800, l: 2650, a: 2500 };
-
   return (
-    <div
-      className={`fixed inset-0 z-[9999] flex items-center justify-center bg-white transition-opacity duration-300 ${
-        phase === "out" ? "opacity-0 pointer-events-none" : "opacity-100"
-      }`}
-    >
-      <div className="tesla-anim">
-        <div className="logo">
-          <div className="title">
-            {letters.map((k) => (
-              <span
-                key={k}
-                className={`ltr ${k}`}
-                style={{
-                  animation: `
-                    letterIn 700ms cubic-bezier(0.55, 0.055, 0.675, 0.19) ${inDelays[k]}ms both,
-                    letterOut 600ms ease-in ${outDelays[k]}ms forwards
-                  `,
-                }}
-              />
-            ))}
-          </div>
-          <div className="underline-wrap">
-            <span
-              className="underline"
-              style={{
-                animation: `
-                  lineIn 700ms ease-out 1300ms both,
-                  lineOut 700ms ease-in 2300ms forwards
-                `,
-              }}
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+      <div className="logo">
+        <div className="title">
+          {letters.map((k) => (
+            <div
+              key={k}
+              ref={(el) => { letterRefs.current[k] = el; }}
+              className={k}
             />
-          </div>
+          ))}
+        </div>
+        <div className="underline-wrap">
+          <div ref={underlineRef} className="underline" />
         </div>
       </div>
 
-      <style>{`
-        .tesla-anim .logo {
-          position: relative;
+      <style jsx>{`
+        .logo {
           width: 67vmin;
           height: 12vmin;
-        }
-        .tesla-anim .title {
           position: relative;
+        }
+        .title {
           width: 67vmin;
           height: 9.2vmin;
+          position: relative;
         }
-        .tesla-anim .ltr,
-        .tesla-anim .ltr::before,
-        .tesla-anim .ltr::after {
+
+        .t, .e, .s1, .s2, .l, .a {
           position: absolute;
-          content: "";
-          display: block;
+          background: #e81b22;
+          will-change: transform, opacity;
         }
-        .tesla-anim .ltr { opacity: 0; }
 
         /* T */
-        .tesla-anim .t {
-          width: 10vmin; height: 1.6vmin; background: #e81b22;
-          left: 4vmin; top: 0;
-          border-bottom-right-radius: 4vmin; border-bottom-left-radius: 4vmin;
+        .t {
+          width: 10vmin; height: 1.6vmin;
+          left: -46.4vmin; top: -7.2vmin;
+          border-bottom-right-radius: 4vmin;
+          border-bottom-left-radius: 4vmin;
         }
-        .tesla-anim .t::before {
-          width: 1.5vmin; height: 7.5vmin; background: #e81b22;
+        .t::before {
+          width: 1.5vmin; height: 7.5vmin;
           left: 4.25vmin; top: 0.3vmin;
         }
+
         /* E */
-        .tesla-anim .e {
-          width: 9vmin; height: 1.6vmin; background: #e81b22;
-          left: 17vmin; top: 0;
-          border-bottom-right-radius: 4vmin; border-bottom-left-radius: 4vmin;
+        .e {
+          width: 9vmin; height: 1.6vmin;
+          left: -19.8vmin; top: -7.2vmin;
+          border-bottom-right-radius: 4vmin;
+          border-bottom-left-radius: 4vmin;
         }
-        .tesla-anim .e::before {
-          width: 9vmin; height: 1.6vmin; background: #e81b22;
-          border-bottom-right-radius: 4vmin; border-bottom-left-radius: 4vmin;
-          top: 3.1vmin; left: 0;
+        .e::before, .e::after {
+          width: 9vmin; height: 1.6vmin;
+          border-bottom-right-radius: 4vmin;
+          border-bottom-left-radius: 4vmin;
         }
-        .tesla-anim .e::after {
-          width: 9vmin; height: 1.6vmin; background: #e81b22;
-          border-bottom-right-radius: 4vmin; border-bottom-left-radius: 4vmin;
-          top: 6.3vmin; left: 0;
-        }
+        .e::before { top: 3.1vmin; }
+        .e::after { top: 6.3vmin; }
+
         /* S */
-        .tesla-anim .s1 {
-          width: 8.7vmin; height: 1.6vmin; background: #e81b22;
-          left: 28vmin; top: 0;
+        .s1 {
+          width: 8.7vmin; height: 1.6vmin;
+          left: 6.8vmin; top: -7.2vmin;
           border-bottom-right-radius: 4vmin;
         }
-        .tesla-anim .s1::before {
-          width: 1.56vmin; height: 4vmin; background: #e81b22;
-          left: 0; top: 0;
+        .s1::before {
+          width: 1.56vmin; height: 4vmin;
         }
-        .tesla-anim .s1::after {
-          width: 8.7vmin; height: 1.5vmin; background: #e81b22;
-          top: 3.2vmin; left: 0;
+        .s1::after {
+          width: 8.7vmin; height: 1.5vmin;
+          top: 3.2vmin;
         }
-        /* second part of S (lower curve) — handled inside .s1 via a nested span would be cleaner,
-           but to keep one element we tuck a second curve via a sibling pseudo on .l? Instead use .l below. */
+        .s2 {
+          width: 8.9vmin; height: 1.4vmin;
+          left: 6.3vmin; top: 5.3vmin;
+          border-top-left-radius: 4vmin;
+        }
+        .s2::before {
+          width: 1.6vmin; height: 4.3vmin;
+          left: 7.5vmin; top: -2.9vmin;
+        }
 
         /* L */
-        .tesla-anim .l {
-          width: 1.5vmin; height: 7.85vmin; background: #e81b22;
-          left: 46vmin; top: 0;
+        .l {
+          width: 1.5vmin; height: 7.85vmin;
+          left: 25.7vmin; top: -0.9vmin;
         }
-        .tesla-anim .l::before {
-          width: 8.4vmin; height: 1.4vmin; background: #e81b22;
-          top: 6.5vmin; left: 0;
+        .l::before {
+          width: 8.4vmin; height: 1.4vmin;
+          top: 6.5vmin;
           border-bottom-right-radius: 4vmin;
         }
+
         /* A */
-        .tesla-anim .a {
-          width: 9vmin; height: 1.6vmin; background: #e81b22;
-          border-bottom-right-radius: 4vmin; border-bottom-left-radius: 4vmin;
-          left: 57vmin; top: 0;
+        .a {
+          width: 9vmin; height: 1.6vmin;
+          left: 56.2vmin; top: -7.2vmin;
+          border-bottom-right-radius: 4vmin;
+          border-bottom-left-radius: 4vmin;
         }
-        .tesla-anim .a::before {
-          width: 8.7vmin; height: 4.6vmin; background: #e81b22;
+        .a::before {
+          width: 8.7vmin; height: 4.6vmin;
           left: 0.2vmin; top: 3.2vmin;
         }
-        .tesla-anim .a::after {
-          width: 5.6vmin; height: 3.2vmin; background: #fff;
+        .a::after {
+          width: 5.6vmin; height: 3.2vmin;
+          background: #fff;
           left: 1.7vmin; top: 4.7vmin;
         }
 
-        /* underline */
-        .tesla-anim .underline-wrap {
-          position: relative;
+        /* Underline */
+        .underline-wrap {
           width: 67vmin;
-          height: 0.5vmin;
-          margin-top: 1vmin;
-        }
-        .tesla-anim .underline {
+          height: 0.45vmin;
+          top: 5.6vmin;
           position: absolute;
-          left: 0; top: 0;
-          height: 0.5vmin;
-          width: 0;
+          overflow: hidden;
+        }
+        .underline {
+          position: absolute;
+          height: 100%;
+          width: 67vmin;
           background: #e81b22;
           border-radius: 1vmin;
-          opacity: 0;
-        }
-
-        @keyframes letterIn {
-          0%   { opacity: 0; transform: translateY(-30px) scaleY(0.7); }
-          60%  { opacity: 1; transform: translateY(4px) scaleY(1.04); }
-          80%  { transform: translateY(-2px) scaleY(0.98); }
-          100% { opacity: 1; transform: translateY(0) scaleY(1); }
-        }
-        @keyframes letterOut {
-          0%   { opacity: 1; transform: translateY(0) scaleY(1); }
-          100% { opacity: 0; transform: translateY(24px) scaleY(0.7); }
-        }
-        @keyframes lineIn {
-          0%   { width: 0; opacity: 1; }
-          100% { width: 67vmin; opacity: 1; }
-        }
-        @keyframes lineOut {
-          0%   { width: 67vmin; opacity: 1; left: 0; }
-          100% { width: 0; opacity: 1; left: 67vmin; }
+          box-shadow: 0 0.3vmin 1vmin rgba(232,27,34,0.5);
         }
       `}</style>
     </div>
