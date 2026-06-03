@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,35 +36,34 @@ const AppRoutes = () => {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <PageTransition key={location.pathname}>
-        <Routes location={location}>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/policies" element={<Policies />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
-          <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
-          <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
-          <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
-          <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
-          <Route path="/dashboard/plans" element={<DashboardLayout><Plans /></DashboardLayout>} />
-          <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
-          <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
-          <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
-          <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
-          <Route path="/403" element={<Forbidden />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </PageTransition>
-    </AnimatePresence>
+    <PageTransition>
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/policies" element={<Policies />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
+        <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
+        <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
+        <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
+        <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
+        <Route path="/dashboard/plans" element={<DashboardLayout><Plans /></DashboardLayout>} />
+        <Route path="/dashboard/kyc" element={<DashboardLayout><Kyc /></DashboardLayout>} />
+        <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
+        <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
+        <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
+        <Route path="/403" element={<Forbidden />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </PageTransition>
   );
 };
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
