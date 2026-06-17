@@ -20,6 +20,17 @@ const clearAuthStorage = () => {
       if (isAuthStorageKey(key)) storage.removeItem(key);
     });
   });
+
+  // Also clear the auto-logout bookkeeping keys. Previously these
+  // survived logout forever, so a stale "last activity" timestamp
+  // from a prior session would make the very next login compute a
+  // negative time-remaining and log the user out instantly.
+  try {
+    window.localStorage.removeItem(LAST_ACTIVITY_KEY);
+    window.localStorage.removeItem(FORCE_LOGOUT_KEY);
+  } catch {
+    /* ignore */
+  }
 };
 
 const clearAuthCookies = () => {
@@ -113,9 +124,12 @@ export function useAutoLogout() {
       "focus",
     ];
 
-    if (!localStorage.getItem(LAST_ACTIVITY_KEY)) {
-      setLastActivity(Date.now());
-    }
+    // Always treat the moment this hook mounts (i.e. right after a
+    // successful login, when the dashboard first renders) as fresh
+    // activity. Previously this only ran if the key was missing, so
+    // a leftover timestamp from a much earlier session would survive
+    // and immediately expire on the next login.
+    setLastActivity(Date.now());
 
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
     window.addEventListener("storage", syncFromStorage);
