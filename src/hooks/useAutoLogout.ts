@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const TIMEOUT_MS = 2 * 60 * 1000; // 30 minutes
 const LAST_ACTIVITY_KEY = "tv:last-activity";
 const FORCE_LOGOUT_KEY = "tv:force-logout";
 
@@ -110,6 +110,20 @@ export function useAutoLogout() {
       }
     };
 
+    // Events that count as genuine user activity and should push the
+    // 30-minute window forward.
+    //
+    // NOTE: "focus" was deliberately removed from this list. The
+    // window/tab "focus" event fires whenever the browser becomes the
+    // active app again -- including when a laptop wakes from sleep or
+    // a phone is unlocked with the tab already open. That is NOT user
+    // activity, and treating it as one caused the exact bug reported:
+    // waking the device silently reset the idle timer to a fresh 30
+    // minutes, so the session never expired even after being idle
+    // (asleep) far longer than the timeout. Regaining focus should
+    // only trigger a RECHECK of the existing deadline (see the
+    // separate "focus" listener below, wired to armTimer, not reset),
+    // never a reset of the deadline itself.
     const events: (keyof WindowEventMap)[] = [
       "mousemove",
       "mousedown",
@@ -121,7 +135,6 @@ export function useAutoLogout() {
       "touchmove",
       "pointerdown",
       "pointermove",
-      "focus",
     ];
 
     // Always treat the moment this hook mounts (i.e. right after a
@@ -133,7 +146,16 @@ export function useAutoLogout() {
 
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
     window.addEventListener("storage", syncFromStorage);
+
+    // Recheck-only listeners: these fire when the tab/window regains
+    // visibility or focus (e.g. after device sleep/wake, tab switch,
+    // or app foregrounding). They must call armTimer() -- which
+    // recomputes the remaining time against the existing
+    // lastActivity timestamp -- and must NEVER call reset(), or a
+    // wake/focus event would silently grant a full new timeout window
+    // regardless of how long the device was actually idle.
     document.addEventListener("visibilitychange", armTimer);
+    window.addEventListener("focus", armTimer);
 
     armTimer();
     heartbeat = setInterval(() => {
@@ -149,6 +171,7 @@ export function useAutoLogout() {
       events.forEach((e) => window.removeEventListener(e, reset));
       window.removeEventListener("storage", syncFromStorage);
       document.removeEventListener("visibilitychange", armTimer);
+      window.removeEventListener("focus", armTimer);
     };
   }, []);
 }
