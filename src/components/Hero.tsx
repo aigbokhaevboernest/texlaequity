@@ -41,15 +41,16 @@ const Hero = () => {
           </motion.p>
 
           <motion.h1
-            initial={{ opacity: 0, filter: "blur(12px)", y: 16 }}
-            animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-            transition={{ duration: 1, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
-            className="font-display font-light text-white text-[44px] sm:text-6xl md:text-7xl lg:text-[88px] leading-[0.95] tracking-[-0.04em]"
-          >
-            <RotatingWords />, grow, drive.
-            <br />
-            <span className="text-white/50">The future of wealth.</span>
-          </motion.h1>
+  initial={{ opacity: 0, filter: "blur(12px)", y: 16 }}
+  animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+  transition={{ duration: 1, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
+  className="font-display font-bold text-white text-[44px] sm:text-6xl md:text-7xl lg:text-[88px] leading-[0.95] tracking-[-0.04em]"
+>
+  <RotatingWords />, grow, drive.
+  <br />
+  <span className="text-white/50">The future of wealth.</span>
+</motion.h1>
+
 
           <motion.p
             initial={{ opacity: 0, y: 10 }}
