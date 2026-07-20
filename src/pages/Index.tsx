@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LiveStats from "@/components/LiveStats";
+import Vision from "@/components/Vision";
 import TeslaInventory from "@/components/TeslaInventory";
 import InvestmentPlans from "@/components/InvestmentPlans";
 import About from "@/components/About";
@@ -16,6 +17,7 @@ const Index = () => {
       <main>
         <Hero />
         <LiveStats />
+        <Vision />
         <TeslaInventory />
         <InvestmentPlans />
         <Leaderboard />
