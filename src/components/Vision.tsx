@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import elonMusk from "@/assets/elon-musk.jpg";
 
 const Vision = () => {
   return (
@@ -13,7 +14,7 @@ const Vision = () => {
           className="relative rounded-xl overflow-hidden max-h-[280px] md:max-h-[420px] mx-auto w-full max-w-[320px] md:max-w-none"
         >
           <img
-            src="/images/elon-musk.jpg"
+            src={elonMusk}
             alt="Elon Musk"
             className="w-full h-full object-cover object-top rounded-xl"
           />
