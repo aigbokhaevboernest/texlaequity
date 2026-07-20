@@ -7,9 +7,25 @@ const stats = [
 
 const StatsTicker = () => {
   return (
-    <section id="stats" className="relative py-24 border-t border-border/60">
+    <section id="stats" className="relative py-8 md:py-24 border-t border-border/60">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border/60 rounded-2xl overflow-hidden">
+        {/* Mobile: compact horizontal scroll ticker */}
+        <div className="flex md:hidden items-center gap-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
+          {stats.map((s, i) => (
+            <div key={s.label} className="flex items-center gap-3 shrink-0">
+              {i !== 0 && <span className="text-foreground/30 text-xs">•</span>}
+              <p className="label-mono text-foreground/40 text-[11px]">
+                {s.label}
+              </p>
+              <p className="font-display text-base font-medium text-foreground">
+                {s.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: full grid */}
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-px bg-border/60 rounded-2xl overflow-hidden">
           {stats.map((s) => (
             <div key={s.label} className="bg-background p-8 lg:p-10">
               <p className="label-mono text-foreground/40 mb-3">{s.label}</p>
