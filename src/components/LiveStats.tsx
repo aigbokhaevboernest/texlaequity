@@ -53,13 +53,23 @@ const Counter = ({ stat }: { stat: Stat }) => {
   );
 };
 
-const StatPill = ({ stat }: { stat: Stat }) => (
-  <div className="flex items-center gap-4 px-6 py-4 mx-2 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm whitespace-nowrap">
+const StatPill = ({ stat, compact }: { stat: Stat; compact?: boolean }) => (
+  <div
+    className={`flex items-center gap-2 md:gap-4 ${
+      compact ? "px-4 py-2 mx-1.5" : "px-6 py-4 mx-2"
+    } rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm whitespace-nowrap shrink-0`}
+  >
     <div className="flex items-center gap-2">
       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-      <span className="label-mono text-foreground/45">{stat.label}</span>
+      <span className="label-mono text-foreground/45 text-[10px] md:text-xs">
+        {stat.label}
+      </span>
     </div>
-    <span className="font-display text-xl md:text-2xl font-light tracking-tight text-foreground">
+    <span
+      className={`font-display font-light tracking-tight text-foreground ${
+        compact ? "text-base" : "text-xl md:text-2xl"
+      }`}
+    >
       <Counter stat={stat} />
     </span>
   </div>
@@ -77,18 +87,13 @@ const LiveStats = () => {
       <div className="pointer-events-none absolute inset-y-0 left-0 w-12 md:w-24 z-10 bg-gradient-to-r from-background to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-12 md:w-24 z-10 bg-gradient-to-l from-background to-transparent" />
 
-      {/* Mobile: compact single-row scrollable ticker */}
-      <div className="md:hidden flex items-center gap-4 overflow-x-auto px-6 whitespace-nowrap scrollbar-hide">
-        {STATS.map((s, i) => (
-          <div key={s.label} className="flex items-center gap-2 shrink-0">
-            {i !== 0 && <span className="text-foreground/25 text-xs">•</span>}
-            <span className="w-1 h-1 rounded-full bg-primary" />
-            <p className="label-mono text-foreground/45 text-[10px]">{s.label}</p>
-            <p className="font-display text-sm font-medium text-foreground">
-              <Counter stat={s} />
-            </p>
-          </div>
-        ))}
+      {/* Mobile: auto-scrolling marquee, no manual swipe */}
+      <div className="md:hidden flex w-full overflow-hidden">
+        <div className="flex ticker-track">
+          {loop.map((s, i) => (
+            <StatPill key={`m-${s.label}-${i}`} stat={s} compact />
+          ))}
+        </div>
       </div>
 
       {/* Marquee track (desktop) */}
