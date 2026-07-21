@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 const MIN_DISPLAY_MS = 900;
 const FADE_MS = 450;
-const SESSION_KEY = "flexiq-splash-shown";
+const SESSION_KEY = "tesla-equity-splash-shown";
 
 /**
  * App-level splash screen.
@@ -44,13 +44,13 @@ export const SplashScreen = () => {
       }`}
       style={{ transitionDuration: `${FADE_MS}ms` }}
     >
-      <span className="sr-only">Loading Flexiq</span>
+      <span className="sr-only">Loading Tesla Equity</span>
 
-      <div className="flexiq-loader" />
+      <div className="tesla-loader" />
 
       <div className="mt-8 flex flex-col items-center gap-1">
         <span className="text-2xl font-semibold tracking-tight text-on-dark">
-          tesla
+          Tesla
         </span>
         <span className="text-xs uppercase tracking-[0.3em] text-on-dark-muted">
           Equity
@@ -79,7 +79,7 @@ export const SplashScreen = () => {
             radial-gradient(farthest-side at top right, currentColor 96%, #0000),
             radial-gradient(farthest-side at bottom right, currentColor 96%, #0000),
             radial-gradient(farthest-side at bottom left, currentColor 96%, #0000);
-          animation: flexiq-l40-1 1s infinite;
+          animation: tesla-l40-1 1s infinite;
         }
         .tesla-loader::after {
           background-image:
@@ -87,7 +87,7 @@ export const SplashScreen = () => {
             radial-gradient(farthest-side at top right, #0000 94%, currentColor 96%),
             radial-gradient(farthest-side at bottom right, #0000 94%, currentColor 96%),
             radial-gradient(farthest-side at bottom left, #0000 94%, currentColor 96%);
-          animation: flexiq-l40-2 1s infinite;
+          animation: tesla-l40-2 1s infinite;
         }
         @keyframes tesla-l40-1 {
           0%, 10%, 90%, 100% { inset: 0; }
