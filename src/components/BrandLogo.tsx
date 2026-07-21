@@ -4,7 +4,7 @@ export const BrandLogo = ({ className = "" }: { className?: string }) => (
   <img
     src={logo}
     alt="Tesla"
-    className={className}
+    className={`h-4 w-auto ${className}`}
   />
 );
 
