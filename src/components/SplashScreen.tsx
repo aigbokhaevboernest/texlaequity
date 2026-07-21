@@ -50,22 +50,22 @@ export const SplashScreen = () => {
 
       <div className="mt-8 flex flex-col items-center gap-1">
         <span className="text-2xl font-semibold tracking-tight text-on-dark">
-          Flexiq
+          tesla
         </span>
         <span className="text-xs uppercase tracking-[0.3em] text-on-dark-muted">
-          Verve Banking
+          Equity
         </span>
       </div>
 
       <style>{`
-        .flexiq-loader {
+        .tesla-loader {
           width: 52px;
           aspect-ratio: 1;
           color: hsl(var(--mediumblue));
           position: relative;
         }
-        .flexiq-loader::before,
-        .flexiq-loader::after {
+        .tesla-loader::before,
+        .tesla-loader::after {
           content: "";
           position: absolute;
           inset: 0;
@@ -73,7 +73,7 @@ export const SplashScreen = () => {
           background-position: 0 0, 100% 0, 100% 100%, 0 100%;
           background-repeat: no-repeat;
         }
-        .flexiq-loader::before {
+        .tesla-loader::before {
           background-image:
             radial-gradient(farthest-side at top left, currentColor 96%, #0000),
             radial-gradient(farthest-side at top right, currentColor 96%, #0000),
@@ -81,7 +81,7 @@ export const SplashScreen = () => {
             radial-gradient(farthest-side at bottom left, currentColor 96%, #0000);
           animation: flexiq-l40-1 1s infinite;
         }
-        .flexiq-loader::after {
+        .tesla-loader::after {
           background-image:
             radial-gradient(farthest-side at top left, #0000 94%, currentColor 96%),
             radial-gradient(farthest-side at top right, #0000 94%, currentColor 96%),
@@ -89,18 +89,18 @@ export const SplashScreen = () => {
             radial-gradient(farthest-side at bottom left, #0000 94%, currentColor 96%);
           animation: flexiq-l40-2 1s infinite;
         }
-        @keyframes flexiq-l40-1 {
+        @keyframes tesla-l40-1 {
           0%, 10%, 90%, 100% { inset: 0; }
           40%, 60% { inset: -10px; }
         }
-        @keyframes flexiq-l40-2 {
+        @keyframes tesla-l40-2 {
           0%, 40% { transform: rotate(0); }
           60%, 100% { transform: rotate(90deg); }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .flexiq-loader::before,
-          .flexiq-loader::after {
+          .tesla-loader::before,
+          .tesla-loader::after {
             animation: none;
           }
         }
