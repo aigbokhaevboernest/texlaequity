@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import RotatingWords from "./RotatingWords";
-import { useAuthNavigate, AuthLoaderOverlay } from "@/components/AuthNavLoader";
 
+const Hero = () => {
+  const nav = useNavigate();
 
   return (
     <section className="relative min-h-[100svh] flex flex-col overflow-hidden">
@@ -50,7 +51,6 @@ import { useAuthNavigate, AuthLoaderOverlay } from "@/components/AuthNavLoader";
   <span className="text-white/50">The future of wealth.</span>
 </motion.h1>
 
-
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -68,7 +68,7 @@ import { useAuthNavigate, AuthLoaderOverlay } from "@/components/AuthNavLoader";
           >
             <Button
               size="lg"
-              onClick={() => goTo("/signup")}
+              onClick={() => nav("/signup")}
               className="rounded-full px-7 h-11 text-[14px] font-medium group"
             >
               Start Investing
@@ -96,8 +96,6 @@ import { useAuthNavigate, AuthLoaderOverlay } from "@/components/AuthNavLoader";
           <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
         </motion.div>
       </div>
-
-      <AuthLoaderOverlay show={authLoading} />
     </section>
   );
 };
