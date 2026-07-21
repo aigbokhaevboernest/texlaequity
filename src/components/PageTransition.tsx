@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import Loader from "./Loader";
 
 function S({ className = "" }: { className?: string }) {
   return <div className={`rounded-md bg-muted/50 ${className}`} />;
@@ -204,19 +205,11 @@ function KycSkeleton() {
 function AuthSkeleton() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 space-y-5">
-        <div className="space-y-2 text-center">
-          <S className="h-8 w-40 mx-auto" />
-          <S className="h-3 w-56 mx-auto" />
-        </div>
-        <div className="space-y-2"><S className="h-3 w-16" /><S className="h-10 w-full" /></div>
-        <div className="space-y-2"><S className="h-3 w-20" /><S className="h-10 w-full" /></div>
-        <S className="h-10 w-full rounded-md" />
-        <S className="h-3 w-48 mx-auto" />
-      </div>
+      <Loader />
     </div>
   );
 }
+
 
 function LandingSkeleton() {
   return (
