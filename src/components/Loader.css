@@ -1,9 +1,9 @@
 .loader {
   width: 50px;
   aspect-ratio: 1;
-  color: #E11D2E;
+  color: #398EB6;
   position: relative;
-  animation: l40 1.25s infinite alternate;
+  animation: l40 .5s infinite alternate;
 }
 .loader:before,
 .loader:after {
@@ -20,7 +20,7 @@
     radial-gradient(farthest-side at top    right,currentColor 96%,#0000),
     radial-gradient(farthest-side at bottom right,currentColor 96%,#0000),
     radial-gradient(farthest-side at bottom left ,currentColor 96%,#0000);
-  animation: l40-1 2.5s infinite;
+  animation: l40-1 1s infinite;
 }
 .loader:after {
   background-image: 
@@ -28,7 +28,7 @@
     radial-gradient(farthest-side at top    right,#0000 94%,currentColor 96%),
     radial-gradient(farthest-side at bottom right,#0000 94%,currentColor 96%),
     radial-gradient(farthest-side at bottom left ,#0000 94%,currentColor 96%);
-  animation: l40-2 2.5s infinite;
+  animation: l40-2 1s infinite;
 }
 @keyframes l40-1 {
   0%,10%,90%,100% {inset:0}
