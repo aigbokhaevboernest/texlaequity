@@ -293,10 +293,26 @@ const DEFAULT_TRANSITION_MS = 180;
 export default function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [showSkeleton, setShowSkeleton] = useState(false);
+  const prevPathRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setShowSkeleton(true);
+    const prevPath = prevPathRef.current;
     const isAuthRoute = AUTH_PATHS.some((p) => location.pathname.startsWith(p));
+    const cameFromAuthRoute = prevPath
+      ? AUTH_PATHS.some((p) => prevPath.startsWith(p))
+      : false;
+
+    // Skip the loader only when hopping between two auth pages (e.g. login <-> signup)
+    const skipLoader = isAuthRoute && cameFromAuthRoute;
+
+    prevPathRef.current = location.pathname;
+
+    if (skipLoader) {
+      setShowSkeleton(false);
+      return;
+    }
+
+    setShowSkeleton(true);
     const duration = isAuthRoute ? LOADER_LOOP_MS * LOADER_LOOPS : DEFAULT_TRANSITION_MS;
     const t = window.setTimeout(() => setShowSkeleton(false), duration);
     return () => window.clearTimeout(t);
