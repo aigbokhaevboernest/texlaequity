@@ -204,11 +204,12 @@ function KycSkeleton() {
 
 function AuthSkeleton() {
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
       <Loader />
     </div>
   );
 }
+
 
 function LandingSkeleton() {
   return (
