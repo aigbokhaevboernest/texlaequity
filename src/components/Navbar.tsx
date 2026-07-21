@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useAuthNavigate, AuthLoaderOverlay } from "@/components/AuthNavLoader";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -10,6 +11,7 @@ const Navbar = () => {
   const { pathname } = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { loading: authLoading, goTo } = useAuthNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -60,7 +62,7 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" onClick={() => nav("/login")} className="text-[13px] hidden md:inline-flex text-white hover:bg-white/10 hover:text-white">
+                <Button variant="ghost" size="sm" onClick={() => goTo("/login")} className="text-[13px] hidden md:inline-flex text-white hover:bg-white/10 hover:text-white">
                   Log in
                 </Button>
                 <a
@@ -98,14 +100,16 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <button onClick={() => { setOpen(false); nav("/login"); }} className="py-2 text-left text-white/80 hover:text-white">Log in</button>
-                  <button onClick={() => { setOpen(false); nav("/signup"); }} className="py-2 text-left text-white/80 hover:text-white">Sign up</button>
+                  <button onClick={() => { setOpen(false); goTo("/login"); }} className="py-2 text-left text-white/80 hover:text-white">Log in</button>
+                  <button onClick={() => { setOpen(false); goTo("/signup"); }} className="py-2 text-left text-white/80 hover:text-white">Sign up</button>
                 </>
               )}
             </div>
           </div>
         )}
       </div>
+
+      <AuthLoaderOverlay show={authLoading} />
     </header>
   );
 };
