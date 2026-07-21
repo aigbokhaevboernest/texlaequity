@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
-
+import { useAuth } from "@/hooks/useAuth";
 const REMEMBER_KEY = "tv_remember_email";
 
 const loginSchema = z.object({
