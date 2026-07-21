@@ -57,7 +57,6 @@ const AppRoutes = () => {
         <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
         <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
         <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
-        <Route path="/403" element={<Forbidden />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
