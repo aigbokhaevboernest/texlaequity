@@ -33,7 +33,7 @@ const Navbar = () => {
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         <nav className="h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center" onClick={() => setOpen(false)}>
-            <img src="/tesla-wordmark.png" alt="Tesla" className="h-6 w-auto brightness-0 invert" />
+            <img src="/tesla-wordmark.png" alt="Tesla" className="h-4 w-auto brightness-0 invert" />
           </Link>
 
           <div className="hidden md:flex items-center gap-9 text-[13px] font-medium">
