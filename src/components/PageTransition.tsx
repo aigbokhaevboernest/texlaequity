@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Loader from "./Loader";
+import { ReactNode, useEffect, useState, useRef } from "react";
 
 function S({ className = "" }: { className?: string }) {
   return <div className={`rounded-md bg-muted/50 ${className}`} />;
