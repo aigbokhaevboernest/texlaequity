@@ -4,11 +4,7 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import RotatingWords from "./RotatingWords";
 import { useAuthNavigate, AuthLoaderOverlay } from "@/components/AuthNavLoader";
-import { useAuthNav } from "@/hooks/useAuthNav";
 
-const Hero = () => {
-  const nav = useNavigate();
-  const { loading: authLoading, goTo } = useAuthNavigate();
 
   return (
     <section className="relative min-h-[100svh] flex flex-col overflow-hidden">
