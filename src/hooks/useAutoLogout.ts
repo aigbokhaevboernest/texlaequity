@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const TIMEOUT_MS = 2 * 60 * 1000; // 30 minutes
+const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const LAST_ACTIVITY_KEY = "tv:last-activity";
 const FORCE_LOGOUT_KEY = "tv:force-logout";
 
