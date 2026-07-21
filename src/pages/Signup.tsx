@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -7,28 +8,33 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
 const countries = COUNTRIES;
 const currencies = CURRENCIES;
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
-const schema = z.object({
-  full_name: z.string().trim().min(2, "Min 2 characters").max(100),
-  username: z
-    .string()
-    .trim()
-    .min(3, "Min 3 characters")
-    .max(30)
-    .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, underscores only"),
-  email: z.string().trim().email("Invalid email").max(255),
-  password: z.string().min(1, "Enter a password").max(72),
-  phone: z.string().trim().min(6, "Enter a valid phone").max(20),
-  gender: z.string().min(1, "Select a gender"),
-  country: z.string().min(1, "Select a country"),
-  currency: z.string().min(1, "Select a currency"),
-});
+const schema = z
+  .object({
+    full_name: z.string().trim().min(2, "Min 2 characters").max(100),
+    username: z
+      .string()
+      .trim()
+      .min(3, "Min 3 characters")
+      .max(30)
+      .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, underscores only"),
+    email: z.string().trim().email("Invalid email").max(255),
+    phone: z.string().trim().min(6, "Enter a valid phone").max(20),
+    gender: z.string().min(1, "Select a gender"),
+    country: z.string().min(1, "Select a country"),
+    currency: z.string().min(1, "Select a currency"),
+    password: z.string().min(8, "Min 8 characters").max(72),
+    confirm_password: z.string().min(1, "Confirm your password"),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Passwords do not match",
+    path: ["confirm_password"],
+  });
 
 const nativeSelectClass =
   "mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
@@ -42,11 +48,12 @@ const Signup = () => {
     full_name: "",
     username: "",
     email: "",
-    password: "",
     phone: "",
     gender: "",
     country: "",
     currency: "",
+    password: "",
+    confirm_password: "",
   });
 
   useEffect(() => {
@@ -131,7 +138,12 @@ const Signup = () => {
           <img src="/tesla-wordmark.png" alt="Tesla" className="h-6 w-auto" />
         </Link>
 
-        <div className="glass rounded-3xl p-8 shadow-elegant">
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="glass rounded-3xl p-8 shadow-elegant"
+        >
           <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>
           <p className="text-sm text-muted-foreground mb-6">Signup to start earning.</p>
 
@@ -214,17 +226,6 @@ const Signup = () => {
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Enter password"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="country">Country</Label>
               <select
                 id="country"
@@ -256,6 +257,28 @@ const Signup = () => {
               </select>
             </div>
 
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Enter password"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="confirm_password">Confirm password</Label>
+              <Input
+                id="confirm_password"
+                type="password"
+                value={form.confirm_password}
+                onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+                placeholder="Re-enter password"
+              />
+            </div>
+
             <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
             </Button>
@@ -267,7 +290,7 @@ const Signup = () => {
               Log in
             </Link>
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
