@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import elonMusk from "@/assets/elon-musk.jpg";
+import elonMusk from "@/assets/elon-musk.jpeg";
 
 const Vision = () => {
   return (
