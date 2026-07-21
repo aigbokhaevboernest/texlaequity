@@ -286,8 +286,8 @@ function pickSkeleton(pathname: string): ReactNode {
 }
 
 const AUTH_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"];
-const LOADER_LOOP_MS = 1500; // matches Loader.css animation: l35 1.5s
-const LOADER_LOOPS = 3;
+const LOADER_LOOP_MS = 1000;
+const LOADER_LOOPS = 2;
 const DEFAULT_TRANSITION_MS = 180;
 
 export default function PageTransition({ children }: { children: ReactNode }) {
