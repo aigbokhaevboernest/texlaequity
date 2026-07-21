@@ -1,127 +1,229 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { z } from "zod";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Zap, Loader2, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 
+type ForgotStep = "email" | "code" | "password";
 
-const pwdSchema = z
-  .object({
-    pwd: z.string().min(1, "Enter a password").max(72, "Password too long"),
-    confirm: z.string(),
-  })
-  .refine((d) => d.pwd === d.confirm, { message: "Passwords don't match", path: ["confirm"] });
-
-const ResetPassword = () => {
-  const nav = useNavigate();
-  
+const ForgotPasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const [step, setStep] = useState<ForgotStep>("email");
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [done, setDone] = useState(false);
-  const [pwd, setPwd] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  useEffect(() => {
-    // Supabase fires PASSWORD_RECOVERY when the user lands from a recovery link
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setReady(true);
-    });
-    // Also handle case where session is already established (hash already processed)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  const resetModal = () => {
+    setStep("email");
+    setEmailInput("");
+    setCodeInput("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setLoading(false);
+  };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = pwdSchema.safeParse({ pwd, confirm });
-    if (!parsed.success) {
-      toast.error(parsed.error.errors[0].message);
+  const handleClose = () => {
+    resetModal();
+    onClose();
+  };
+
+  const callResetFn = async (body: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("password-reset", { body });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+
+  const handleEmailSubmit = async () => {
+    if (!emailInput.trim()) return;
+    setLoading(true);
+    try {
+      await callResetFn({ action: "request", email: emailInput.trim().toLowerCase() });
+      setLoading(false);
+      setStep("code");
+      toast.success("Code sent! Check your email.");
+    } catch (err: any) {
+      setLoading(false);
+      toast.error(err.message ?? "Something went wrong.");
+    }
+  };
+
+  const handleCodeSubmit = async () => {
+    if (codeInput.length !== 6) return;
+    setLoading(true);
+    try {
+      await callResetFn({
+        action: "verify",
+        email: emailInput.trim().toLowerCase(),
+        code: codeInput.trim(),
+      });
+      setLoading(false);
+      setStep("password");
+    } catch (err: any) {
+      setLoading(false);
+      toast.error(err.message ?? "Invalid or expired code.");
+    }
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match.");
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: parsed.data.pwd });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await callResetFn({
+        action: "reset",
+        email: emailInput.trim().toLowerCase(),
+        code: codeInput.trim(),
+        new_password: newPassword,
+      });
+      setLoading(false);
+      toast.success("Password changed successfully. You can now sign in.");
+      handleClose();
+    } catch (err: any) {
+      setLoading(false);
+      toast.error(err.message ?? "Failed to update password.");
     }
-    setDone(true);
-    toast.success("Password updated");
-    setTimeout(() => nav("/dashboard"), 1200);
   };
 
   return (
-    <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
-      <div className="w-full max-w-md relative">
-        <Link to="/" className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-elegant">
-            <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-sm rounded-2xl">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            {step !== "email" && (
+              <button
+                type="button"
+                onClick={() => setStep(step === "code" ? "email" : "code")}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+            <DialogTitle>
+              {step === "email" && "Reset your password"}
+              {step === "code" && "Enter your code"}
+              {step === "password" && "Set new password"}
+            </DialogTitle>
           </div>
-          <span className="font-display font-bold text-xl">TeslaVest</span>
-        </Link>
+        </DialogHeader>
 
-        <div className="glass rounded-3xl p-8 shadow-elegant">
-          {done ? (
-            <div className="text-center py-2">
-              <div className="w-14 h-14 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-5">
-                <CheckCircle2 className="w-7 h-7 text-success" />
-              </div>
-              <h1 className="font-display text-2xl font-light mb-2">Password updated</h1>
-              <p className="text-sm text-muted-foreground">Redirecting you to your dashboard…</p>
-            </div>
-          ) : !ready ? (
-            <div className="text-center py-6">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Verifying your reset link… If nothing happens, request a new link from{" "}
-                <Link to="/forgot-password" className="text-primary hover:underline">Forgot password</Link>.
-              </p>
-            </div>
-          ) : (
+        <div className="mt-2 space-y-4">
+          {step === "email" && (
             <>
-              <h1 className="font-display text-3xl font-light mb-2">Set a new password</h1>
-              <p className="text-sm text-muted-foreground mb-6">Set your new password to continue.</p>
-              <form onSubmit={submit} className="space-y-4">
-                <div>
-                  <Label htmlFor="pwd">New password</Label>
+              <p className="text-sm text-muted-foreground">
+                Enter the email address on your account and we'll send you a reset code.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email address</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="you@example.com"
+                  onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
+                />
+              </div>
+              <Button onClick={handleEmailSubmit} disabled={loading || !emailInput.trim()} className="w-full">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset code"}
+              </Button>
+            </>
+          )}
+
+          {step === "code" && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                We sent a 6-digit code to <strong>{emailInput}</strong>. Enter it below.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="reset-code">6-digit code</Label>
+                <Input
+                  id="reset-code"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="text-center text-xl tracking-widest font-mono"
+                  onKeyDown={(e) => e.key === "Enter" && handleCodeSubmit()}
+                />
+              </div>
+              <Button onClick={handleCodeSubmit} disabled={loading || codeInput.length !== 6} className="w-full">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify code"}
+              </Button>
+            </>
+          )}
+
+          {step === "password" && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Choose a new password. Must be at least 8 characters.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="new-pwd">New password</Label>
+                <div className="relative">
                   <Input
-                    id="pwd"
-                    type="password"
-                    autoComplete="new-password"
-                    value={pwd}
-                    onChange={(e) => setPwd(e.target.value)}
-                    placeholder="Enter new password"
-                    required
+                    id="new-pwd"
+                    type={showNew ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-                <div>
-                  <Label htmlFor="confirm">Confirm new password</Label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-pwd">Confirm new password</Label>
+                <div className="relative">
                   <Input
-                    id="confirm"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    required
+                    id="confirm-pwd"
+                    type={showConfirm ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-                <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update password"}
-                </Button>
-              </form>
+              </div>
+              <Button
+                onClick={handlePasswordSubmit}
+                disabled={loading || !newPassword || !confirmPassword}
+                className="w-full"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Change password"}
+              </Button>
             </>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default ResetPassword;
+export default ForgotPasswordModal;
