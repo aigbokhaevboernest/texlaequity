@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.png";
+import logo from "@/assets/tesla-wordmark.png";
 
 export const BrandLogo = ({ className = "" }: { className?: string }) => (
   <img
