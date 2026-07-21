@@ -35,7 +35,6 @@ const Counter = ({ stat }: { stat: Stat }) => {
     let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - t, 3);
       setVal(stat.value * eased);
       if (t < 1) raf = requestAnimationFrame(tick);
@@ -67,42 +66,29 @@ const StatPill = ({ stat }: { stat: Stat }) => (
 );
 
 const LiveStats = () => {
-  // duplicate for seamless marquee loop
   const loop = [...STATS, ...STATS];
 
   return (
     <section
       id="stats"
       aria-label="Live platform statistics"
-      className="relative py-10 border-y border-border/60 bg-surface/40 overflow-hidden"
+      className="relative py-6 md:py-10 border-y border-border/60 bg-surface/40 overflow-hidden"
     >
-      {/* Edge fade masks */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 z-10 bg-gradient-to-r from-background to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 z-10 bg-gradient-to-l from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 md:w-24 z-10 bg-gradient-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-12 md:w-24 z-10 bg-gradient-to-l from-background to-transparent" />
 
-      {/* Static grid (mobile-friendly counter view) */}
-      <div className="md:hidden max-w-[1400px] mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-2 gap-3"
-        >
-          {STATS.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-xl border border-border/60 bg-card/60 px-4 py-3"
-            >
-              <p className="label-mono text-foreground/45 text-[9px] mb-1.5">
-                {s.label}
-              </p>
-              <p className="font-display text-lg font-light tracking-tight text-foreground">
-                <Counter stat={s} />
-              </p>
-            </div>
-          ))}
-        </motion.div>
+      {/* Mobile: compact single-row scrollable ticker */}
+      <div className="md:hidden flex items-center gap-4 overflow-x-auto px-6 whitespace-nowrap scrollbar-hide">
+        {STATS.map((s, i) => (
+          <div key={s.label} className="flex items-center gap-2 shrink-0">
+            {i !== 0 && <span className="text-foreground/25 text-xs">•</span>}
+            <span className="w-1 h-1 rounded-full bg-primary" />
+            <p className="label-mono text-foreground/45 text-[10px]">{s.label}</p>
+            <p className="font-display text-sm font-medium text-foreground">
+              <Counter stat={s} />
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Marquee track (desktop) */}
