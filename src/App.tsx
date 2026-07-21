@@ -26,7 +26,6 @@ import Cars from "./pages/dashboard/Cars";
 import DashSettings from "./pages/dashboard/Settings";
 import { AuthProvider } from "./hooks/useAuth";
 import ConnectWallet from "./pages/dashboard/ConnectWallet";
-import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
