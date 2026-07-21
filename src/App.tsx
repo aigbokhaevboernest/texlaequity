@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-
+import { AuthNavProvider } from "./hooks/useAuthNav";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,6 +35,17 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const location = useLocation();
+
+  return (
+    <AuthNavProvider>
+      <PageTransition>
+        <Routes location={location}>
+          {/* ...unchanged... */}
+        </Routes>
+      </PageTransition>
+    </AuthNavProvider>
+  );
+};
 
   return (
     <PageTransition>
