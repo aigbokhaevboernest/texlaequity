@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import SplashScreen from "./components/SplashScreen";
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +29,7 @@ import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import Forbidden from "./pages/Forbidden";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
+import SplashScreen from "./components/SplashScreen";
 
 const queryClient = new QueryClient();
 
@@ -64,22 +65,22 @@ const AppRoutes = () => {
   );
 };
 
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <ErrorBoundary>
-            <AppRoutes />
-          </ErrorBoundary>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+  <SplashScreen>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <ErrorBoundary>
+              <AppRoutes />
+            </ErrorBoundary>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   </SplashScreen>
-  </QueryClientProvider>
 );
 
 export default App;
