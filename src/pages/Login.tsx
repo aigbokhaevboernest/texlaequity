@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 
 const REMEMBER_KEY = "tv_remember_email";
