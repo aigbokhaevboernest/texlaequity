@@ -149,19 +149,20 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} />
-                Remember me
-              </label>
-              <button
-                type="button"
-                onClick={() => setForgotOpen(true)}
-                className="text-primary font-medium hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
+           <div className="flex items-center justify-between text-sm text-muted-foreground">
+  <label className="flex items-center gap-2 cursor-pointer select-none">
+    <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} />
+    Remember me
+  </label>
+  <button
+    type="button"
+    onClick={() => setForgotOpen(true)}
+    className="text-primary font-medium hover:underline"
+  >
+    Forgot password?
+  </button>
+</div>
+
 
             <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Log in"}
