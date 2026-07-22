@@ -38,13 +38,16 @@ export default function PageTransition({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t);
   }, [location.pathname]);
 
-  if (showLoader) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
-        <Loader />
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  // Render the loader as an OVERLAY on top of children — never replace children.
+  // This keeps Navbar (and anything else persistent) mounted, so it never flickers.
+  return (
+    <>
+      {children}
+      {showLoader && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
+          <Loader />
+        </div>
+      )}
+    </>
+  );
 }
