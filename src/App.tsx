@@ -1,6 +1,7 @@
 import PublicLayout from "./components/PublicLayout";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,12 +40,14 @@ const AppRoutes = () => {
     <PageTransition>
       <Routes location={location}>
         <Route element={<PublicLayout />}>
-  <Route path="/" element={<Index />} />
-  <Route path="/inventory" element={<Inventory />} />
-  <Route path="/faq" element={<FaqPage />} />
-  <Route path="/terms" element={<Terms />} />
-  <Route path="/policies" element={<Policies />} />
-</Route>
+          <Route path="/" element={<Index />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/policies" element={<Policies />} />
+        </Route>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
