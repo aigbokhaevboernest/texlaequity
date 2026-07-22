@@ -89,9 +89,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const allowedWhileSuspended = isOverview; // can see balance only
 
   const handleSignOut = async () => {
-    await signOut();
-    nav("/");
-  };
+  sessionStorage.setItem("skip_transition_loader", "1");
+  await signOut();
+  nav("/");
+};
+
 
   const initials = (profile?.full_name || profile?.username || "U")
     .split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
