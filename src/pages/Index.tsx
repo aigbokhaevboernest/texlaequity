@@ -1,4 +1,3 @@
-import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LiveStats from "@/components/LiveStats";
 import Vision from "@/components/Vision";
@@ -12,8 +11,7 @@ import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <>
       <main>
         <Hero />
         <LiveStats />
@@ -26,7 +24,7 @@ const Index = () => {
         <CTASection />
       </main>
       <Footer />
-    </div>
+    </>
   );
 };
 
