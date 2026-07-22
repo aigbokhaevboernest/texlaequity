@@ -71,7 +71,7 @@ const ForgotPassword = () => {
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center shadow-elegant">
             <Zap className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
           </div>
-          <span className="font-display font-bold text-xl">TeslaVest</span>
+          <span className="font-display font-bold text-xl">Tesla Equity</span>
         </Link>
 
         <div className="glass rounded-3xl p-8 shadow-elegant">
