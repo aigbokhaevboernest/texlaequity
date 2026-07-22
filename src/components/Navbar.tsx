@@ -1,9 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { Menu, X } from "lucide-react";
-
+import BrandLogo from "@/components/BrandLogo";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -26,7 +26,6 @@ const Navbar = () => {
     { to: "/policies", label: "Privacy" },
   ];
 
-  // Dark blue palette (Tesla-like deep midnight blue) — always visible
   const navBase = "bg-[#0a1530]/95 backdrop-blur-xl border-b border-white/10 text-white";
 
   return (
@@ -34,10 +33,8 @@ const Navbar = () => {
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         <nav className="h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center -ml-6 lg:-ml-10" onClick={() => setOpen(false)}>
-  <img src="/tesla-wordmark.png" alt="Tesla" className="h-4 w-auto brightness-0 invert" />
-</Link>
-
-
+            <BrandLogo className="brightness-0 invert" />
+          </Link>
 
           <div className="hidden md:flex items-center gap-9 text-[13px] font-medium">
             {links.map((l) => (
@@ -66,9 +63,7 @@ const Navbar = () => {
                 <Button variant="ghost" size="sm" onClick={() => nav("/login")} className="text-[13px] hidden md:inline-flex text-white hover:bg-white/10 hover:text-white">
                   Log in
                 </Button>
-                <a
-                  href="mailto:jameshilterson@gmail.com?subject=Tesla%20Order%20Inquiry&body=Hello%2C%20I%27m%20interested%20in%20ordering%20a%20Tesla.%20Please%20contact%20me."
-                >
+                <a href="mailto:jameshilterson@gmail.com?subject=Tesla%20Order%20Inquiry&body=Hello%2C%20I%27m%20interested%20in%20ordering%20a%20Tesla.%20Please%20contact%20me.">
                   <Button size="sm" className="text-[13px] rounded-full px-4 h-8 bg-white text-[#0a1530] hover:bg-white/90">
                     Order Tesla
                   </Button>
@@ -113,4 +108,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default memo(Navbar);
