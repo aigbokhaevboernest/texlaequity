@@ -101,12 +101,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-mesh">
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/60">
-        <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-<Link to="/" className="flex items-center justify-start">
-  <img src="/tesla-wordmark.png" alt="Tesla" className="h-4 w-auto" />
-</Link>
+     <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
+  <Link to="/" className="flex items-center justify-start">
+    <img src="/tesla-wordmark.png" alt="Tesla" className="h-4 w-auto" />
+  </Link>
 
-
-          </Link>
 
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 pr-2">
