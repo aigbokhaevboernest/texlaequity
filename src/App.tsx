@@ -38,13 +38,13 @@ const AppRoutes = () => {
   return (
     <PageTransition>
       <Routes location={location}>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/faq" element={<FaqPage />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/policies" element={<Policies />} />
+        <Route element={<PublicLayout />}>
+  <Route path="/" element={<Index />} />
+  <Route path="/inventory" element={<Inventory />} />
+  <Route path="/faq" element={<FaqPage />} />
+  <Route path="/terms" element={<Terms />} />
+  <Route path="/policies" element={<Policies />} />
+</Route>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
