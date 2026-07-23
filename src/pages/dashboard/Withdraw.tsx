@@ -16,14 +16,11 @@ import {
   Percent,
   Receipt,
   Wallet,
-  History as HistoryIcon,
-  Clock,
-  CheckCircle2,
-  XCircle,
 } from "lucide-react";
 import { z } from "zod";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
+import WithdrawalHistory from "@/components/dashboard/WithdrawalHistory";
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
@@ -38,26 +35,6 @@ tax:  { title: "Tax code", subtitle: "Enter the Tax code assigned to your accoun
 };
 
 type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
-
-interface WithdrawalHistoryRow {
-  id: string;
-  method: string;
-  amount_usd: number;
-  status: string;
-  created_at: string;
-}
-
-const STATUS_META: Record<string, { label: string; className: string; icon: typeof Clock }> = {
-  pending: { label: "Pending", className: "bg-amber-500/10 text-amber-600 border-amber-500/20", icon: Clock },
-  approved: { label: "Approved", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", icon: CheckCircle2 },
-  completed: { label: "Completed", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", icon: CheckCircle2 },
-  rejected: { label: "Rejected", className: "bg-red-500/10 text-red-600 border-red-500/20", icon: XCircle },
-  failed: { label: "Failed", className: "bg-red-500/10 text-red-600 border-red-500/20", icon: XCircle },
-};
-
-function statusMeta(status: string) {
-  return STATUS_META[status] ?? { label: status, className: "bg-muted text-muted-foreground border-border", icon: Clock };
-}
 
 export default function Withdraw() {
 const { user } = useAuth();
@@ -76,20 +53,6 @@ return { balance: data ? Number(data.total_balance) : 0 };
 }, [user?.id], { cacheKey: user ? `withdraw-balance:${user.id}` : undefined });
 const balance = balanceData?.balance ?? 0;
 const balanceReady = balanceData !== null;
-
-// Withdrawal history: every withdrawal transaction made by this user.
-const { data: historyData, refresh: refreshHistory } = useLiveData(async () => {
-  if (!user) return { rows: [] as WithdrawalHistoryRow[] };
-  const { data } = await supabase
-    .from("transactions")
-    .select("id, method, amount_usd, status, created_at")
-    .eq("user_id", user.id)
-    .eq("type", "withdrawal")
-    .order("created_at", { ascending: false });
-  return { rows: (data as WithdrawalHistoryRow[]) ?? [] };
-}, [user?.id], { cacheKey: user ? `withdraw-history:${user.id}` : undefined });
-const history = historyData?.rows ?? [];
-const historyReady = historyData !== null;
 
 // Load default verification code once per user (separate from balance fetcher
 // so input doesn't re-render whenever balance refreshes).
@@ -114,19 +77,6 @@ useEffect(() => {
     .subscribe();
   return () => { supabase.removeChannel(ch); };
 }, [user?.id, refreshBalance]);
-
-// Realtime: reflect new withdrawals / status changes (e.g. admin approving/rejecting) in history.
-useEffect(() => {
-  if (!user) return;
-  const ch = supabase
-    .channel(`withdraw-history-${user.id}`)
-    .on("postgres_changes",
-      { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
-      () => refreshHistory())
-    .subscribe();
-  return () => { supabase.removeChannel(ch); };
-}, [user?.id, refreshHistory]);
-
 
 const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
 const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
@@ -219,7 +169,6 @@ setPendingTxId(data.id);
 setInput("");
 setStepIndex(0);
 setAuthOpen(true);
-refreshHistory();
 };
 
 const verify = async () => {
@@ -265,7 +214,6 @@ if (nextIdx >= activeSteps.length) {
   setAuthOpen(false);
   setPendingTxId(null);
   refreshBalance();
-  refreshHistory();
   toast.success("codes verified. Withdrawal is under final review.");
 } else {
   setStepIndex(nextIdx);
@@ -279,7 +227,6 @@ const cancelRequest = async () => {
 if (pendingTxId) await supabase.from("transactions").update({ status: "rejected" }).eq("id", pendingTxId);
 setAuthOpen(false);
 setPendingTxId(null);
-refreshHistory();
 };
 
 const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
@@ -330,11 +277,10 @@ Available balance: {balanceReady && currencyReady ? (
 </div>
 
   <Tabs defaultValue="crypto">
-    <TabsList className="grid w-full max-w-2xl grid-cols-4">
+    <TabsList className="grid w-full max-w-2xl grid-cols-3">
       <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
       <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
       <TabsTrigger value="others"><Wallet className="w-3.5 h-3.5 mr-1.5" /> Others</TabsTrigger>
-      <TabsTrigger value="history"><HistoryIcon className="w-3.5 h-3.5 mr-1.5" /> History</TabsTrigger>
     </TabsList>
 
     <TabsContent value="crypto" className="mt-6">
@@ -459,53 +405,10 @@ Available balance: {balanceReady && currencyReady ? (
         </Button>
       </div>
     </TabsContent>
-
-    <TabsContent value="history" className="mt-6">
-      <div className="rounded-2xl border border-border bg-card overflow-hidden max-w-2xl">
-        {!historyReady ? (
-          <div className="p-6 space-y-3">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : history.length === 0 ? (
-          <div className="p-10 flex flex-col items-center text-center gap-2">
-            <HistoryIcon className="w-6 h-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No withdrawals yet.</p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {history.map((row) => {
-              const meta = statusMeta(row.status);
-              const StatusIcon = meta.icon;
-              const date = new Date(row.created_at);
-              return (
-                <li key={row.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{row.method}</p>
-                    <p className="text-[12px] text-muted-foreground">
-                      {date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                      {" · "}
-                      {date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-medium">
-                      {currencyReady ? format(Number(row.amount_usd)) : `$${Number(row.amount_usd).toFixed(2)}`}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full border ${meta.className}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {meta.label}
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </TabsContent>
   </Tabs>
+
+  {/* Withdrawal history — now a standalone component, matching project 2 pattern */}
+  <WithdrawalHistory />
 
   <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
     <DialogContent className="max-w-md p-0 overflow-hidden border-border" style={{ borderRadius: 16 }}>
