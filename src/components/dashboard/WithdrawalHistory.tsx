@@ -15,20 +15,20 @@ interface Props {
   onResume: (txId: string, txAmount: number) => void;
 }
 
-// Tones matched to the dark card background this component renders on
-// (bg-#0F1629). Keys mirror the statuses used across transactions.
+// Light-theme tones — same status colors used in Transactions.tsx, so the
+// badges look consistent wherever they appear in the app.
 const STATUS_TONES: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
-  awaiting_code: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
-  approved: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-  completed: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-  rejected: "bg-red-500/10 text-red-400 border border-red-500/20",
-  failed: "bg-red-500/10 text-red-400 border border-red-500/20",
-  cancelled: "bg-white/10 text-white/60 border border-white/10",
+  pending: "bg-yellow-500/10 text-yellow-700 border border-yellow-500/20",
+  awaiting_code: "bg-yellow-500/10 text-yellow-700 border border-yellow-500/20",
+  approved: "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20",
+  completed: "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20",
+  rejected: "bg-red-500/10 text-red-700 border border-red-500/20",
+  failed: "bg-red-500/10 text-red-700 border border-red-500/20",
+  cancelled: "bg-muted text-muted-foreground border border-border",
 };
 
 function StatusPill({ status }: { status: string }) {
-  const tone = STATUS_TONES[status] ?? "bg-white/10 text-white/60 border border-white/10";
+  const tone = STATUS_TONES[status] ?? "bg-muted text-muted-foreground border border-border";
   return (
     <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap ${tone}`}>
       {status.replace(/_/g, " ")}
@@ -65,12 +65,12 @@ export default function WithdrawalHistory({ refreshKey, onResume }: Props) {
   }, [user?.id, refreshKey]);
 
   return (
-    <Card className="border-white/10 p-0 overflow-hidden" style={{ backgroundColor: "#0F1629" }}>
-      <div className="px-5 py-4 border-b border-white/10">
-        <h3 className="text-white font-bold text-sm">Withdrawal History</h3>
+    <Card className="border-border p-0 overflow-hidden" style={{ backgroundColor: "#F2F2F2" }}>
+      <div className="px-5 py-4 border-b border-border">
+        <h3 className="text-foreground font-bold text-sm">Withdrawal History</h3>
       </div>
       {rows === null && (
-        <div className="divide-y divide-white/10">
+        <div className="divide-y divide-border">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="px-4 py-3 flex items-center gap-3">
               <div className="flex-1 space-y-1.5">
@@ -84,10 +84,10 @@ export default function WithdrawalHistory({ refreshKey, onResume }: Props) {
         </div>
       )}
       {rows !== null && rows.length === 0 && (
-        <div className="p-6 text-center text-white/50 text-sm">No withdrawals yet.</div>
+        <div className="p-6 text-center text-muted-foreground text-sm">No withdrawals yet.</div>
       )}
       {rows && rows.length > 0 && (
-        <div className="divide-y divide-white/10">
+        <div className="divide-y divide-border">
           {rows.map((r) => {
             // "cancelled"     -> user exited the verification modal before finishing -> Continue (resume same tx)
             // "awaiting_code" -> admin assigned a further code (e.g. COT/tax) -> Continue (resume same tx)
@@ -96,20 +96,20 @@ export default function WithdrawalHistory({ refreshKey, onResume }: Props) {
             return (
               <div key={r.id} className="px-4 py-3 flex items-center gap-3 text-sm">
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-semibold tabular-nums">
+                  <div className="text-foreground font-semibold tabular-nums">
                     {Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[11px] text-white/50 truncate">
+                  <div className="text-[11px] text-muted-foreground truncate">
                     {r.method || "—"} · {new Date(r.created_at).toLocaleString()}
                   </div>
                 </div>
                 <StatusPill status={r.status} />
                 {showResume ? (
-                  <Button size="sm" variant="gold" onClick={() => onResume(r.id, Number(r.amount))}>
+                  <Button size="sm" variant="default" onClick={() => onResume(r.id, Number(r.amount))}>
                     Continue
                   </Button>
                 ) : (
-                  <Button size="sm" variant="outline" className="border-white/20 text-white/80 hover:bg-white/10" onClick={() => setDetail(r)}>
+                  <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-muted" onClick={() => setDetail(r)}>
                     View
                   </Button>
                 )}
