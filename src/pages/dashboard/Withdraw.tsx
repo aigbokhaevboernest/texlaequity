@@ -11,6 +11,7 @@ import { Loader2, Bitcoin, Landmark, ShieldAlert, ShieldCheck, Percent, Receipt,
 import { z } from "zod";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
+import WithdrawalHistory from "@/components/dashboard/WithdrawalHistory";
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
@@ -31,6 +32,10 @@ const { user } = useAuth();
 const { format, currency, ready: currencyReady } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
 const [defaultCode, setDefaultCode] = useState<string | null>(null);
+
+// Bumped after a withdrawal is created/verified so WithdrawalHistory reloads
+// immediately instead of waiting on its own realtime subscription.
+const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
 const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
 if (!user) return { balance: 0 };
@@ -160,6 +165,16 @@ setPendingTxId(data.id);
 setInput("");
 setStepIndex(0);
 setAuthOpen(true);
+setHistoryRefreshKey((k) => k + 1);
+};
+
+// Resume an existing "cancelled" / "awaiting_code" withdrawal from the
+// history list instead of creating a new transaction.
+const handleResume = (txId: string, _txAmount: number) => {
+setPendingTxId(txId);
+setInput("");
+setStepIndex(0);
+setAuthOpen(true);
 };
 
 const verify = async () => {
@@ -205,6 +220,7 @@ if (nextIdx >= activeSteps.length) {
   setAuthOpen(false);
   setPendingTxId(null);
   refreshBalance();
+  setHistoryRefreshKey((k) => k + 1);
   toast.success("codes verified. Withdrawal is under final review.");
 } else {
   setStepIndex(nextIdx);
@@ -215,9 +231,10 @@ if (nextIdx >= activeSteps.length) {
 };
 
 const cancelRequest = async () => {
-if (pendingTxId) await supabase.from("transactions").update({ status: "rejected" }).eq("id", pendingTxId);
+if (pendingTxId) await supabase.from("transactions").update({ status: "cancelled" }).eq("id", pendingTxId);
 setAuthOpen(false);
 setPendingTxId(null);
+setHistoryRefreshKey((k) => k + 1);
 };
 
 const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
@@ -397,6 +414,9 @@ Available balance: {balanceReady && currencyReady ? (
       </div>
     </TabsContent>
   </Tabs>
+
+  {/* Withdrawal history, rendered directly below the form */}
+  <WithdrawalHistory refreshKey={historyRefreshKey} symbol={currency} onResume={handleResume} />
 
   <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
     <DialogContent className="max-w-md p-0 overflow-hidden border-border" style={{ borderRadius: 16 }}>
