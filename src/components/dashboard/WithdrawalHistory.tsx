@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogTitle, DialogHeader,
 } from "@/components/ui/dialog";
-import { StatusPill } from "@/pages/dashboard/Dashboard";
 
 type Row = { id: string; amount: number; method: string | null; status: string; created_at: string };
 
