@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { InputSkeleton } from "@/components/ui/SkeletonBlock";
 
+import { CURRENCIES, COUNTRIES } from "@/lib/locations";
 
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
@@ -137,7 +138,12 @@ export default function Settings() {
               {genders.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
-          
+          <div>
+            <Label htmlFor="currency">Currency</Label>
+            <select id="currency" className={nativeSelectClass} value={form.currency} onChange={(e) => update("currency", e.target.value)}>
+              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</option>)}
+            </select>
+          </div>
           <div className="sm:col-span-2">
             <Label htmlFor="country">Country</Label>
             <select id="country" className={nativeSelectClass} value={form.country} onChange={(e) => update("country", e.target.value)}>
