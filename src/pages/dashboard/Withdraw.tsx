@@ -7,20 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Loader2,
-  Bitcoin,
-  Landmark,
-  ShieldAlert,
-  ShieldCheck,
-  Percent,
-  Receipt,
-  Wallet,
-} from "lucide-react";
+import { Loader2, Bitcoin, Landmark, ShieldAlert, ShieldCheck, Percent, Receipt, Wallet } from "lucide-react";
 import { z } from "zod";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
-import WithdrawalHistory from "@/components/dashboard/WithdrawalHistory";
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
@@ -38,10 +28,6 @@ type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
 
 export default function Withdraw() {
 const { user } = useAuth();
-// Single useCurrency() call for this whole page — WithdrawalHistory receives
-// currency via props instead of calling the hook itself, so we never open
-// two `profile-currency-${user.id}` realtime channels at once (that was
-// causing "postgres_changes callbacks after subscribe()").
 const { format, currency, ready: currencyReady } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
 const [defaultCode, setDefaultCode] = useState<string | null>(null);
@@ -81,6 +67,7 @@ useEffect(() => {
     .subscribe();
   return () => { supabase.removeChannel(ch); };
 }, [user?.id, refreshBalance]);
+
 
 const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
 const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
@@ -410,9 +397,6 @@ Available balance: {balanceReady && currencyReady ? (
       </div>
     </TabsContent>
   </Tabs>
-
-  {/* Withdrawal history — receives currency via props, not its own useCurrency() call */}
-  <WithdrawalHistory format={format} currencyReady={currencyReady} />
 
   <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
     <DialogContent className="max-w-md p-0 overflow-hidden border-border" style={{ borderRadius: 16 }}>
