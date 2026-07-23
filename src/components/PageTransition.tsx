@@ -20,7 +20,9 @@ export default function PageTransition({ children }: { children: ReactNode }) {
     const isDashboardRoute = location.pathname.startsWith("/dashboard");
     const cameFromDashboardRoute = prevPath ? prevPath.startsWith("/dashboard") : false;
 
-    const isLogoutTransition = cameFromDashboardRoute && location.pathname === "/";
+    // Leaving the dashboard for anywhere else (logout can redirect to "/",
+    // "/login", etc.) — treat it the same as a logout transition, no loader.
+    const isLogoutTransition = cameFromDashboardRoute && !isDashboardRoute;
 
     prevPathRef.current = location.pathname;
 
