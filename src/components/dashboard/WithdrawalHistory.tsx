@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogTitle, DialogHeader,
 } from "@/components/ui/dialog";
-import { StatusPill } from "@/pages/dashboard/Dashboard";
 
 type Row = { id: string; amount: number; method: string | null; status: string; created_at: string };
 
@@ -14,6 +13,27 @@ interface Props {
   refreshKey: number;
   symbol?: string;
   onResume: (txId: string, txAmount: number) => void;
+}
+
+// Tones matched to the dark card background this component renders on
+// (bg-#0F1629). Keys mirror the statuses used across transactions.
+const STATUS_TONES: Record<string, string> = {
+  pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  awaiting_code: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  approved: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  completed: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  rejected: "bg-red-500/10 text-red-400 border border-red-500/20",
+  failed: "bg-red-500/10 text-red-400 border border-red-500/20",
+  cancelled: "bg-white/10 text-white/60 border border-white/10",
+};
+
+function StatusPill({ status }: { status: string }) {
+  const tone = STATUS_TONES[status] ?? "bg-white/10 text-white/60 border border-white/10";
+  return (
+    <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap ${tone}`}>
+      {status.replace(/_/g, " ")}
+    </span>
+  );
 }
 
 export default function WithdrawalHistory({ refreshKey, onResume }: Props) {
