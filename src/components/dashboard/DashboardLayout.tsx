@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import { useState, useEffect, ReactNode } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -104,7 +105,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/60">
      <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
   <Link to="/" className="flex items-center justify-start">
-    <img src="/tesla-wordmark.png" alt="Tesla" className="h-4 w-auto" />
+    <BrandLogo className="h-4 w-auto" />
   </Link>
 
 
