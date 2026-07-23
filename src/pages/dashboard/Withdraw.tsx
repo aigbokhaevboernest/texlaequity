@@ -38,6 +38,10 @@ type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
 
 export default function Withdraw() {
 const { user } = useAuth();
+// Single useCurrency() call for this whole page — WithdrawalHistory receives
+// currency via props instead of calling the hook itself, so we never open
+// two `profile-currency-${user.id}` realtime channels at once (that was
+// causing "postgres_changes callbacks after subscribe()").
 const { format, currency, ready: currencyReady } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
 const [defaultCode, setDefaultCode] = useState<string | null>(null);
@@ -407,8 +411,8 @@ Available balance: {balanceReady && currencyReady ? (
     </TabsContent>
   </Tabs>
 
-  {/* Withdrawal history — now a standalone component, matching project 2 pattern */}
-  <WithdrawalHistory />
+  {/* Withdrawal history — receives currency via props, not its own useCurrency() call */}
+  <WithdrawalHistory format={format} currencyReady={currencyReady} />
 
   <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
     <DialogContent className="max-w-md p-0 overflow-hidden border-border" style={{ borderRadius: 16 }}>
