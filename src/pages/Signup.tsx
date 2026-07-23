@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -136,7 +137,7 @@ const Signup = () => {
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
-          <img src="/tesla-wordmark.png" alt="Tesla" className="h-6 w-auto" />
+          <BrandLogo className="h-4 w-auto" />
         </Link>
 
         <motion.div
