@@ -24,11 +24,12 @@ export default function PageTransition({ children }: { children: ReactNode }) {
 
     prevPathRef.current = location.pathname;
 
-    // Dashboard-to-dashboard: quick white flash overlay
-    if (isDashboardRoute && cameFromDashboardRoute) {
-      setShowFlash(true);
-      const t = window.setTimeout(() => setShowFlash(false), FLASH_MS);
-      return () => window.clearTimeout(t);
+    // Dashboard routes: no loader, no flash — always plain, whether arriving
+    // from outside (e.g. login) or navigating within the dashboard.
+    if (isDashboardRoute) {
+      setShowLoader(false);
+      setShowFlash(false);
+      return;
     }
 
     const skipLoader = (isAuthRoute && cameFromAuthRoute) || isLogoutTransition;
