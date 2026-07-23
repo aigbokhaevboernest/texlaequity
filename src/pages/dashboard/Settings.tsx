@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { InputSkeleton } from "@/components/ui/SkeletonBlock";
 
-import { CURRENCIES, COUNTRIES } from "@/lib/locations";
+import { COUNTRIES } from "@/lib/locations";
 
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
@@ -17,11 +17,11 @@ const nativeSelectClass =
 
 interface ProfileForm {
   full_name: string; username: string; phone: string; gender: string;
-  country: string; currency: string; address: string;
+  country: string; address: string;
 }
 
 const EMPTY: ProfileForm = {
-  full_name: "", username: "", phone: "", gender: "", country: "", currency: "USD", address: "",
+  full_name: "", username: "", phone: "", gender: "", country: "", address: "",
 };
 
 const cacheKey = (uid: string) => `settings:${uid}`;
@@ -53,7 +53,6 @@ export default function Settings() {
         phone: data.phone ?? "",
         gender: data.gender ?? "",
         country: data.country ?? "",
-        currency: data.currency ?? "USD",
         address: data.address ?? "",
       };
       setForm(next);
@@ -81,7 +80,7 @@ export default function Settings() {
     setLoading(true);
     const { error } = await supabase.from("profiles").update({
       full_name: form.full_name, username: form.username, phone: form.phone,
-      gender: form.gender, country: form.country, currency: form.currency, address: form.address,
+      gender: form.gender, country: form.country, address: form.address,
     }).eq("user_id", user.id);
     setLoading(false);
     if (error) { toast.error(error.message); return; }
@@ -110,7 +109,7 @@ export default function Settings() {
         </div>
         <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => <InputSkeleton key={i} />)}
+            {Array.from({ length: 7 }).map((_, i) => <InputSkeleton key={i} />)}
           </div>
         </div>
       </div>
@@ -136,12 +135,6 @@ export default function Settings() {
             <select id="gender" className={nativeSelectClass} value={form.gender} onChange={(e) => update("gender", e.target.value)}>
               <option value="" disabled hidden>Select Gender</option>
               {genders.map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="currency">Currency</Label>
-            <select id="currency" className={nativeSelectClass} value={form.currency} onChange={(e) => update("currency", e.target.value)}>
-              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</option>)}
             </select>
           </div>
           <div className="sm:col-span-2">
