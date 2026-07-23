@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,9 @@ export default function WithdrawalHistory({ refreshKey, onResume }: Props) {
     let cancelled = false;
     const load = () => supabase
       .from("transactions")
-      .select("id, amount, method, status, created_at")
+      // amount_usd is the actual column name on this table; aliased to `amount`
+      // so the rest of this component can stay unchanged.
+      .select("id, amount:amount_usd, method, status, created_at")
       .eq("user_id", user.id)
       .eq("type", "withdrawal")
       .order("created_at", { ascending: false })
