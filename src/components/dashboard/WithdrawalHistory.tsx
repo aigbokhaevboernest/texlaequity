@@ -9,7 +9,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { useLiveData } from "@/hooks/useLiveData";
-import { useCurrency } from "@/hooks/useCurrency";
 
 interface WithdrawalHistoryRow {
   id: string;
@@ -17,6 +16,15 @@ interface WithdrawalHistoryRow {
   amount_usd: number;
   status: string;
   created_at: string;
+}
+
+interface WithdrawalHistoryProps {
+  // Currency comes from the parent so this component doesn't open its own
+  // duplicate `useCurrency()` realtime channel (was causing a
+  // "postgres_changes callbacks after subscribe()" error when this component
+  // is rendered inside a page that also calls useCurrency()).
+  format: (amount: number) => string;
+  currencyReady: boolean;
 }
 
 const STATUS_META: Record<string, { label: string; className: string; icon: typeof Clock }> = {
@@ -31,9 +39,8 @@ function statusMeta(status: string) {
   return STATUS_META[status] ?? { label: status, className: "bg-muted text-muted-foreground border-border", icon: Clock };
 }
 
-export default function WithdrawalHistory() {
+export default function WithdrawalHistory({ format, currencyReady }: WithdrawalHistoryProps) {
   const { user } = useAuth();
-  const { format, ready: currencyReady } = useCurrency();
 
   // Withdrawal history: every withdrawal transaction made by this user.
   const { data: historyData, refresh: refreshHistory } = useLiveData(async () => {
