@@ -17,8 +17,7 @@ interface Submission {
 export default function Kyc() {
   const { user } = useAuth();
   const [submission, setSubmission] = useState<Submission | null>(null);
-  const [statusReady, setStatusReady] = useState(false);
-  const [showStatusCard, setShowStatusCard] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const [docType, setDocType] = useState("Passport");
@@ -29,21 +28,14 @@ export default function Kyc() {
 
   useEffect(() => {
     if (!user) return;
-    setStatusReady(false);
-    setShowStatusCard(false);
+    setLoadingStatus(true);
     supabase.from("kyc_submissions").select("id, document_type, status, created_at, rejection_reason")
       .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data }) => {
-        if (data) setSubmission(data as Submission);
-        setStatusReady(true);
+        setSubmission((data as Submission) ?? null);
+        setLoadingStatus(false);
       });
   }, [user]);
-
-  useEffect(() => {
-    if (!statusReady || !submission || submission.status === "rejected") return;
-    const timer = window.setTimeout(() => setShowStatusCard(true), 120);
-    return () => window.clearTimeout(timer);
-  }, [statusReady, submission]);
 
   const upload = async (file: File, key: string) => {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
@@ -75,7 +67,6 @@ export default function Kyc() {
       created_at: new Date().toISOString(),
       rejection_reason: null,
     });
-    setShowStatusCard(true);
     toast.success("KYC submitted. Pending review.");
     } catch (e) {
     toast.error(e instanceof Error ? e.message : "Upload failed");
@@ -127,6 +118,9 @@ export default function Kyc() {
     </div>
   );
 
+  const showStatusCard = !!submission && submission.status !== "rejected";
+  const showForm = !loadingStatus && (!submission || submission.status === "rejected");
+
   return (
     <div className="space-y-6">
       <div>
@@ -135,7 +129,17 @@ export default function Kyc() {
         <p className="text-muted-foreground text-[14px] mt-1">To maintain a secure and transparent financial process, you are required to confirm your identity. </p>
       </div>
 
-      {showStatusCard && submission && (
+      {loadingStatus && (
+        <div className="rounded-2xl border border-border bg-card p-5 max-w-2xl flex items-center gap-4">
+          <div className="w-5 h-5 rounded-full bg-muted animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-56 rounded bg-muted animate-pulse" />
+          </div>
+        </div>
+      )}
+
+      {!loadingStatus && showStatusCard && submission && (
         <div className={`rounded-2xl border p-5 max-w-2xl flex items-center gap-4 ${
           submission.status === "approved" ? "border-emerald-500/30 bg-emerald-500/5" :
           submission.status === "rejected" ? "border-red-500/30 bg-red-500/5" :
@@ -156,7 +160,7 @@ export default function Kyc() {
         </div>
       )}
 
-      {(!showStatusCard || !submission || submission.status === "rejected") && (
+      {showForm && (
         <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
