@@ -11,17 +11,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
-import { TrendingUp, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 
-const FEE_RATE = 0.00; // 1% platform fee
+const FEE_RATE = 0.01; // 1% platform fee
 const ADMIN_EMAIL = "admin@texlaequity.com";
 
-// Static values — update these manually whenever you want to change the displayed price.
-const STOCK_PRICE = 248.50;
-const PREVIOUS_CLOSE = 245.20;
-const PRICE_CHANGE = STOCK_PRICE - PREVIOUS_CLOSE;
-const PRICE_CHANGE_PERCENT = (PRICE_CHANGE / PREVIOUS_CLOSE) * 100;
-const MARKET_OPEN = true;
+type Quote = {
+  price: number;
+  change: number;
+  changePercent: number;
+  previousClose: number;
+  marketOpen: boolean;
+};
 
 type StockOrder = {
   id: string;
@@ -38,10 +39,23 @@ export default function TeslaStock() {
   const { format } = useCurrency();
   const navigate = useNavigate();
 
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(true);
   const [orders, setOrders] = useState<StockOrder[]>([]);
   const [buyOpen, setBuyOpen] = useState(false);
   const [shares, setShares] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadQuote = async () => {
+      const { data, error } = await supabase.functions.invoke("stock-price");
+      if (!error && data && !data.error) setQuote(data as Quote);
+      setQuoteLoading(false);
+    };
+    loadQuote();
+    const interval = setInterval(loadQuote, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -53,7 +67,7 @@ export default function TeslaStock() {
       .then(({ data }) => setOrders((data as StockOrder[] | null) ?? []));
   }, [user]);
 
-  const price = STOCK_PRICE;
+  const price = quote?.price ?? 0;
   const shareCount = Number(shares) || 0;
   const subtotal = shareCount * price;
   const fees = subtotal * FEE_RATE;
@@ -135,14 +149,24 @@ export default function TeslaStock() {
           </div>
 
           <div className="text-right">
-            <p className="font-display text-2xl font-medium">{format(price)}</p>
-            <div className={`flex items-center justify-end gap-1 text-[12px] font-medium ${PRICE_CHANGE >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-              <TrendingUp className="w-3.5 h-3.5" />
-              {PRICE_CHANGE >= 0 ? "+" : ""}{PRICE_CHANGE.toFixed(2)} ({PRICE_CHANGE_PERCENT.toFixed(2)}%)
-            </div>
-            <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${MARKET_OPEN ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
-              {MARKET_OPEN ? "Market Open" : "Market Closed"}
-            </span>
+            {quoteLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground ml-auto" />
+            ) : quote ? (
+              <>
+                <p className="font-display text-2xl font-medium">{format(price)}</p>
+                <div className={`flex items-center justify-end gap-1 text-[12px] font-medium ${quote.change >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                  {quote.change >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                  {quote.change >= 0 ? "+" : ""}{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)
+                </div>
+              </>
+            ) : (
+              <p className="text-[12px] text-muted-foreground">Price unavailable</p>
+            )}
+            {quote && (
+              <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${quote.marketOpen ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+                {quote.marketOpen ? "Market Open" : "Market Closed"}
+              </span>
+            )}
           </div>
         </div>
 
@@ -167,11 +191,11 @@ export default function TeslaStock() {
           </div>
           <div>
             <p className="text-muted-foreground">Prev. Close</p>
-            <p className="font-medium text-foreground">{format(PREVIOUS_CLOSE)}</p>
+            <p className="font-medium text-foreground">{quote ? format(quote.previousClose) : "—"}</p>
           </div>
         </div>
 
-        <Button className="w-full" onClick={openBuy}>
+        <Button className="w-full" onClick={openBuy} disabled={quoteLoading || !quote}>
           <TrendingUp className="w-4 h-4" />
           Buy Tesla Shares
         </Button>
