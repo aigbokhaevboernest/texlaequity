@@ -13,7 +13,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { TrendingUp, Loader2 } from "lucide-react";
 
-const FEE_RATE = 0.01; // 1% platform fee
+const FEE_RATE = 0.00; // 1% platform fee
 const ADMIN_EMAIL = "admin@texlaequity.com";
 
 // Static values — update these manually whenever you want to change the displayed price.
