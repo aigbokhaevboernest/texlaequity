@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,16 @@ import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 
 const wallets: Record<string, string> = {
-  BTC: "bc1qwp5fr9rnfpggp6tsqfhsyl86sffmdn8wfcu7hz",
-  ETH: "0x04B613E07bDC52C83a5e7F47548D7fB4a157bDCa",
-  USDT: "0x04B613E07bDC52C83a5e7F47548D7fB4a157bDCa",
+  BTC: "bc1q4h883jgnjaeq3dxzzakgxwnwt2hu6dxz92mg8a",
+  ETH: "0xFde3363Bb1a94365493bCEAC2D1B780de35d843c",
+  USDT: "0xFde3363Bb1a94365493bCEAC2D1B780de35d843c",
 };
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
 export default function Deposit() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [crypto, setCrypto] = useState({ coin: "BTC", amount: "" });
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -27,6 +29,12 @@ export default function Deposit() {
   const [uploadingProof, setUploadingProof] = useState(false);
   const proofRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const amountParam = searchParams.get("amount");
+    if (amountParam) {
+      setCrypto((c) => ({ ...c, amount: amountParam }));
+    }
+  }, [searchParams]);
 
   const onPickProof = (f: File | null) => {
     if (!f) { setProofFile(null); setProofPreview(null); return; }
