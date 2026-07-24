@@ -1,5 +1,3 @@
-const FINNHUB_API_KEY = Deno.env.get("FINNHUB_API_KEY")!;
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -10,29 +8,24 @@ Deno.serve(async (req) => {
 
   try {
     const res = await fetch(
-      `https://finnhub.io/api/v1/quote?symbol=TSLA&token=${FINNHUB_API_KEY}`
+      "https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=1d&range=1d"
     );
     if (!res.ok) throw new Error("Failed to fetch quote");
-    const data = await res.json();
+    const json = await res.json();
 
-    // c = current, d = change, dp = percent change, pc = previous close
-    const now = new Date();
-    const nyHour = Number(
-      new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }).format(now)
-    );
-    const nyDay = now.getUTCDay(); // rough; good enough for a status pill
-    const isWeekday = nyDay >= 1 && nyDay <= 5;
-    const isMarketHours = nyHour >= 9 && nyHour < 16;
-    const marketOpen = isWeekday && isMarketHours;
+    const result = json?.chart?.result?.[0];
+    const meta = result?.meta;
+
+    if (!meta) throw new Error("No data returned");
+
+    const price = meta.regularMarketPrice;
+    const previousClose = meta.previousClose ?? meta.chartPreviousClose;
+    const change = price - previousClose;
+    const changePercent = (change / previousClose) * 100;
+    const marketOpen = meta.marketState === "REGULAR";
 
     return new Response(
-      JSON.stringify({
-        price: data.c,
-        change: data.d,
-        changePercent: data.dp,
-        previousClose: data.pc,
-        marketOpen,
-      }),
+      JSON.stringify({ price, change, changePercent, previousClose, marketOpen }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
