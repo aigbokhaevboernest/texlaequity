@@ -14,7 +14,7 @@ import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 const wallets: Record<string, string> = {
   BTC: "bc1q4h883jgnjaeq3dxzzakgxwnwt2hu6dxz92mg8a",
   ETH: "0xFde3363Bb1a94365493bCEAC2D1B780de35d843c",
-  USDT: "0xFde3363Bb1a94365493bCEAC2D1B780de35d843c",
+  USDT: "TBZneYAbtDZop9Q4TmKM9RvuyAH7WEtYf6",
 };
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
