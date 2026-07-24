@@ -11,9 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
-import { TrendingUp, Loader2, CheckCircle2 } from "lucide-react";
+import { TrendingUp, Loader2 } from "lucide-react";
 
-const FEE_RATE = 0.00; // 0% platform fee
+const FEE_RATE = 0.01; // 1% platform fee
 const ADMIN_EMAIL = "admin@texlaequity.com";
 
 // Static values — update these manually whenever you want to change the displayed price.
@@ -42,7 +42,6 @@ export default function TeslaStock() {
   const [buyOpen, setBuyOpen] = useState(false);
   const [shares, setShares] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -52,7 +51,7 @@ export default function TeslaStock() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => setOrders((data as StockOrder[] | null) ?? []));
-  }, [user, success]);
+  }, [user]);
 
   const price = STOCK_PRICE;
   const shareCount = Number(shares) || 0;
@@ -65,7 +64,7 @@ export default function TeslaStock() {
     setBuyOpen(true);
   };
 
-    const confirmPurchase = async () => {
+  const confirmPurchase = async () => {
     if (!user || !shareCount) {
       toast.warning("Enter the number of shares you want to buy");
       return;
@@ -112,7 +111,6 @@ export default function TeslaStock() {
 
     navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
   };
-
 
   return (
     <div className="space-y-6">
@@ -210,7 +208,7 @@ export default function TeslaStock() {
         )}
       </Card>
 
-            <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
+      <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
         <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-slate-900">Buy Tesla Shares</DialogTitle>
@@ -255,3 +253,6 @@ export default function TeslaStock() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
