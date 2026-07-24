@@ -65,7 +65,7 @@ export default function TeslaStock() {
     setBuyOpen(true);
   };
 
-  const confirmPurchase = async () => {
+    const confirmPurchase = async () => {
     if (!user || !shareCount) {
       toast.warning("Enter the number of shares you want to buy");
       return;
@@ -93,7 +93,7 @@ export default function TeslaStock() {
       body: {
         email: userEmail,
         subject: "Tesla Share Purchase — Deposit Required",
-        message: `<p>Your request to purchase <strong>${shareCount} Tesla (TSLA) shares</strong> at ${format(price)}/share has been received.</p><p>Total due: <strong>${format(total)}</strong> (incl. fees).</p><p>Please complete your deposit to finalize the purchase.</p>`,
+        message: `<p>You have requested to buy Tesla shares. Continue with deposit.</p><p><strong>${shareCount} TSLA shares</strong> at ${format(price)}/share — total due: <strong>${format(total)}</strong> (incl. fees).</p>`,
       },
     }).catch(() => {});
     void supabase.functions.invoke("send-email", {
@@ -105,15 +105,14 @@ export default function TeslaStock() {
     }).catch(() => {});
 
     setSubmitting(false);
-    setSuccess(true);
-    toast.success("You've successfully purchased Tesla shares.");
+    setBuyOpen(false);
+    toast("You have requested to buy Tesla shares. Continue with deposit.", {
+      style: { background: "#2563eb", color: "#ffffff", border: "none" },
+    });
 
-    setTimeout(() => {
-      setSuccess(false);
-      setBuyOpen(false);
-      navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
-    }, 1400);
+    navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
   };
+
 
   return (
     <div className="space-y-6">
@@ -211,61 +210,48 @@ export default function TeslaStock() {
         )}
       </Card>
 
-      <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
+            <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
         <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-md">
-          {success ? (
-            <div className="py-8 flex flex-col items-center text-center gap-3">
-              <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-              <p className="font-display text-lg font-medium">You've successfully purchased Tesla shares.</p>
-              <p className="text-[13px] text-muted-foreground">Redirecting to deposit…</p>
+          <DialogHeader>
+            <DialogTitle className="text-slate-900">Buy Tesla Shares</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Enter the number of shares you'd like to buy.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-[13px]">
+            <div className="flex justify-between"><span className="text-slate-500">Company</span><span className="font-medium">Tesla Inc.</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Ticker</span><span className="font-medium">TSLA</span></div>
+
+            <div className="space-y-1.5 pt-2">
+              <Label className="text-slate-700 text-sm">Amount to buy (shares)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="any"
+                value={shares}
+                onChange={(e) => setShares(e.target.value)}
+                placeholder="e.g. 5"
+              />
             </div>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-slate-900">Buy Tesla Shares</DialogTitle>
-                <DialogDescription className="text-slate-500">
-                  Enter the number of shares you'd like to buy.
-                </DialogDescription>
-              </DialogHeader>
 
-              <div className="space-y-3 py-2 text-[13px]">
-                <div className="flex justify-between"><span className="text-slate-500">Company</span><span className="font-medium">Tesla Inc.</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Ticker</span><span className="font-medium">TSLA</span></div>
+            <div className="flex justify-between pt-2"><span className="text-slate-500">Price per share</span><span className="font-medium">{format(price)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Estimated fees</span><span className="font-medium">{format(fees)}</span></div>
+            <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
+              <span className="font-medium">Total cost</span>
+              <span className="font-semibold">{format(total)}</span>
+            </div>
+          </div>
 
-                <div className="space-y-1.5 pt-2">
-                  <Label className="text-slate-700 text-sm">Amount to buy (shares)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={shares}
-                    onChange={(e) => setShares(e.target.value)}
-                    placeholder="e.g. 5"
-                  />
-                </div>
-
-                <div className="flex justify-between pt-2"><span className="text-slate-500">Price per share</span><span className="font-medium">{format(price)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Estimated fees</span><span className="font-medium">{format(fees)}</span></div>
-                <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
-                  <span className="font-medium">Total cost</span>
-                  <span className="font-semibold">{format(total)}</span>
-                </div>
-              </div>
-
-              <DialogFooter className="flex-row gap-2 sm:gap-2">
-                <Button variant="outline" onClick={() => setBuyOpen(false)} disabled={submitting}
-                  className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100">
-                  Cancel
-                </Button>
-                <Button onClick={confirmPurchase} disabled={submitting || !shareCount} className="flex-1">
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                  Confirm Purchase
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+          <DialogFooter className="flex-row gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setBuyOpen(false)} disabled={submitting}
+              className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100">
+              Cancel
+            </Button>
+            <Button onClick={confirmPurchase} disabled={submitting || !shareCount} className="flex-1">
+              {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Confirm Purchase
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
