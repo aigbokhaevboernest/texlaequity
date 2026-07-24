@@ -9,7 +9,7 @@ import { useLiveData } from "@/hooks/useLiveData";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
-  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet,
+  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet,TrendingUp,
 } from "lucide-react";
 
 const items = [
@@ -22,6 +22,7 @@ const items = [
   { to: "/dashboard/transactions", label: "Transaction History", icon: History },
   { to: "/dashboard/kyc", label: "AML / KYC", icon: ShieldCheck },
   { to: "/dashboard/plans", label: "Trading Plans", icon: LineChart },
+  { to: "/dashboard/tesla-stock", label: "Tesla Stock", icon: TrendingUp },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
