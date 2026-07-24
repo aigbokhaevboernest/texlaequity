@@ -41,10 +41,9 @@ export default function TeslaStock() {
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(true);
-  const [shares, setShares] = useState("");
   const [orders, setOrders] = useState<StockOrder[]>([]);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [modalShares, setModalShares] = useState("");
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [shares, setShares] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -55,7 +54,7 @@ export default function TeslaStock() {
       setQuoteLoading(false);
     };
     loadQuote();
-    const interval = setInterval(loadQuote, 30000); // refresh every 30s
+    const interval = setInterval(loadQuote, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -75,31 +74,25 @@ export default function TeslaStock() {
   const fees = subtotal * FEE_RATE;
   const total = subtotal + fees;
 
-  const modalShareCount = Number(modalShares) || 0;
-  const modalSubtotal = modalShareCount * price;
-  const modalFees = modalSubtotal * FEE_RATE;
-  const modalTotal = modalSubtotal + modalFees;
-
-  const openConfirm = () => {
-    if (!shareCount || shareCount <= 0) {
-      toast.warning("Enter the number of shares you want to buy");
-      return;
-    }
-    setModalShares(shares);
-    setConfirmOpen(true);
+  const openBuy = () => {
+    setShares("");
+    setBuyOpen(true);
   };
 
   const confirmPurchase = async () => {
-    if (!user || !modalShareCount) return;
+    if (!user || !shareCount) {
+      toast.warning("Enter the number of shares you want to buy");
+      return;
+    }
     setSubmitting(true);
 
     const { error } = await supabase.from("stock_orders").insert({
       user_id: user.id,
       symbol: "TSLA",
-      shares: modalShareCount,
+      shares: shareCount,
       price_per_share: price,
-      fees: modalFees,
-      total_cost: modalTotal,
+      fees,
+      total_cost: total,
       status: "pending",
     });
 
@@ -114,34 +107,27 @@ export default function TeslaStock() {
       body: {
         email: userEmail,
         subject: "Tesla Share Purchase — Deposit Required",
-        message: `<p>Your request to purchase <strong>${modalShareCount} Tesla (TSLA) shares</strong> at ${format(price)}/share has been received.</p><p>Total due: <strong>${format(modalTotal)}</strong> (incl. fees).</p><p>Please complete your deposit to finalize the purchase.</p>`,
+        message: `<p>Your request to purchase <strong>${shareCount} Tesla (TSLA) shares</strong> at ${format(price)}/share has been received.</p><p>Total due: <strong>${format(total)}</strong> (incl. fees).</p><p>Please complete your deposit to finalize the purchase.</p>`,
       },
     }).catch(() => {});
     void supabase.functions.invoke("send-email", {
       body: {
         email: ADMIN_EMAIL,
         subject: `Stock order from ${userEmail || "user"}`,
-        message: `<p>${userEmail || "A user"} requested ${modalShareCount} TSLA shares at ${format(price)}/share — total ${format(modalTotal)}. Awaiting deposit + approval.</p>`,
+        message: `<p>${userEmail || "A user"} requested ${shareCount} TSLA shares at ${format(price)}/share — total ${format(total)}. Awaiting deposit + approval.</p>`,
       },
     }).catch(() => {});
 
     setSubmitting(false);
     setSuccess(true);
-    setConfirmOpen(false);
-    toast.success("You've successfully requested Tesla shares.");
+    toast.success("You've successfully purchased Tesla shares.");
 
     setTimeout(() => {
       setSuccess(false);
-      navigate(`/dashboard/deposit?amount=${modalTotal.toFixed(2)}`);
+      setBuyOpen(false);
+      navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
     }, 1400);
   };
-
-  const totalShares = orders.filter((o) => o.status === "approved").reduce((s, o) => s + Number(o.shares), 0);
-  const totalInvested = orders.filter((o) => o.status === "approved").reduce((s, o) => s + Number(o.total_cost), 0);
-  const avgPrice = totalShares > 0 ? totalInvested / totalShares : 0;
-  const marketValue = totalShares * price;
-  const unrealized = marketValue - totalInvested;
-  const unrealizedPct = totalInvested > 0 ? (unrealized / totalInvested) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -153,8 +139,8 @@ export default function TeslaStock() {
         </p>
       </div>
 
-      {/* Overview card */}
-      <Card className="rounded-2xl border-border p-6">
+      {/* Single overview + buy card */}
+      <Card className="rounded-2xl border-border p-6 max-w-2xl">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-display text-lg font-bold shrink-0">
@@ -194,7 +180,7 @@ export default function TeslaStock() {
           and clean energy.
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12px]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12px] mb-5">
           <div>
             <p className="text-muted-foreground">CEO</p>
             <p className="font-medium text-foreground">Elon Musk</p>
@@ -212,87 +198,15 @@ export default function TeslaStock() {
             <p className="font-medium text-foreground">{quote ? format(quote.previousClose) : "—"}</p>
           </div>
         </div>
-      </Card>
 
-      {/* Investment panel */}
-      <Card className="rounded-2xl border-border p-6 max-w-xl">
-        <h2 className="font-display text-lg font-medium mb-4">Buy Tesla Shares</h2>
-        <div className="space-y-4">
-          <div>
-            <Label>Number of shares</Label>
-            <Input
-              type="number"
-              min="0"
-              step="any"
-              value={shares}
-              onChange={(e) => setShares(e.target.value)}
-              placeholder="e.g. 5"
-            />
-          </div>
-
-          <div className="rounded-xl bg-muted/40 p-4 space-y-2 text-[13px]">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Price per share</span>
-              <span className="font-medium">{format(price)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Quantity</span>
-              <span className="font-medium">{shareCount || 0}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Estimated fees (1%)</span>
-              <span className="font-medium">{format(fees)}</span>
-            </div>
-            <div className="flex justify-between pt-2 border-t border-border text-[14px]">
-              <span className="font-medium">Total cost</span>
-              <span className="font-semibold">{format(total)}</span>
-            </div>
-          </div>
-
-          <Button className="w-full" onClick={openConfirm} disabled={quoteLoading || !quote}>
-            <TrendingUp className="w-4 h-4" />
-            Buy Tesla Shares
-          </Button>
-        </div>
-      </Card>
-
-      {/* Portfolio */}
-      <Card className="rounded-2xl border-border p-6">
-        <h2 className="font-display text-lg font-medium mb-4">Your Portfolio</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-[12px]">
-          <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-muted-foreground mb-1">Shares owned</p>
-            <p className="font-display font-medium text-[14px]">{totalShares}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-muted-foreground mb-1">Avg. price</p>
-            <p className="font-display font-medium text-[14px]">{format(avgPrice)}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-muted-foreground mb-1">Market value</p>
-            <p className="font-display font-medium text-[14px]">{format(marketValue)}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-muted-foreground mb-1">Total invested</p>
-            <p className="font-display font-medium text-[14px]">{format(totalInvested)}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-muted-foreground mb-1">Unrealized P/L</p>
-            <p className={`font-display font-medium text-[14px] ${unrealized >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-              {format(unrealized)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-muted/40 p-3">
-            <p className="text-muted-foreground mb-1">Return</p>
-            <p className={`font-display font-medium text-[14px] ${unrealizedPct >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-              {unrealizedPct.toFixed(2)}%
-            </p>
-          </div>
-        </div>
+        <Button className="w-full" onClick={openBuy} disabled={quoteLoading || !quote}>
+          <TrendingUp className="w-4 h-4" />
+          Buy Tesla Shares
+        </Button>
       </Card>
 
       {/* Transaction history */}
-      <Card className="rounded-2xl border-border overflow-hidden">
+      <Card className="rounded-2xl border-border overflow-hidden max-w-2xl">
         <div className="p-6 pb-0">
           <h2 className="font-display text-lg font-medium mb-4">Transaction History</h2>
         </div>
@@ -323,8 +237,8 @@ export default function TeslaStock() {
         )}
       </Card>
 
-      {/* Confirmation modal */}
-      <Dialog open={confirmOpen} onOpenChange={(o) => !submitting && setConfirmOpen(o)}>
+      {/* Buy modal */}
+      <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
         <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-md">
           {success ? (
             <div className="py-8 flex flex-col items-center text-center gap-3">
@@ -335,9 +249,9 @@ export default function TeslaStock() {
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle className="text-slate-900">Confirm Purchase</DialogTitle>
+                <DialogTitle className="text-slate-900">Buy Tesla Shares</DialogTitle>
                 <DialogDescription className="text-slate-500">
-                  Review your order before confirming.
+                  Enter the number of shares you'd like to buy.
                 </DialogDescription>
               </DialogHeader>
 
@@ -351,25 +265,26 @@ export default function TeslaStock() {
                     type="number"
                     min="0"
                     step="any"
-                    value={modalShares}
-                    onChange={(e) => setModalShares(e.target.value)}
+                    value={shares}
+                    onChange={(e) => setShares(e.target.value)}
+                    placeholder="e.g. 5"
                   />
                 </div>
 
                 <div className="flex justify-between pt-2"><span className="text-slate-500">Price per share</span><span className="font-medium">{format(price)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Estimated fees</span><span className="font-medium">{format(modalFees)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Estimated fees</span><span className="font-medium">{format(fees)}</span></div>
                 <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
                   <span className="font-medium">Total cost</span>
-                  <span className="font-semibold">{format(modalTotal)}</span>
+                  <span className="font-semibold">{format(total)}</span>
                 </div>
               </div>
 
               <DialogFooter className="flex-row gap-2 sm:gap-2">
-                <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={submitting}
+                <Button variant="outline" onClick={() => setBuyOpen(false)} disabled={submitting}
                   className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100">
                   Cancel
                 </Button>
-                <Button onClick={confirmPurchase} disabled={submitting || !modalShareCount} className="flex-1">
+                <Button onClick={confirmPurchase} disabled={submitting || !shareCount} className="flex-1">
                   {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                   Confirm Purchase
                 </Button>
