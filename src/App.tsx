@@ -1,7 +1,7 @@
 import PublicLayout from "./components/PublicLayout";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-
+import TeslaStock from "./pages/dashboard/TeslaStock";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -60,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/cars" element={<DashboardLayout><Cars /></DashboardLayout>} />
         <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
         <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
+        <Route path="/dashboard/tesla-stock" element={<DashboardLayout><TeslaStock /></DashboardLayout>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
