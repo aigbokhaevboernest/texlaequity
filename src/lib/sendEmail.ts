@@ -9,7 +9,7 @@ interface SendEmailParams {
 
 export async function sendEmail({ email, subject, message, first_name }: SendEmailParams) {
   const { data, error } = await supabase.functions.invoke("send-email", {
-    body: { email, subject, message, first_name },
+    body: { to: email, subject, message, first_name },
   });
 
   if (error) throw new Error(error.message);
