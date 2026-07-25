@@ -20,17 +20,13 @@ const wallets: Record<string, string> = {
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
-type ExtraField = { label: string; value: string };
+type BankField = { label: string; value: string };
 
 type Bank = {
   id: string;
-  bank_name: string;
-  account_number: string;
-  account_name: string;
-  routing_number: string | null;
-  swift_code: string | null;
   is_active: boolean;
-  extra_fields: ExtraField[] | null;
+  fields: BankField[];
+  assigned_user_ids: string[];
 };
 
 export default function Deposit() {
@@ -61,18 +57,21 @@ export default function Deposit() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!user) { setBanksLoading(false); return; }
     supabase
       .from("bank_deposit_info")
       .select("*")
       .eq("is_active", true)
+      .contains("assigned_user_ids", [user.id])
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) toast.error(error.message);
         const active = (data as Bank[] | null) ?? [];
         setBanks(active);
         if (active.length > 0) setSelectedBankId(active[0].id);
         setBanksLoading(false);
       });
-  }, []);
+  }, [user]);
 
   const onPickProof = (f: File | null) => {
     if (!f) { setProofFile(null); setProofPreview(null); return; }
@@ -128,12 +127,9 @@ export default function Deposit() {
   const submitBank = async () => {
     const bank = banks.find((b) => b.id === selectedBankId);
     if (!bank) { toast.error("Select a bank"); return; }
-    const ok = await submit(
-      `Bank Transfer - ${bank.bank_name}`,
-      bankAmount,
-      { bank_name: bank.bank_name, account_number: bank.account_number, account_name: bank.account_name },
-      { requireProof: true, file: bankProofFile }
-    );
+    const bankName = bank.fields[0]?.value ?? "Bank";
+    const extra: Record<string, unknown> = { bank_fields: bank.fields };
+    const ok = await submit(`Bank Transfer - ${bankName}`, bankAmount, extra, { requireProof: true, file: bankProofFile });
     if (ok) {
       setBankAmount("");
       setBankProofFile(null); setBankProofPreview(null);
@@ -189,7 +185,6 @@ export default function Deposit() {
   );
 
   const selectedBank = banks.find((b) => b.id === selectedBankId);
-  const hasBank = !banksLoading && banks.length > 0;
 
   return (
     <div className="space-y-6">
@@ -200,11 +195,9 @@ export default function Deposit() {
       </div>
 
       <Tabs defaultValue="crypto">
-        <TabsList className={`grid w-full max-w-2xl ${hasBank ? "grid-cols-2" : "grid-cols-1"}`}>
+        <TabsList className="grid w-full max-w-2xl grid-cols-2">
           <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
-          {hasBank && (
-            <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
-          )}
+          <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
         </TabsList>
 
         <TabsContent value="crypto" className="mt-6">
@@ -252,107 +245,68 @@ export default function Deposit() {
           </div>
         </TabsContent>
 
-        {hasBank && selectedBank && (
-          <TabsContent value="bank" className="mt-6">
-            <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-              {banks.length > 1 && (
+        <TabsContent value="bank" className="mt-6">
+          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+            {banksLoading ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
+            ) : !selectedBank ? (
+              <div className="py-10 text-center space-y-1">
+                <Landmark className="w-6 h-6 mx-auto text-muted-foreground" />
+                <p className="text-sm font-medium">No account details available</p>
+                <p className="text-xs text-muted-foreground">Contact support if you'd like to deposit by bank transfer.</p>
+              </div>
+            ) : (
+              <>
+                {banks.length > 1 && (
+                  <div>
+                    <Label htmlFor="bank-select">Bank</Label>
+                    <select
+                      id="bank-select"
+                      value={selectedBankId}
+                      onChange={(e) => setSelectedBankId(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      {banks.map((b) => (
+                        <option key={b.id} value={b.id}>{b.fields[0]?.value ?? "Bank"}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
-                  <Label htmlFor="bank-select">Bank</Label>
-                  <select
-                    id="bank-select"
-                    value={selectedBankId}
-                    onChange={(e) => setSelectedBankId(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {banks.map((b) => (
-                      <option key={b.id} value={b.id}>{b.bank_name}</option>
-                    ))}
-                  </select>
+                  <Label>Amount</Label>
+                  <Input value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} placeholder="" />
                 </div>
-              )}
 
-              <div>
-                <Label>Amount</Label>
-                <Input value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} placeholder="" />
-              </div>
+                <div className="rounded-xl bg-muted/40 p-4 space-y-2.5 text-[13px]">
+                  {selectedBank.fields.map((f, i) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{f.label}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium font-mono">{f.value}</span>
+                        <button type="button" onClick={() => copy(f.value)}>
+                          <Copy className="w-3 h-3 text-muted-foreground" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="rounded-xl bg-muted/40 p-4 space-y-2.5 text-[13px]">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Bank name</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium">{selectedBank.bank_name}</span>
-                    <button type="button" onClick={() => copy(selectedBank.bank_name)}>
-                      <Copy className="w-3 h-3 text-muted-foreground" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Account name</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium">{selectedBank.account_name}</span>
-                    <button type="button" onClick={() => copy(selectedBank.account_name)}>
-                      <Copy className="w-3 h-3 text-muted-foreground" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Account number</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium font-mono">{selectedBank.account_number}</span>
-                    <button type="button" onClick={() => copy(selectedBank.account_number)}>
-                      <Copy className="w-3 h-3 text-muted-foreground" />
-                    </button>
-                  </div>
-                </div>
-                {selectedBank.routing_number && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Routing number</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-medium font-mono">{selectedBank.routing_number}</span>
-                      <button type="button" onClick={() => copy(selectedBank.routing_number!)}>
-                        <Copy className="w-3 h-3 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {selectedBank.swift_code && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">SWIFT code</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-medium font-mono">{selectedBank.swift_code}</span>
-                      <button type="button" onClick={() => copy(selectedBank.swift_code!)}>
-                        <Copy className="w-3 h-3 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {(selectedBank.extra_fields ?? []).map((f, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <span className="text-muted-foreground">{f.label}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-medium font-mono">{f.value}</span>
-                      <button type="button" onClick={() => copy(f.value)}>
-                        <Copy className="w-3 h-3 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <ProofUploader
-                required
-                preview={bankProofPreview}
-                fileName={bankProofFile?.name}
-                fileSize={bankProofFile?.size}
-                inputRef={bankProofRef}
-                onPick={onPickBankProof}
-              />
-              <Button disabled={submitting || uploadingBankProof} onClick={submitBank} className="w-full">
-                {submitting || uploadingBankProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
-              </Button>
-            </div>
-          </TabsContent>
-        )}
+                <ProofUploader
+                  required
+                  preview={bankProofPreview}
+                  fileName={bankProofFile?.name}
+                  fileSize={bankProofFile?.size}
+                  inputRef={bankProofRef}
+                  onPick={onPickBankProof}
+                />
+                <Button disabled={submitting || uploadingBankProof} onClick={submitBank} className="w-full">
+                  {submitting || uploadingBankProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
+                </Button>
+              </>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
