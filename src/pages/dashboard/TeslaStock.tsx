@@ -158,14 +158,12 @@ export default function TeslaStock() {
                   {quote.change >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {quote.change >= 0 ? "+" : ""}{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)
                 </div>
+                <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${quote.marketOpen ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+                  {quote.marketOpen ? "Market Open" : "Market Closed"}
+                </span>
               </>
             ) : (
               <p className="text-[12px] text-muted-foreground">Price unavailable</p>
-            )}
-            {quote && (
-              <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${quote.marketOpen ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
-                {quote.marketOpen ? "Market Open" : "Market Closed"}
-              </span>
             )}
           </div>
         </div>
@@ -280,3 +278,4 @@ export default function TeslaStock() {
     </div>
   );
 }
+
