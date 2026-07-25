@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { sendEmail } from "@/lib/sendEmail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,10 @@ import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 
 type ForgotStep = "email" | "code" | "password";
+
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 const ForgotPasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [step, setStep] = useState<ForgotStep>("email");
@@ -33,18 +38,27 @@ const ForgotPasswordModal = ({ open, onClose }: { open: boolean; onClose: () => 
     onClose();
   };
 
-  const callResetFn = async (body: Record<string, unknown>) => {
-    const { data, error } = await supabase.functions.invoke("password-reset", { body });
-    if (error) throw new Error(error.message);
-    if (data?.error) throw new Error(data.error);
-    return data;
-  };
-
   const handleEmailSubmit = async () => {
     if (!emailInput.trim()) return;
     setLoading(true);
     try {
-      await callResetFn({ action: "request", email: emailInput.trim().toLowerCase() });
+      const cleanEmail = emailInput.trim().toLowerCase();
+      const resetCode = generateCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      const { error: insertError } = await supabase.from("password_reset_codes").insert({
+        email: cleanEmail,
+        code: resetCode,
+        expires_at: expiresAt,
+      });
+      if (insertError) throw new Error(insertError.message);
+
+      await sendEmail({
+        email: cleanEmail,
+        subject: "Your password reset code",
+        message: `<p>Your password reset code is:</p><p style="font-size:24px; font-weight:bold; letter-spacing:4px;">${resetCode}</p><p>This code expires in 10 minutes.</p>`,
+      });
+
       setLoading(false);
       setStep("code");
       toast.success("Code sent! Check your email.");
@@ -58,11 +72,20 @@ const ForgotPasswordModal = ({ open, onClose }: { open: boolean; onClose: () => 
     if (codeInput.length !== 6) return;
     setLoading(true);
     try {
-      await callResetFn({
-        action: "verify",
-        email: emailInput.trim().toLowerCase(),
-        code: codeInput.trim(),
-      });
+      const { data, error } = await supabase
+        .from("password_reset_codes")
+        .select("*")
+        .eq("email", emailInput.trim().toLowerCase())
+        .eq("code", codeInput.trim())
+        .eq("used", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Invalid or expired code");
+
       setLoading(false);
       setStep("password");
     } catch (err: any) {
@@ -82,12 +105,15 @@ const ForgotPasswordModal = ({ open, onClose }: { open: boolean; onClose: () => 
     }
     setLoading(true);
     try {
-      await callResetFn({
-        action: "reset",
-        email: emailInput.trim().toLowerCase(),
-        code: codeInput.trim(),
-        new_password: newPassword,
+      const { data, error } = await supabase.rpc("reset_password_with_code", {
+        p_email: emailInput.trim().toLowerCase(),
+        p_code: codeInput.trim(),
+        p_new_password: newPassword,
       });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
       setLoading(false);
       toast.success("Password changed successfully. You can now sign in.");
       handleClose();
