@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { sendEmail } from "@/lib/sendEmail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,19 +13,16 @@ const emailSchema = z.string().trim().email("Enter a valid email").max(255);
 
 type Step = "email" | "code";
 
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 const ForgotPassword = () => {
   const nav = useNavigate();
   const [step, setStep] = useState<Step>("email");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-
-  const callResetFn = async (body: Record<string, unknown>) => {
-    const { data, error } = await supabase.functions.invoke("password-reset", { body });
-    if (error) throw new Error(error.message);
-    if (data?.error) throw new Error(data.error);
-    return data;
-  };
 
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,9 +32,26 @@ const ForgotPassword = () => {
       toast.error(parsed.error.errors[0].message);
       return;
     }
+
     setLoading(true);
     try {
-      await callResetFn({ action: "request", email: parsed.data });
+      const resetCode = generateCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      const { error: insertError } = await supabase.from("password_reset_codes").insert({
+        email: parsed.data,
+        code: resetCode,
+        expires_at: expiresAt,
+      });
+      if (insertError) throw new Error(insertError.message);
+
+      await sendEmail({
+        email: parsed.data,
+        subject: "Your password reset code",
+        message: `<p>Your password reset code is:</p><p style="font-size:24px; font-weight:bold; letter-spacing:4px;">${resetCode}</p><p>This code expires in 10 minutes.</p>`,
+      });
+
+      setEmail(parsed.data);
       setLoading(false);
       setStep("code");
       toast.success("Code sent — check your inbox");
@@ -52,9 +67,25 @@ const ForgotPassword = () => {
       toast.error("Enter the 6-digit code");
       return;
     }
+
     setLoading(true);
     try {
-      await callResetFn({ action: "verify", email: email.trim().toLowerCase(), code: code.trim() });
+      const { data, error } = await supabase
+        .from("password_reset_codes")
+        .select("*")
+        .eq("email", email.trim().toLowerCase())
+        .eq("code", code.trim())
+        .eq("used", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Invalid or expired code");
+
+      await supabase.from("password_reset_codes").update({ used: true }).eq("id", data.id);
+
       setLoading(false);
       nav("/reset-password", { state: { email: email.trim().toLowerCase(), code: code.trim() } });
     } catch (err: any) {
