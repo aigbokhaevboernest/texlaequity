@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { sendEmail } from "@/lib/sendEmail";
+import { SUPPORT_EMAIL, COMPANY_NAME } from "@/lib/siteConfig";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,10 @@ const { user } = useAuth();
 const { format, currency, ready: currencyReady } = useCurrency();
 const [submitting, setSubmitting] = useState(false);
 const [defaultCode, setDefaultCode] = useState<string | null>(null);
+const [firstName, setFirstName] = useState<string>("");
 
+// Bumped after a withdrawal is created/verified so WithdrawalHistory reloads
+// immediately instead of waiting on its own realtime subscription.
 const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
 const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
@@ -48,6 +52,8 @@ return { balance: data ? Number(data.total_balance) : 0 };
 const balance = balanceData?.balance ?? 0;
 const balanceReady = balanceData !== null;
 
+// Load default verification code once per user (separate from balance fetcher
+// so input doesn't re-render whenever balance refreshes).
 useEffect(() => {
   if (!user) return;
   let active = true;
@@ -58,6 +64,19 @@ useEffect(() => {
   return () => { active = false; };
 }, [user?.id]);
 
+// Load first name for personalized email greetings.
+useEffect(() => {
+  if (!user) return;
+  let active = true;
+  supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()
+    .then(({ data }) => {
+      const name = (data as any)?.full_name?.trim();
+      if (active && name) setFirstName(name.split(" ")[0]);
+    });
+  return () => { active = false; };
+}, [user?.id]);
+
+// Realtime: reflect balance changes from admin or anywhere else.
 useEffect(() => {
   if (!user) return;
   const ch = supabase
@@ -89,8 +108,9 @@ const [stepIndex, setStepIndex] = useState(0);
 const [input, setInput] = useState("");
 const [verifying, setVerifying] = useState(false);
 
+// always include auth as first step, then any additional codes assigned
 const activeSteps = useMemo<CodeType[]>(() => {
-const steps: CodeType[] = ["auth"];
+const steps: CodeType[] = ["auth"]; // auth always required
 if (codes.some((c) => c.code_type === "cot")) steps.push("cot");
 if (codes.some((c) => c.code_type === "tax")) steps.push("tax");
 return steps;
@@ -161,8 +181,11 @@ if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
 if (user.email) {
   sendEmail({
     email: user.email,
-    subject: "Withdrawal request received",
-    message: `<p>We've received your withdrawal request of $${a.data.toFixed(2)} via ${method}.</p><p>It's now pending verification and review.</p>`,
+    first_name: firstName,
+    subject: "Withdrawal Request",
+    message: `<p>This is to inform you that your withdrawal request of $${a.data.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.</p>
+<p>For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
+<p>Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
   }).catch(() => {});
 }
 
@@ -173,6 +196,8 @@ setAuthOpen(true);
 setHistoryRefreshKey((k) => k + 1);
 };
 
+// Resume an existing "cancelled" / "awaiting_code" withdrawal from the
+// history list instead of creating a new transaction.
 const handleResume = (txId: string, _txAmount: number) => {
 setPendingTxId(txId);
 setInput("");
@@ -185,6 +210,7 @@ if (!user || !currentType) return;
 const entered = input.trim().toUpperCase();
 if (entered.length < 4) { toast.error("Enter the code"); return; }
 
+// For auth step: check account_withdrawal_codes first, fallback to default_verification_code
 if (currentType === "auth") {
   const assignedAuth = codes.find((c) => c.code_type === "auth");
   const validCode = assignedAuth
@@ -204,6 +230,7 @@ if (currentType === "auth") {
     await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", assignedAuth.id);
   }
 } else {
+  // cot / tax
   if (!currentCode) { toast.error("No code assigned for this step."); return; }
   if (entered !== currentCode.code.trim().toUpperCase()) {
     toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
@@ -224,8 +251,11 @@ if (nextIdx >= activeSteps.length) {
   if (user.email) {
     sendEmail({
       email: user.email,
-      subject: "Withdrawal verification complete",
-      message: `<p>All verification codes have been confirmed for your withdrawal request.</p><p>It's now under final review.</p>`,
+      first_name: firstName,
+      subject: "Withdrawal Verification Complete",
+      message: `<p>All verification codes have been confirmed for your withdrawal request. It's now under final review.</p>
+<p>For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
+<p>Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
     }).catch(() => {});
   }
 
@@ -426,6 +456,7 @@ Available balance: {balanceReady && currencyReady ? (
     </TabsContent>
   </Tabs>
 
+  {/* Withdrawal history, rendered directly below the form */}
   <WithdrawalHistory refreshKey={historyRefreshKey} symbol={currency} onResume={handleResume} />
 
   <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
