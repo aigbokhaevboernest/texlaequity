@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { toast } from "sonner";
 import { Loader2, Copy, Upload, X, ImageIcon, Landmark, Bitcoin } from "lucide-react";
@@ -41,7 +42,6 @@ export default function Deposit() {
 
   const [banks, setBanks] = useState<Bank[]>([]);
   const [banksLoading, setBanksLoading] = useState(true);
-  const [tab, setTab] = useState<"crypto" | "bank">("crypto");
   const [selectedBankId, setSelectedBankId] = useState<string>("");
   const [bankAmount, setBankAmount] = useState("");
   const [bankProofFile, setBankProofFile] = useState<File | null>(null);
@@ -90,18 +90,18 @@ export default function Deposit() {
   const copy = (txt: string) => { navigator.clipboard.writeText(txt); toast.success("Copied"); };
 
   const submit = async (method: string, amt: string, extra: Record<string, unknown>, opts?: { requireProof?: boolean; file?: File | null }) => {
-    if (!user) return;
+    if (!user) return false;
     const a = amountSchema.safeParse(amt);
-    if (!a.success) { toast.error(a.error.errors[0].message); return; }
+    if (!a.success) { toast.error(a.error.errors[0].message); return false; }
     const file = opts?.file ?? null;
-    if (opts?.requireProof && !file) { toast.error("Please attach proof of payment"); return; }
+    if (opts?.requireProof && !file) { toast.error("Please attach proof of payment"); return false; }
     setSubmitting(true);
     let proof_url: string | null = null;
     if (file) {
       setUploadingProof(true);
       const res = await uploadToBucket("deposit-proofs", user.id, file);
       setUploadingProof(false);
-      if (res.error) { setSubmitting(false); toast.error(res.error); return; }
+      if (res.error) { setSubmitting(false); toast.error(res.error); return false; }
       proof_url = res.path;
     }
     const { error } = await supabase.from("transactions").insert({
@@ -109,7 +109,7 @@ export default function Deposit() {
       ...(proof_url ? { proof_url } : {}), ...extra,
     });
     setSubmitting(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); return false; }
     toast.success("Deposit request submitted.");
     return true;
   };
@@ -186,6 +186,7 @@ export default function Deposit() {
   );
 
   const selectedBank = banks.find((b) => b.id === selectedBankId);
+  const hasBank = !banksLoading && banks.length > 0;
 
   return (
     <div className="space-y-6">
@@ -195,161 +196,150 @@ export default function Deposit() {
         <p className="text-muted-foreground text-[14px] mt-1">Choose a method. Funds reflect after confirmation.</p>
       </div>
 
-      {/* Tabs — Bank only shows if admin has an active bank configured */}
-      {!banksLoading && banks.length > 0 && (
-        <div className="flex gap-2 max-w-2xl">
-          <button
-            onClick={() => setTab("crypto")}
-            className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-[13px] font-medium transition-all ${
-              tab === "crypto" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
-            }`}
-          >
-            <Bitcoin className="w-4 h-4" /> Crypto
-          </button>
-          <button
-            onClick={() => setTab("bank")}
-            className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-[13px] font-medium transition-all ${
-              tab === "bank" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
-            }`}
-          >
-            <Landmark className="w-4 h-4" /> Bank Transfer
-          </button>
-        </div>
-      )}
+      <Tabs defaultValue="crypto">
+        <TabsList className={`grid w-full max-w-2xl ${hasBank ? "grid-cols-2" : "grid-cols-1"}`}>
+          <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
+          {hasBank && (
+            <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
+          )}
+        </TabsList>
 
-      {tab === "crypto" && (
-        <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="coin">Coin</Label>
-              <select
-                id="coin"
-                value={crypto.coin}
-                onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="BTC">Bitcoin (BTC)</option>
-                <option value="ETH">Ethereum (ETH)</option>
-                <option value="USDT">Tether (USDT)</option>
-              </select>
+        <TabsContent value="crypto" className="mt-6">
+          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="coin">Coin</Label>
+                <select
+                  id="coin"
+                  value={crypto.coin}
+                  onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="BTC">Bitcoin (BTC)</option>
+                  <option value="ETH">Ethereum (ETH)</option>
+                  <option value="USDT">Tether (USDT)</option>
+                </select>
+              </div>
+              <div>
+                <Label>Amount</Label>
+                <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="" />
+              </div>
             </div>
             <div>
-              <Label>Amount</Label>
-              <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="" />
+              <Label>Send to wallet address</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={wallets[crypto.coin]} className="font-mono text-xs" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(wallets[crypto.coin])}>
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.</p>
             </div>
+            <ProofUploader
+              required
+              preview={proofPreview}
+              fileName={proofFile?.name}
+              fileSize={proofFile?.size}
+              inputRef={proofRef}
+              onPick={onPickProof}
+            />
+            <Button disabled={submitting || uploadingProof} onClick={submitCrypto} className="w-full">
+              {submitting || uploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
+            </Button>
           </div>
-          <div>
-            <Label>Send to wallet address</Label>
-            <div className="flex gap-2">
-              <Input readOnly value={wallets[crypto.coin]} className="font-mono text-xs" />
-              <Button type="button" variant="outline" size="icon" onClick={() => copy(wallets[crypto.coin])}>
-                <Copy className="w-3.5 h-3.5" />
+        </TabsContent>
+
+        {hasBank && selectedBank && (
+          <TabsContent value="bank" className="mt-6">
+            <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+              {banks.length > 1 && (
+                <div>
+                  <Label htmlFor="bank-select">Bank</Label>
+                  <select
+                    id="bank-select"
+                    value={selectedBankId}
+                    onChange={(e) => setSelectedBankId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {banks.map((b) => (
+                      <option key={b.id} value={b.id}>{b.bank_name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <Label>Amount</Label>
+                <Input value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} placeholder="" />
+              </div>
+
+              <div className="rounded-xl bg-muted/40 p-4 space-y-2.5 text-[13px]">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Bank name</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">{selectedBank.bank_name}</span>
+                    <button type="button" onClick={() => copy(selectedBank.bank_name)}>
+                      <Copy className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Account name</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">{selectedBank.account_name}</span>
+                    <button type="button" onClick={() => copy(selectedBank.account_name)}>
+                      <Copy className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Account number</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium font-mono">{selectedBank.account_number}</span>
+                    <button type="button" onClick={() => copy(selectedBank.account_number)}>
+                      <Copy className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+                {selectedBank.routing_number && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Routing number</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium font-mono">{selectedBank.routing_number}</span>
+                      <button type="button" onClick={() => copy(selectedBank.routing_number!)}>
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {selectedBank.swift_code && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">SWIFT code</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium font-mono">{selectedBank.swift_code}</span>
+                      <button type="button" onClick={() => copy(selectedBank.swift_code!)}>
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <ProofUploader
+                required
+                preview={bankProofPreview}
+                fileName={bankProofFile?.name}
+                fileSize={bankProofFile?.size}
+                inputRef={bankProofRef}
+                onPick={onPickBankProof}
+              />
+              <Button disabled={submitting || uploadingBankProof} onClick={submitBank} className="w-full">
+                {submitting || uploadingBankProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.</p>
-          </div>
-          <ProofUploader
-            required
-            preview={proofPreview}
-            fileName={proofFile?.name}
-            fileSize={proofFile?.size}
-            inputRef={proofRef}
-            onPick={onPickProof}
-          />
-          <Button disabled={submitting || uploadingProof} onClick={submitCrypto} className="w-full">
-            {submitting || uploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
-          </Button>
-        </div>
-      )}
-
-      {tab === "bank" && selectedBank && (
-        <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-          {banks.length > 1 && (
-            <div>
-              <Label htmlFor="bank-select">Bank</Label>
-              <select
-                id="bank-select"
-                value={selectedBankId}
-                onChange={(e) => setSelectedBankId(e.target.value)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {banks.map((b) => (
-                  <option key={b.id} value={b.id}>{b.bank_name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div>
-            <Label>Amount</Label>
-            <Input value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} placeholder="" />
-          </div>
-
-          <div className="rounded-xl bg-muted/40 p-4 space-y-2.5 text-[13px]">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Bank name</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium">{selectedBank.bank_name}</span>
-                <button type="button" onClick={() => copy(selectedBank.bank_name)}>
-                  <Copy className="w-3 h-3 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Account name</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium">{selectedBank.account_name}</span>
-                <button type="button" onClick={() => copy(selectedBank.account_name)}>
-                  <Copy className="w-3 h-3 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Account number</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium font-mono">{selectedBank.account_number}</span>
-                <button type="button" onClick={() => copy(selectedBank.account_number)}>
-                  <Copy className="w-3 h-3 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-            {selectedBank.routing_number && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Routing number</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium font-mono">{selectedBank.routing_number}</span>
-                  <button type="button" onClick={() => copy(selectedBank.routing_number!)}>
-                    <Copy className="w-3 h-3 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
-            )}
-            {selectedBank.swift_code && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">SWIFT code</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium font-mono">{selectedBank.swift_code}</span>
-                  <button type="button" onClick={() => copy(selectedBank.swift_code!)}>
-                    <Copy className="w-3 h-3 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <ProofUploader
-            required
-            preview={bankProofPreview}
-            fileName={bankProofFile?.name}
-            fileSize={bankProofFile?.size}
-            inputRef={bankProofRef}
-            onPick={onPickBankProof}
-          />
-          <Button disabled={submitting || uploadingBankProof} onClick={submitBank} className="w-full">
-            {submitting || uploadingBankProof ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've sent the deposit"}
-          </Button>
-        </div>
-      )}
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
