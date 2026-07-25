@@ -297,7 +297,7 @@ if (nextIdx >= activeSteps.length) {
       email: user.email,
       first_name: firstName,
       subject: "Withdrawal Request",
-      message: `<p>This is to inform you that your withdrawal request of $${pendingWithdrawalInfo.amount.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.<br/><br/>${pendingWithdrawalInfo.detailsText}</p>
+      message: `<p>This is to inform you that your withdrawal request of $${pendingWithdrawalInfo.amount.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.<br/>${pendingWithdrawalInfo.detailsText}</p>
 <p>For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
 <p>Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
     }).catch(() => {});
