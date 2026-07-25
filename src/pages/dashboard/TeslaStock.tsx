@@ -139,9 +139,10 @@ export default function TeslaStock() {
       <Card className="rounded-2xl border-border p-6 max-w-2xl">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground font-display text-lg font-bold shrink-0">
-              T
-            </div>
+           <div className="w-12 h-12 rounded-xl bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
+  <img src="/tesla-icon.png" alt="Tesla" className="w-8 h-8 object-contain" />
+</div>
+
             <div>
               <p className="font-display text-lg font-medium text-foreground">Tesla Inc.</p>
               <p className="text-[12px] text-muted-foreground">TSLA · NASDAQ</p>
