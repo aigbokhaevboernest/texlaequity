@@ -18,6 +18,9 @@ const wallets: Record<string, string> = {
   USDT: "TBZneYAbtDZop9Q4TmKM9RvuyAH7WEtYf6",
 };
 
+const qrCodeUrl = (address: string) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(address)}`;
+
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
 type BankField = { label: string; value: string };
@@ -202,35 +205,55 @@ export default function Deposit() {
 
         <TabsContent value="crypto" className="mt-6">
           <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="coin">Coin</Label>
-                <select
-                  id="coin"
-                  value={crypto.coin}
-                  onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="BTC">Bitcoin (BTC)</option>
-                  <option value="ETH">Ethereum (ETH)</option>
-                  <option value="USDT">Tether (USDT)</option>
-                </select>
-              </div>
-              <div>
-                <Label>Amount</Label>
-                <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="" />
-              </div>
-            </div>
             <div>
-              <Label>Send to wallet address</Label>
-              <div className="flex gap-2">
-                <Input readOnly value={wallets[crypto.coin]} className="font-mono text-xs" />
-                <Button type="button" variant="outline" size="icon" onClick={() => copy(wallets[crypto.coin])}>
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
+              <Label htmlFor="coin">Coin</Label>
+              <div className="mt-1.5 grid grid-cols-3 gap-2">
+                {(Object.keys(wallets) as Array<keyof typeof wallets>).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCrypto({ ...crypto, coin: c })}
+                    className={`rounded-xl border py-2.5 text-sm font-medium transition ${
+                      crypto.coin === c
+                        ? "border-primary text-primary bg-primary/5"
+                        : "border-border text-muted-foreground hover:border-foreground/30"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.</p>
             </div>
+
+            <div className="rounded-xl bg-muted/40 p-5 flex flex-col items-center gap-4">
+              <img
+                src={qrCodeUrl(wallets[crypto.coin])}
+                alt={`${crypto.coin} wallet QR code`}
+                className="w-48 h-48 rounded-lg bg-white p-2"
+                width={192}
+                height={192}
+              />
+              <div className="w-full">
+                <Label className="text-[11px] tracking-wide text-muted-foreground">
+                  {crypto.coin} WALLET ADDRESS
+                </Label>
+                <div className="flex gap-2 mt-1">
+                  <Input readOnly value={wallets[crypto.coin]} className="font-mono text-xs" />
+                  <Button type="button" variant="outline" size="icon" onClick={() => copy(wallets[crypto.coin])}>
+                    <Copy className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label>Amount</Label>
+              <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="0.00" />
+            </div>
+
             <ProofUploader
               required
               preview={proofPreview}
