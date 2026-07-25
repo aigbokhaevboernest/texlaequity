@@ -29,6 +29,41 @@ tax:  { title: "Tax code", subtitle: "Enter the Tax code assigned to your accoun
 
 type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
 
+// Details carried from the initial "withdrawal requested" step through to the
+// "withdrawal successful" email sent once verification completes.
+interface PendingWithdrawalInfo {
+  amount: number;
+  method: string;
+  detailsText: string;
+}
+
+// Builds a single, human-readable line describing where the funds are being
+// sent, tailored per method. Bank/crypto/other handles show in full; card
+// numbers are masked to the last 4 digits.
+const buildMethodDetails = (method: string, body: Record<string, unknown>): string => {
+  if (method.startsWith("Crypto")) {
+    return `${method} withdrawal to wallet address: ${body.wallet_address ?? ""}`;
+  }
+  if (method === "Bank transfer") {
+    const b = (body.bank_details ?? {}) as { bank_name?: string; account_name?: string; account_no?: string; swift?: string };
+    const swiftPart = b.swift ? `, SWIFT/IBAN: ${b.swift}` : "";
+    return `Bank transfer to ${b.bank_name ?? ""}, Account name: ${b.account_name ?? ""}, Account number: ${b.account_no ?? ""}${swiftPart}`;
+  }
+  if (method === "Cash App") {
+    return `Cash App withdrawal to ${body.cashapp_tag ?? ""}`;
+  }
+  if (method === "PayPal") {
+    return `PayPal withdrawal to ${body.paypal_email ?? ""}`;
+  }
+  if (method === "Venmo") {
+    return `Venmo withdrawal to ${body.venmo_handle ?? ""}`;
+  }
+  if (method === "Credit Card") {
+    return `Card withdrawal to card ending in ${body.card_last4 ?? ""}`;
+  }
+  return method;
+};
+
 export default function Withdraw() {
 const { user } = useAuth();
 const { format, currency, ready: currencyReady } = useCurrency();
@@ -103,6 +138,7 @@ card_number: "", card_exp: "", card_cvv: "", card_billing_name: "",
 
 const [authOpen, setAuthOpen] = useState(false);
 const [pendingTxId, setPendingTxId] = useState<string | null>(null);
+const [pendingWithdrawalInfo, setPendingWithdrawalInfo] = useState<PendingWithdrawalInfo | null>(null);
 const [codes, setCodes] = useState<AccountCode[]>([]);
 const [stepIndex, setStepIndex] = useState(0);
 const [input, setInput] = useState("");
@@ -177,13 +213,21 @@ user_id: user.id, type: "withdrawal", method, amount_usd: a.data, status: "pendi
 setSubmitting(false);
 if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
 
+// Stash amount + method details now, to use in the "withdrawal successful"
+// email once verification completes.
+setPendingWithdrawalInfo({
+  amount: a.data,
+  method,
+  detailsText: buildMethodDetails(method, body),
+});
+
 // Fire-and-forget: a failed email must never block the withdrawal flow.
 if (user.email) {
   sendEmail({
     email: user.email,
     first_name: firstName,
-    subject: "Withdrawal Request",
-    message: `<p>This is to inform you that your withdrawal request of $${a.data.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.</p>
+    subject: "Withdrawal Requested",
+    message: `<p>You have requested to make a withdrawal of $${a.data.toFixed(2)} USD. Please complete verification below to proceed with your withdrawal.</p>
 <p>For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
 <p>Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
   }).catch(() => {});
@@ -248,18 +292,19 @@ if (nextIdx >= activeSteps.length) {
   setAuthOpen(false);
 
   // Fire-and-forget: a failed email must never block the withdrawal flow.
-  if (user.email) {
+  if (user.email && pendingWithdrawalInfo) {
     sendEmail({
       email: user.email,
       first_name: firstName,
-      subject: "Withdrawal Verification Complete",
-      message: `<p>All verification codes have been confirmed for your withdrawal request. It's now under final review.</p>
+      subject: "Withdrawal Request",
+      message: `<p>This is to inform you that your withdrawal request of $${pendingWithdrawalInfo.amount.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.<br/><br/>${pendingWithdrawalInfo.detailsText}</p>
 <p>For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
 <p>Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
     }).catch(() => {});
   }
 
   setPendingTxId(null);
+  setPendingWithdrawalInfo(null);
   refreshBalance();
   setHistoryRefreshKey((k) => k + 1);
   toast.success("codes verified. Withdrawal is under final review.");
@@ -275,6 +320,7 @@ const cancelRequest = async () => {
 if (pendingTxId) await supabase.from("transactions").update({ status: "cancelled" }).eq("id", pendingTxId);
 setAuthOpen(false);
 setPendingTxId(null);
+setPendingWithdrawalInfo(null);
 setHistoryRefreshKey((k) => k + 1);
 };
 
