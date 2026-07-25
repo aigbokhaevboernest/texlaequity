@@ -62,7 +62,7 @@ export default function Deposit() {
       .from("bank_deposit_info")
       .select("*")
       .eq("is_active", true)
-      .contains("assigned_user_ids", [user.id])
+      .filter("assigned_user_ids", "cs", `{${user.id}}`)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error) toast.error(error.message);
