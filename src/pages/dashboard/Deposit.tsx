@@ -20,6 +20,8 @@ const wallets: Record<string, string> = {
 
 const amountSchema = z.coerce.number().positive("Amount must be positive");
 
+type ExtraField = { label: string; value: string };
+
 type Bank = {
   id: string;
   bank_name: string;
@@ -28,6 +30,7 @@ type Bank = {
   routing_number: string | null;
   swift_code: string | null;
   is_active: boolean;
+  extra_fields: ExtraField[] | null;
 };
 
 export default function Deposit() {
@@ -323,6 +326,17 @@ export default function Deposit() {
                     </div>
                   </div>
                 )}
+                {(selectedBank.extra_fields ?? []).map((f, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <span className="text-muted-foreground">{f.label}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium font-mono">{f.value}</span>
+                      <button type="button" onClick={() => copy(f.value)}>
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <ProofUploader
