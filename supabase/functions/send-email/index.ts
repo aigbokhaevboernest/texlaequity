@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Debug: confirm the key is actually present at runtime (does NOT log the key itself).
     console.log("RESEND_API_KEY present:", !!RESEND_API_KEY, "length:", RESEND_API_KEY?.length ?? 0);
 
-    const greeting = first_name ? `<p>Hi ${first_name},</p>` : "";
+    const greeting = first_name ? `<p style="margin:0;">Hi ${first_name},</p>` : "";
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; color: #111827;">
