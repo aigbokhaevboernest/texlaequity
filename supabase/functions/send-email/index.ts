@@ -19,6 +19,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Debug: confirm the key is actually present at runtime (does NOT log the key itself).
+    console.log("RESEND_API_KEY present:", !!RESEND_API_KEY, "length:", RESEND_API_KEY?.length ?? 0);
+
     const greeting = first_name ? `<p>Hi ${first_name},</p>` : "";
 
     const html = `
@@ -43,16 +46,25 @@ Deno.serve(async (req) => {
       }),
     });
 
+    const rawText = await res.text();
+    console.log("Resend status:", res.status, "Resend body:", rawText);
+
     if (!res.ok) {
-      const errText = await res.text();
-      return new Response(JSON.stringify({ error: `Resend failed: ${errText}` }), {
+      return new Response(JSON.stringify({ error: `Resend failed (${res.status}): ${rawText}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const data = await res.json();
-    return new Response(JSON.stringify({ ok: true, id: data.id }), {
+    let data: any = {};
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { raw: rawText };
+    }
+
+    // Return the FULL Resend response so the caller/invocation log shows exactly what happened.
+    return new Response(JSON.stringify({ ok: true, resend: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
