@@ -141,7 +141,7 @@ const Signup = () => {
     setLoading(false);
     toast.success("Welcome to Tesla!");
     nav("/dashboard", { replace: true });
-
+};
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
