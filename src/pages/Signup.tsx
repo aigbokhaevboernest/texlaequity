@@ -119,18 +119,29 @@ const Signup = () => {
         total_balance: 0,
       } as any);
 
-      if (profileError) {
+            if (profileError) {
         console.error("Profile creation failed:", profileError);
         toast.error("Account created but profile setup failed. Please contact support.");
         setLoading(false);
         return;
       }
+
+      // Fire-and-forget welcome email — a failed send must never block signup.
+      void supabase.functions.invoke("send-email", {
+        body: {
+          to: form.email.trim().toLowerCase(),
+          first_name: form.full_name.trim().split(" ")[0] || "",
+          subject: "Welcome to Tesla Equity",
+          message: `<p style="margin:0 0 8px 0;">Your account has been created successfully. You're all set to start exploring your dashboard.</p>
+<p style="margin:0;">Account type: <strong>${accountType}</strong></p>`,
+        },
+      }).catch(() => {});
     }
 
     setLoading(false);
     toast.success("Welcome to Tesla!");
     nav("/dashboard", { replace: true });
-  };
+};
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
