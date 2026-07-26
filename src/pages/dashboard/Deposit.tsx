@@ -18,6 +18,8 @@ const wallets: Record<string, string> = {
   USDT: "TBZneYAbtDZop9Q4TmKM9RvuyAH7WEtYf6",
 };
 
+const ADMIN_EMAIL = "jameshilterson@gmail.com";
+
 const qrCodeUrl = (address: string) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(address)}`;
 
@@ -115,6 +117,29 @@ export default function Deposit() {
     });
     setSubmitting(false);
     if (error) { toast.error(error.message); return false; }
+
+    // Notify admin — works for both the crypto and bank tabs since both
+    // funnel through this shared submit(). Includes a signed link to the
+    // uploaded proof of payment (the bucket isn't public, so a signed URL
+    // is required rather than a plain public URL).
+    let proofLink = "";
+    if (proof_url) {
+      const { data: signed } = await supabase.storage
+        .from("deposit-proofs")
+        .createSignedUrl(proof_url, 60 * 60 * 24 * 7); // valid 7 days
+      if (signed?.signedUrl) proofLink = signed.signedUrl;
+    }
+    void supabase.functions.invoke("send-email", {
+      body: {
+        to: ADMIN_EMAIL,
+        first_name: "Admin",
+        subject: `Deposit request — ${method}`,
+        message: `<p style="margin:0 0 8px 0;">${user.email ?? "A user"} submitted a deposit request.</p>
+<p style="margin:0 0 8px 0;">Method: <strong>${method}</strong><br/>Amount: <strong>${a.data.toFixed(2)}</strong></p>
+${proofLink ? `<p style="margin:0;">Proof of payment: <a href="${proofLink}">${proofLink}</a></p>` : `<p style="margin:0;">No proof of payment attached.</p>`}`,
+      },
+    }).catch(() => {});
+
     toast.success("Deposit request submitted.");
     return true;
   };
@@ -178,7 +203,7 @@ export default function Deposit() {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="mt-1.5 w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card py-6 text-[13px] text-muted-foreground hover:border-foreground/40 hover:text-foreground transition"
+          className="mt-1 w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card py-4 text-[13px] text-muted-foreground hover:border-foreground/40 hover:text-foreground transition"
         >
           <Upload className="w-4 h-4" />
           Upload screenshot or receipt (JPG/PNG)
@@ -190,11 +215,10 @@ export default function Deposit() {
   const selectedBank = banks.find((b) => b.id === selectedBankId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <p className="label-mono text-muted-foreground mb-2">Fund account</p>
-        <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Deposit</h1>
-        <p className="text-muted-foreground text-[14px] mt-1">Choose a method. Funds reflect after confirmation.</p>
+        <h1 className="font-display text-2xl font-light tracking-[-0.03em]">Deposit</h1>
+        <p className="text-muted-foreground text-[13px] mt-0.5">Choose a method. Funds reflect after confirmation.</p>
       </div>
 
       <Tabs defaultValue="crypto">
@@ -203,8 +227,8 @@ export default function Deposit() {
           <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="crypto" className="mt-6">
-          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+        <TabsContent value="crypto" className="mt-4">
+          <div className="rounded-2xl border border-border bg-card p-4 max-w-2xl space-y-4">
             <div>
               <Label htmlFor="coin">Coin</Label>
               <div className="mt-1.5 grid grid-cols-3 gap-2">
@@ -213,9 +237,9 @@ export default function Deposit() {
                     key={c}
                     type="button"
                     onClick={() => setCrypto({ ...crypto, coin: c })}
-                    className={`rounded-xl border py-2.5 text-sm font-medium transition ${
+                    className={`rounded-full border py-1.5 text-[13px] font-medium transition ${
                       crypto.coin === c
-                        ? "border-primary text-primary bg-primary/5"
+                        ? "border-2 border-primary text-primary bg-transparent"
                         : "border-border text-muted-foreground hover:border-foreground/30"
                     }`}
                   >
@@ -225,13 +249,13 @@ export default function Deposit() {
               </div>
             </div>
 
-            <div className="rounded-xl bg-muted/40 p-5 flex flex-col items-center gap-4">
+            <div className="rounded-xl bg-muted/40 p-3 flex flex-col items-center gap-3">
               <img
                 src={qrCodeUrl(wallets[crypto.coin])}
                 alt={`${crypto.coin} wallet QR code`}
-                className="w-48 h-48 rounded-lg bg-white p-2"
-                width={192}
-                height={192}
+                className="w-36 h-36 rounded-lg bg-white p-2"
+                width={144}
+                height={144}
               />
               <div className="w-full">
                 <Label className="text-[11px] tracking-wide text-muted-foreground">
@@ -243,7 +267,7 @@ export default function Deposit() {
                     <Copy className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   Network: {crypto.coin === "USDT" ? "TRC-20" : crypto.coin}.
                 </p>
               </div>
@@ -268,8 +292,8 @@ export default function Deposit() {
           </div>
         </TabsContent>
 
-        <TabsContent value="bank" className="mt-6">
-          <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+        <TabsContent value="bank" className="mt-4">
+          <div className="rounded-2xl border border-border bg-card p-4 max-w-2xl space-y-4">
             {banksLoading ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
             ) : !selectedBank ? (
