@@ -227,8 +227,8 @@ if (user.email) {
     email: user.email,
     first_name: firstName,
     subject: "Withdrawal Requested",
-    message: `<p style="margin:0 0 12px 0;">You have requested to make a withdrawal of $${a.data.toFixed(2)} USD. Please complete verification below to proceed with your withdrawal.</p>
-<p style="margin:0 0 12px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
+    message: `<p style="margin:0 0 8px 0;">You have requested to make a withdrawal of $${a.data.toFixed(2)} USD. Please complete verification below to proceed with your withdrawal.</p>
+<p style="margin:0 0 8px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
 <p style="margin:0;">Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
   }).catch(() => {});
 }
@@ -241,12 +241,31 @@ setHistoryRefreshKey((k) => k + 1);
 };
 
 // Resume an existing "cancelled" / "awaiting_code" withdrawal from the
-// history list instead of creating a new transaction.
-const handleResume = (txId: string, _txAmount: number) => {
+// history list instead of creating a new transaction. Also re-fetches the
+// full row so pendingWithdrawalInfo is populated — otherwise the "withdrawal
+// successful" email in verify() has nothing to send, since that state is
+// normally only set inside submit() for brand-new withdrawals.
+const handleResume = async (txId: string, _txAmount: number) => {
 setPendingTxId(txId);
 setInput("");
 setStepIndex(0);
 setAuthOpen(true);
+
+const { data } = await supabase
+  .from("transactions")
+  .select("*")
+  .eq("id", txId)
+  .maybeSingle();
+
+if (data) {
+  const method = (data as any).method as string;
+  const amount = Number((data as any).amount_usd);
+  setPendingWithdrawalInfo({
+    amount,
+    method,
+    detailsText: buildMethodDetails(method, data as Record<string, unknown>),
+  });
+}
 };
 
 const verify = async () => {
@@ -313,8 +332,9 @@ if (nextIdx >= activeSteps.length) {
       email: user.email,
       first_name: firstName,
       subject: "Withdrawal Request",
-      message: `<p style="margin:0 0 12px 0;">This is to inform you that your withdrawal request of $${pendingWithdrawalInfo.amount.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.<br/>${pendingWithdrawalInfo.detailsText}</p>
-<p style="margin:0 0 12px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
+      message: `<p style="margin:0 0 8px 0;">This is to inform you that your withdrawal request of $${pendingWithdrawalInfo.amount.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.</p>
+<p style="margin:0 0 8px 0;">${pendingWithdrawalInfo.detailsText}</p>
+<p style="margin:0 0 8px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
 <p style="margin:0;">Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
     }).catch(() => {});
   }
