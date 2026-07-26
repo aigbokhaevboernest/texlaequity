@@ -139,11 +139,12 @@ export default function CopyExperts() {
       <p>Awaiting deposit confirmation.</p>
     `;
     void supabase.functions.invoke("send-email", {
-      body: { to: userEmail, subject: `Subscription request: ${modalExpert.name}`, html: userHtml },
-    }).catch(() => {});
-    void supabase.functions.invoke("send-email", {
-      body: { to: ADMIN_EMAIL, subject: `Copy request from ${userEmail || "user"}`, html: adminHtml },
-    }).catch(() => {});
+  body: { to: userEmail, first_name: "", subject: `Subscription request: ${modalExpert.name}`, message: userHtml },
+}).catch(() => {});
+void supabase.functions.invoke("send-email", {
+  body: { to: ADMIN_EMAIL, first_name: "Admin", subject: `Copy request from ${userEmail || "user"}`, message: adminHtml },
+}).catch(() => {});
+
 
     setSubmitting(false);
     setModalExpert(null);
