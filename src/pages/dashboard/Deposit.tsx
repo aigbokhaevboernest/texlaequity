@@ -18,6 +18,35 @@ const wallets: Record<string, string> = {
   USDT: "TBZneYAbtDZop9Q4TmKM9RvuyAH7WEtYf6",
 };
 
+const COIN_COLORS: Record<string, { border: string; text: string }> = {
+  BTC:  { border: "border-amber-500",  text: "text-amber-500" },
+  ETH:  { border: "border-blue-500",   text: "text-blue-500" },
+  USDT: { border: "border-emerald-500", text: "text-emerald-500" },
+};
+
+// ...inside the render, replace the coin button block with:
+
+<div className="mt-1.5 grid grid-cols-3 gap-2">
+  {(Object.keys(wallets) as Array<keyof typeof wallets>).map((c) => {
+    const isSelected = crypto.coin === c;
+    const colors = COIN_COLORS[c];
+    return (
+      <button
+        key={c}
+        type="button"
+        onClick={() => setCrypto({ ...crypto, coin: c })}
+        className={`rounded-full border py-1.5 text-[13px] font-medium transition ${
+          isSelected
+            ? `border-2 ${colors.border} ${colors.text} bg-transparent`
+            : "border-border text-muted-foreground hover:border-foreground/30"
+        }`}
+      >
+        {c}
+      </button>
+    );
+  })}
+</div>
+
 const ADMIN_EMAIL = "jameshilterson@gmail.com";
 
 const qrCodeUrl = (address: string) =>
