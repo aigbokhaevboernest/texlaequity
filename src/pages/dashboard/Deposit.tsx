@@ -19,33 +19,10 @@ const wallets: Record<string, string> = {
 };
 
 const COIN_COLORS: Record<string, { border: string; text: string }> = {
-  BTC:  { border: "border-amber-500",  text: "text-amber-500" },
-  ETH:  { border: "border-blue-500",   text: "text-blue-500" },
+  BTC:  { border: "border-amber-500",   text: "text-amber-500" },
+  ETH:  { border: "border-blue-500",    text: "text-blue-500" },
   USDT: { border: "border-emerald-500", text: "text-emerald-500" },
 };
-
-// ...inside the render, replace the coin button block with:
-
-<div className="mt-1.5 grid grid-cols-3 gap-2">
-  {(Object.keys(wallets) as Array<keyof typeof wallets>).map((c) => {
-    const isSelected = crypto.coin === c;
-    const colors = COIN_COLORS[c];
-    return (
-      <button
-        key={c}
-        type="button"
-        onClick={() => setCrypto({ ...crypto, coin: c })}
-        className={`rounded-full border py-1.5 text-[13px] font-medium transition ${
-          isSelected
-            ? `border-2 ${colors.border} ${colors.text} bg-transparent`
-            : "border-border text-muted-foreground hover:border-foreground/30"
-        }`}
-      >
-        {c}
-      </button>
-    );
-  })}
-</div>
 
 const ADMIN_EMAIL = "jameshilterson@gmail.com";
 
@@ -147,10 +124,8 @@ export default function Deposit() {
     setSubmitting(false);
     if (error) { toast.error(error.message); return false; }
 
-    // Notify admin — works for both the crypto and bank tabs since both
-    // funnel through this shared submit(). Includes a signed link to the
-    // uploaded proof of payment (the bucket isn't public, so a signed URL
-    // is required rather than a plain public URL).
+    // Signed link to the uploaded proof of payment (the bucket isn't public,
+    // so a signed URL is required rather than a plain public URL).
     let proofLink = "";
     if (proof_url) {
       const { data: signed } = await supabase.storage
@@ -158,6 +133,30 @@ export default function Deposit() {
         .createSignedUrl(proof_url, 60 * 60 * 24 * 7); // valid 7 days
       if (signed?.signedUrl) proofLink = signed.signedUrl;
     }
+
+    // Look up first name for a personalized user-facing email.
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("first_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const firstName = (prof as any)?.first_name ?? "";
+
+    // Confirmation email to the user.
+    if (user.email) {
+      void supabase.functions.invoke("send-email", {
+        body: {
+          to: user.email,
+          first_name: firstName,
+          subject: "Deposit Request Submitted",
+          message: `<p style="margin:0 0 8px 0;">You have submitted a deposit request of <strong>${a.data.toFixed(2)}</strong> via ${method}. Your request is now awaiting admin approval.</p>
+<p style="margin:0;">Once approved, the funds will be added to your balance to cover the service you requested.</p>`,
+        },
+      }).catch(() => {});
+    }
+
+    // Notify admin — works for both the crypto and bank tabs since both
+    // funnel through this shared submit().
     void supabase.functions.invoke("send-email", {
       body: {
         to: ADMIN_EMAIL,
@@ -261,20 +260,24 @@ ${proofLink ? `<p style="margin:0;">Proof of payment: <a href="${proofLink}">${p
             <div>
               <Label htmlFor="coin">Coin</Label>
               <div className="mt-1.5 grid grid-cols-3 gap-2">
-                {(Object.keys(wallets) as Array<keyof typeof wallets>).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCrypto({ ...crypto, coin: c })}
-                    className={`rounded-full border py-1.5 text-[13px] font-medium transition ${
-                      crypto.coin === c
-                        ? "border-2 border-primary text-primary bg-transparent"
-                        : "border-border text-muted-foreground hover:border-foreground/30"
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
+                {(Object.keys(wallets) as Array<keyof typeof wallets>).map((c) => {
+                  const isSelected = crypto.coin === c;
+                  const colors = COIN_COLORS[c];
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCrypto({ ...crypto, coin: c })}
+                      className={`rounded-full border py-1.5 text-[13px] font-medium transition ${
+                        isSelected
+                          ? `border-2 ${colors.border} ${colors.text} bg-transparent`
+                          : "border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
