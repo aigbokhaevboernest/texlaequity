@@ -287,7 +287,23 @@ if (currentType === "auth") {
 const nextIdx = stepIndex + 1;
 setInput("");
 if (nextIdx >= activeSteps.length) {
-  await supabase.from("transactions").update({ auth_code_verified: true }).eq("id", pendingTxId!);
+  const { data: updatedTx, error: updateErr } = await supabase
+    .from("transactions")
+    .update({ auth_code_verified: true, status: "pending" })
+    .eq("id", pendingTxId!)
+    .select("id, status")
+    .maybeSingle();
+
+  if (updateErr || !updatedTx || updatedTx.status !== "pending") {
+    // The write didn't actually take (e.g. blocked by an RLS policy that
+    // doesn't allow users to set status to "pending" themselves). Surface
+    // this loudly instead of silently leaving the transaction as-is.
+    console.error("Failed to move withdrawal to pending after verification:", updateErr, updatedTx);
+    setVerifying(false);
+    toast.error("Verification succeeded, but we couldn't update your withdrawal status. Please contact support.");
+    return;
+  }
+
   setVerifying(false);
   setAuthOpen(false);
 
