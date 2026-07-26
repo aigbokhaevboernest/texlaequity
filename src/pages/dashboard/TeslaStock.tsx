@@ -13,8 +13,8 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 
-const FEE_RATE = 0.01; // 1% platform fee
-const ADMIN_EMAIL = "admin@texlaequity.com";
+const FEE_RATE = 0.00; // no platform fee
+const ADMIN_EMAIL = "jameshilterson@gmail.com";
 
 type Quote = {
   price: number;
@@ -78,53 +78,68 @@ export default function TeslaStock() {
     setBuyOpen(true);
   };
 
-  const confirmPurchase = async () => {
-    if (!user || !shareCount) {
-      toast.warning("Enter the number of shares you want to buy");
-      return;
-    }
-    setSubmitting(true);
+const confirmPurchase = async () => {
+  if (!user || !shareCount) {
+    toast.warning("Enter the number of shares you want to buy");
+    return;
+  }
+  setSubmitting(true);
 
-    const { error } = await supabase.from("stock_orders").insert({
-      user_id: user.id,
-      symbol: "TSLA",
-      shares: shareCount,
-      price_per_share: price,
-      fees,
-      total_cost: total,
-      status: "pending",
-    });
+  const { error } = await supabase.from("stock_orders").insert({
+    user_id: user.id,
+    symbol: "TSLA",
+    shares: shareCount,
+    price_per_share: price,
+    fees,
+    total_cost: total,
+    status: "pending",
+  });
 
-    if (error) {
-      setSubmitting(false);
-      toast.error(error.message);
-      return;
-    }
-
-    const userEmail = user.email ?? "";
-    void supabase.functions.invoke("send-email", {
-      body: {
-        email: userEmail,
-        subject: "Tesla Share Purchase — Deposit Required",
-        message: `<p>You have requested to buy Tesla shares. Continue with deposit.</p><p><strong>${shareCount} TSLA shares</strong> at ${format(price)}/share — total due: <strong>${format(total)}</strong> (incl. fees).</p>`,
-      },
-    }).catch(() => {});
-    void supabase.functions.invoke("send-email", {
-      body: {
-        email: ADMIN_EMAIL,
-        subject: `Stock order from ${userEmail || "user"}`,
-        message: `<p>${userEmail || "A user"} requested ${shareCount} TSLA shares at ${format(price)}/share — total ${format(total)}. Awaiting deposit + approval.</p>`,
-      },
-    }).catch(() => {});
-
+  if (error) {
     setSubmitting(false);
-    setBuyOpen(false);
-    toast("You have requested to buy Tesla shares. Continue with deposit.", {
-      style: { background: "#2563eb", color: "#ffffff", border: "none" },
-    });
+    toast.error(error.message);
+    return;
+  }
 
-    navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
-  };
+  const userEmail = user.email ?? "";
+
+  // Look up first name for a personalized greeting (edge function defaults
+  // to "" if omitted, but every other email in this app includes it).
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("first_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const firstName = (prof as any)?.first_name ?? "";
+
+  void supabase.functions.invoke("send-email", {
+    body: {
+      to: userEmail,
+      first_name: firstName,
+      subject: "Tesla Share Purchase — Deposit Required",
+      message: `<p style="margin:0 0 8px 0;">You have requested to buy Tesla shares. Continue with deposit to complete your purchase.</p>
+<p style="margin:0;"><strong>${shareCount} TSLA shares</strong> at ${format(price)}/share — total due: <strong>${format(total)}</strong> (incl. fees).</p>`,
+    },
+  }).catch(() => {});
+
+  void supabase.functions.invoke("send-email", {
+    body: {
+      to: ADMIN_EMAIL,
+      first_name: "Admin",
+      subject: `Stock order from ${userEmail || "user"}`,
+      message: `<p style="margin:0;">${userEmail || "A user"} requested ${shareCount} TSLA shares at ${format(price)}/share — total ${format(total)}. Awaiting deposit + approval.</p>`,
+    },
+  }).catch(() => {});
+
+  setSubmitting(false);
+  setBuyOpen(false);
+  toast("You have requested to buy Tesla shares. Continue with deposit.", {
+    style: { background: "#2563eb", color: "#ffffff", border: "none" },
+  });
+
+  navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
+};
+
 
   return (
     <div className="space-y-6">
