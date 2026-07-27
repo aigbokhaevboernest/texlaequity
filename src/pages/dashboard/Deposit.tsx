@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { toast } from "sonner";
-import { Loader2, Copy, Upload, X, ImageIcon, Landmark, Bitcoin } from "lucide-react";
+import { Loader2, Copy, Upload, X, ImageIcon, Landmark, Bitcoin, ArrowRight } from "lucide-react";
 import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 
@@ -257,6 +257,16 @@ ${proofLink ? `<p style="margin:0;">Proof of payment: <a href="${proofLink}">${p
 
         <TabsContent value="crypto" className="mt-4">
           <div className="rounded-2xl border border-border bg-card p-4 max-w-2xl space-y-4">
+            <Link
+              to="/dashboard/buy-crypto"
+              className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-2.5 text-[13px] hover:bg-primary/10 transition"
+            >
+              <span>
+                Don't have crypto yet? <span className="font-medium text-primary">Buy</span>
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-primary" />
+            </Link>
+
             <div>
               <Label htmlFor="coin">Coin</Label>
               <div className="mt-1.5 grid grid-cols-3 gap-2">
