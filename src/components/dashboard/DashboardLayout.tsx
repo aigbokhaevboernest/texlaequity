@@ -2,10 +2,9 @@ import BrandLogo from "@/components/BrandLogo";
 import { useState, useEffect, ReactNode } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useLiveData } from "@/hooks/useLiveData";
+import { useProfile } from "@/contexts/ProfileContext";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
@@ -25,14 +24,6 @@ const items = [
   { to: "/dashboard/tesla-stock", label: "Tesla Stock", icon: TrendingUp },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
-
-interface Profile {
-  full_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  account_level: string;
-  status: string;
-}
 
 const NavItems = ({ onClick }: { onClick?: () => void }) => (
   <nav className="flex flex-col gap-1 p-2">
@@ -69,12 +60,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (!user) nav("/login", { replace: true });
   }, [user, authLoading, nav]);
 
-  const { data: profile } = useLiveData<Profile | null>(async () => {
-    if (!user) return null;
-    const { data } = await supabase.from("profiles").select("full_name, username, avatar_url, account_level, status")
-      .eq("user_id", user.id).maybeSingle();
-    return (data as Profile | null) ?? null;
-  }, [user?.id], { cacheKey: user ? `dashLayout:${user.id}` : undefined });
+  // Live, shared profile — updates instantly on any DB change, no refresh needed.
+  const { profile } = useProfile();
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
