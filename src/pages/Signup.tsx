@@ -132,8 +132,14 @@ const Signup = () => {
           to: form.email.trim().toLowerCase(),
           first_name: form.full_name.trim().split(" ")[0] || "",
           subject: "Welcome to Tesla Equity",
-          message: `<p style="margin:0 0 8px 0;">Your account has been created successfully. You're all set to start exploring your dashboard.</p>
-<p style="margin:0;">Account type: <strong>${accountType}</strong></p>`,
+          message: `<p style="margin:0 0 12px 0;">Welcome aboard! Your account has been created successfully. You're all set to start exploring your dashboard.</p>
+<p style="margin:0 0 4px 0;">Here are your account details:</p>
+<p style="margin:0 0 2px 0;">Username: <strong>${form.username.trim()}</strong></p>
+<p style="margin:0 0 2px 0;">Account Type: <strong>${accountType}</strong></p>
+<p style="margin:0 0 12px 0;">Currency: <strong>${form.currency}</strong></p>
+<p style="margin:0 0 12px 0;">Please keep your login details safe and do not share them with anyone.</p>
+<p style="margin:0 0 12px 0;">For more information or complaints, please contact support@teslaequity.com or make use of the Live Chat on your dashboard for assistance.</p>
+<p style="margin:0;">Kind Regards,<br/>Tesla Equity Support Team</p>`,
         },
       }).catch(() => {});
     }
