@@ -26,6 +26,7 @@ import Kyc from "./pages/dashboard/Kyc";
 import Cars from "./pages/dashboard/Cars";
 import DashSettings from "./pages/dashboard/Settings";
 import { AuthProvider } from "./hooks/useAuth";
+import { ProfileProvider } from "./contexts/ProfileContext";
 import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
@@ -75,9 +76,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <ErrorBoundary>
-              <AppRoutes />
-            </ErrorBoundary>
+            <ProfileProvider>
+              <ErrorBoundary>
+                <AppRoutes />
+              </ErrorBoundary>
+            </ProfileProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
