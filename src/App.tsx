@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import Deposit from "./pages/dashboard/Deposit";
+import BuyCrypto from "./pages/dashboard/BuyCrypto";
 import Withdraw from "./pages/dashboard/Withdraw";
 import Transactions from "./pages/dashboard/Transactions";
 import CopyExperts from "./pages/dashboard/CopyExperts";
@@ -53,6 +54,7 @@ const AppRoutes = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
         <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
+        <Route path="/dashboard/buy-crypto" element={<DashboardLayout><BuyCrypto /></DashboardLayout>} />
         <Route path="/dashboard/withdraw" element={<DashboardLayout><Withdraw /></DashboardLayout>} />
         <Route path="/dashboard/transactions" element={<DashboardLayout><Transactions /></DashboardLayout>} />
         <Route path="/dashboard/copy-experts" element={<DashboardLayout><CopyExperts /></DashboardLayout>} />
