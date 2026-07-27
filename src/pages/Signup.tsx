@@ -30,7 +30,7 @@ const schema = z
     gender: z.string().min(1, "Select a gender"),
     country: z.string().min(1, "Select a country"),
     currency: z.string().min(1, "Select a currency"),
-    password: z.string().min(8, "Min 8 characters").max(72),
+    password: z.string().min(6, "Min 6 characters").max(72),
     confirm_password: z.string().min(1, "Confirm your password"),
   })
   .refine((data) => data.password === data.confirm_password, {
