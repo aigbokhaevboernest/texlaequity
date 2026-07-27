@@ -6,16 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp, Banknote, Star, ArrowDownToLine, ArrowUpFromLine, Users, LineChart } from "lucide-react";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
-
-interface Profile {
-  full_name: string | null;
-  total_balance: number;
-  profit: number;
-  deposit: number;
-  account_level: string;
-  status: string;
-  assigned_expert_id: string | null;
-}
+import { useProfile } from "@/contexts/ProfileContext";
 
 interface Expert {
   id: string;
@@ -38,15 +29,22 @@ const STATUS_TONES: Record<string, string> = {
 const Overview = () => {
   const { user } = useAuth();
   const { format, ready: currencyReady } = useCurrency();
+
+  // Balance / profit / deposit / status / level all come from the shared,
+  // realtime-subscribed profile — no separate fetch, updates instantly.
+  const { profile, loading: profileLoading } = useProfile();
+
+  // Transactions + assigned expert are page-specific, keep their own live fetch.
   const { data, refresh } = useLiveData(async () => {
-    if (!user) return { profile: null as Profile | null, txs: [] as Tx[], expert: null as Expert | null };
-    const [p, t] = await Promise.all([
-      supabase.from("profiles").select("full_name, total_balance, profit, deposit, account_level, status, assigned_expert_id").eq("user_id", user.id).maybeSingle(),
-      supabase.from("transactions").select("id, type, method, amount_usd, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
-    ]);
-    if (p.error) console.warn("[overview] profile fetch error:", p.error.message);
+    if (!user) return { txs: [] as Tx[], expert: null as Expert | null };
+    const t = await supabase
+      .from("transactions")
+      .select("id, type, method, amount_usd, status, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
     if (t.error) console.warn("[overview] tx fetch error:", t.error.message);
-    const profile = (p.data as Profile | null) ?? null;
+
     let expert: Expert | null = null;
     if (profile?.assigned_expert_id) {
       const { data: ex } = await supabase
@@ -56,25 +54,23 @@ const Overview = () => {
         .maybeSingle();
       expert = (ex as Expert | null) ?? null;
     }
-    return { profile, txs: (t.data as Tx[] | null) ?? [], expert };
-  }, [user?.id], { cacheKey: user ? `overview:${user.id}` : undefined });
+    return { txs: (t.data as Tx[] | null) ?? [], expert };
+  }, [user?.id, profile?.assigned_expert_id], { cacheKey: user ? `overview:${user.id}` : undefined });
 
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel(`overview-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` }, () => refresh())
+      .channel(`overview-tx-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` }, () => refresh())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, refresh]);
 
-  const profile = data?.profile ?? null;
   const txs = data?.txs ?? [];
   const expert = data?.expert ?? null;
   const isSuspended = profile?.status === "suspended";
 
-  const profileLoaded = !!profile;
+  const profileLoaded = !profileLoading && !!profile;
   const moneyReady = profileLoaded && currencyReady;
   const moneyOrSkeleton = (n: number) =>
     moneyReady ? format(n) : (<span className="inline-block h-7 w-24 rounded bg-muted animate-pulse" />);
