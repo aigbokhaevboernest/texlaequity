@@ -16,6 +16,11 @@ import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 const FEE_RATE = 0.00; // no platform fee
 const ADMIN_EMAIL = "jameshilterson@gmail.com";
 
+// Tesla trades in USD on NASDAQ, regardless of the investor's account currency —
+// so price/fees/total are always shown in dollars here, never converted.
+const formatUSD = (n: number) =>
+  n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
 type Quote = {
   price: number;
   change: number;
@@ -36,13 +41,14 @@ type StockOrder = {
 
 export default function TeslaStock() {
   const { user } = useAuth();
-  const { format } = useCurrency();
+  const { format } = useCurrency(); // account-currency formatter, used only for the conversion modal
   const navigate = useNavigate();
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(true);
   const [orders, setOrders] = useState<StockOrder[]>([]);
   const [buyOpen, setBuyOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
   const [shares, setShares] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -78,68 +84,79 @@ export default function TeslaStock() {
     setBuyOpen(true);
   };
 
-const confirmPurchase = async () => {
-  if (!user || !shareCount) {
-    toast.warning("Enter the number of shares you want to buy");
-    return;
-  }
-  setSubmitting(true);
+  // Step 1: user reviews shares/price in USD, then asks to proceed —
+  // show the currency-conversion modal instead of submitting right away.
+  const proceedToConversion = () => {
+    if (!shareCount) {
+      toast.warning("Enter the number of shares you want to buy");
+      return;
+    }
+    setBuyOpen(false);
+    setConvertOpen(true);
+  };
 
-  const { error } = await supabase.from("stock_orders").insert({
-    user_id: user.id,
-    symbol: "TSLA",
-    shares: shareCount,
-    price_per_share: price,
-    fees,
-    total_cost: total,
-    status: "pending",
-  });
+  // Step 2: user confirms on the conversion modal — this actually submits the order.
+  const confirmPurchase = async () => {
+    if (!user || !shareCount) {
+      toast.warning("Enter the number of shares you want to buy");
+      return;
+    }
+    setSubmitting(true);
 
-  if (error) {
+    const { error } = await supabase.from("stock_orders").insert({
+      user_id: user.id,
+      symbol: "TSLA",
+      shares: shareCount,
+      price_per_share: price,
+      fees,
+      total_cost: total,
+      status: "pending",
+    });
+
+    if (error) {
+      setSubmitting(false);
+      toast.error(error.message);
+      return;
+    }
+
+    const userEmail = user.email ?? "";
+
+    // Look up first name for a personalized greeting (edge function defaults
+    // to "" if omitted, but every other email in this app includes it).
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("first_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const firstName = (prof as any)?.first_name ?? "";
+
+    void supabase.functions.invoke("send-email", {
+      body: {
+        to: userEmail,
+        first_name: firstName,
+        subject: "Tesla Share Purchase — Deposit Required",
+        message: `<p style="margin:0 0 8px 0;">You have requested to buy Tesla shares. Continue with deposit to complete your purchase.</p>
+<p style="margin:0;"><strong>${shareCount} TSLA shares</strong> at ${formatUSD(price)}/share — total due: <strong>${formatUSD(total)}</strong> (incl. fees).</p>`,
+      },
+    }).catch(() => {});
+
+    void supabase.functions.invoke("send-email", {
+      body: {
+        to: ADMIN_EMAIL,
+        first_name: "Admin",
+        subject: `Stock order from ${userEmail || "user"}`,
+        message: `<p style="margin:0;">${userEmail || "A user"} requested ${shareCount} TSLA shares at ${formatUSD(price)}/share — total ${formatUSD(total)}. Awaiting deposit + approval.</p>`,
+      },
+    }).catch(() => {});
+
     setSubmitting(false);
-    toast.error(error.message);
-    return;
-  }
+    setConvertOpen(false);
+    toast("You have requested to buy Tesla shares. Continue with deposit.", {
+      style: { background: "#2563eb", color: "#ffffff", border: "none" },
+    });
 
-  const userEmail = user.email ?? "";
-
-  // Look up first name for a personalized greeting (edge function defaults
-  // to "" if omitted, but every other email in this app includes it).
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("first_name")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const firstName = (prof as any)?.first_name ?? "";
-
-  void supabase.functions.invoke("send-email", {
-    body: {
-      to: userEmail,
-      first_name: firstName,
-      subject: "Tesla Share Purchase — Deposit Required",
-      message: `<p style="margin:0 0 8px 0;">You have requested to buy Tesla shares. Continue with deposit to complete your purchase.</p>
-<p style="margin:0;"><strong>${shareCount} TSLA shares</strong> at ${format(price)}/share — total due: <strong>${format(total)}</strong> (incl. fees).</p>`,
-    },
-  }).catch(() => {});
-
-  void supabase.functions.invoke("send-email", {
-    body: {
-      to: ADMIN_EMAIL,
-      first_name: "Admin",
-      subject: `Stock order from ${userEmail || "user"}`,
-      message: `<p style="margin:0;">${userEmail || "A user"} requested ${shareCount} TSLA shares at ${format(price)}/share — total ${format(total)}. Awaiting deposit + approval.</p>`,
-    },
-  }).catch(() => {});
-
-  setSubmitting(false);
-  setBuyOpen(false);
-  toast("You have requested to buy Tesla shares. Continue with deposit.", {
-    style: { background: "#2563eb", color: "#ffffff", border: "none" },
-  });
-
-  navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
-};
-
+    navigate(`/dashboard/deposit?amount=${total.toFixed(2)}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -169,7 +186,7 @@ const confirmPurchase = async () => {
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground ml-auto" />
             ) : quote ? (
               <>
-                <p className="font-display text-2xl font-medium">{format(price)}</p>
+                <p className="font-display text-2xl font-medium">{formatUSD(price)}</p>
                 <div className={`flex items-center justify-end gap-1 text-[12px] font-medium ${quote.change >= 0 ? "text-emerald-600" : "text-destructive"}`}>
                   {quote.change >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {quote.change >= 0 ? "+" : ""}{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)
@@ -205,7 +222,7 @@ const confirmPurchase = async () => {
           </div>
           <div>
             <p className="text-muted-foreground">Prev. Close</p>
-            <p className="font-medium text-foreground">{quote ? format(quote.previousClose) : "—"}</p>
+            <p className="font-medium text-foreground">{quote ? formatUSD(quote.previousClose) : "—"}</p>
           </div>
         </div>
 
@@ -230,8 +247,8 @@ const confirmPurchase = async () => {
                   <p className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">{o.shares} shares @ {format(o.price_per_share)}</p>
-                  <p className="text-muted-foreground">{format(o.total_cost)} total</p>
+                  <p className="font-medium">{o.shares} shares @ {formatUSD(o.price_per_share)}</p>
+                  <p className="text-muted-foreground">{formatUSD(o.total_cost)} total</p>
                 </div>
                 <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
                   o.status === "approved" ? "bg-emerald-500/10 text-emerald-700"
@@ -246,6 +263,7 @@ const confirmPurchase = async () => {
         )}
       </Card>
 
+      {/* Step 1: choose share count — everything shown here is USD */}
       <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
         <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-md">
           <DialogHeader>
@@ -271,11 +289,11 @@ const confirmPurchase = async () => {
               />
             </div>
 
-            <div className="flex justify-between pt-2"><span className="text-slate-500">Price per share</span><span className="font-medium">{format(price)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Estimated fees</span><span className="font-medium">{format(fees)}</span></div>
+            <div className="flex justify-between pt-2"><span className="text-slate-500">Price per share</span><span className="font-medium">{formatUSD(price)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Estimated fees</span><span className="font-medium">{formatUSD(fees)}</span></div>
             <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
-              <span className="font-medium">Total cost</span>
-              <span className="font-semibold">{format(total)}</span>
+              <span className="font-medium">Total cost (USD)</span>
+              <span className="font-semibold">{formatUSD(total)}</span>
             </div>
           </div>
 
@@ -284,7 +302,52 @@ const confirmPurchase = async () => {
               className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100">
               Cancel
             </Button>
-            <Button onClick={confirmPurchase} disabled={submitting || !shareCount} className="flex-1">
+            <Button onClick={proceedToConversion} disabled={submitting || !shareCount} className="flex-1">
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Step 2: show the USD total converted to the investor's account currency, then confirm */}
+      <Dialog open={convertOpen} onOpenChange={(o) => !submitting && setConvertOpen(o)}>
+        <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-slate-900">Confirm Purchase</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Tesla shares are priced in US dollars. Here's what this order costs in your account
+              currency.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-[13px]">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Shares</span>
+              <span className="font-medium">{shareCount} TSLA</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Total (USD)</span>
+              <span className="font-medium">{formatUSD(total)}</span>
+            </div>
+            <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
+              <span className="font-medium">Total (your account currency)</span>
+              <span className="font-semibold">{format(total)}</span>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-row gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConvertOpen(false);
+                setBuyOpen(true);
+              }}
+              disabled={submitting}
+              className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100"
+            >
+              Back
+            </Button>
+            <Button onClick={confirmPurchase} disabled={submitting} className="flex-1">
               {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Confirm Purchase
             </Button>
@@ -294,4 +357,3 @@ const confirmPurchase = async () => {
     </div>
   );
 }
-
