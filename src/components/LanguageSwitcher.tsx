@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 declare global {
   interface Window {
@@ -18,18 +18,35 @@ declare global {
   }
 }
 
+// Add/remove languages here freely — code must be a valid Google Translate code.
 const LANGUAGES = [
   { code: "en", label: "English" },
   { code: "es", label: "Spanish" },
   { code: "fr", label: "French" },
   { code: "de", label: "German" },
-  { code: "zh-CN", label: "Chinese" },
-  { code: "ar", label: "Arabic" },
+  { code: "it", label: "Italian" },
   { code: "pt", label: "Portuguese" },
+  { code: "nl", label: "Dutch" },
+  { code: "pl", label: "Polish" },
+  { code: "hu", label: "Hungarian" },
+  { code: "ro", label: "Romanian" },
+  { code: "sv", label: "Swedish" },
+  { code: "el", label: "Greek" },
+  { code: "cs", label: "Czech" },
+  { code: "uk", label: "Ukrainian" },
   { code: "ru", label: "Russian" },
+  { code: "tr", label: "Turkish" },
+  { code: "ar", label: "Arabic" },
+  { code: "he", label: "Hebrew" },
+  { code: "hi", label: "Hindi" },
+  { code: "bn", label: "Bengali" },
+  { code: "zh-CN", label: "Chinese (Simplified)" },
   { code: "ja", label: "Japanese" },
   { code: "ko", label: "Korean" },
-  { code: "hi", label: "Hindi" },
+  { code: "vi", label: "Vietnamese" },
+  { code: "th", label: "Thai" },
+  { code: "id", label: "Indonesian" },
+  { code: "sw", label: "Swahili" },
 ];
 
 const PAGE_LANGUAGE = "en";
@@ -81,9 +98,7 @@ function loadGoogleTranslateScript() {
 }
 
 export default function LanguageSwitcher() {
-  const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState("en");
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadGoogleTranslateScript();
@@ -110,62 +125,37 @@ export default function LanguageSwitcher() {
     }
   }, []);
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  function handleSelect(code: string) {
-    setOpen(false);
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const code = e.target.value;
     if (code === current) return;
     if (code === PAGE_LANGUAGE) clearLangCookie();
     else setLangCookie(code);
     window.location.reload();
   }
 
-  const currentLabel = LANGUAGES.find((l) => l.code === current)?.label ?? "Language";
-
   return (
-    <div ref={containerRef} className="relative inline-block">
+    <div className="relative inline-block">
       {/* Required host div for Google's script — kept in DOM but visually hidden */}
       <div id="google_translate_element" className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none" />
 
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full border border-white/15 bg-black/40 backdrop-blur px-4 py-2 text-sm font-medium text-white hover:border-white/30 transition-colors"
-      >
-        <span className="text-base leading-none">🌐</span>
-        <span>{currentLabel}</span>
-        <span className="text-[10px] opacity-80">{open ? "▲" : "▼"}</span>
-      </button>
-
-      {open && (
-        <ul
-          role="listbox"
-          className="absolute right-0 mt-2 w-52 max-h-80 overflow-y-auto rounded-2xl bg-[#f3f0fb] p-1.5 shadow-xl z-50"
+      <div className="relative flex items-center gap-2 rounded-full border border-white/15 bg-black/40 backdrop-blur pl-4 pr-8 py-2">
+        <span className="text-base leading-none pointer-events-none">🌐</span>
+        <select
+          value={current}
+          onChange={handleChange}
+          aria-label="Select language"
+          className="appearance-none bg-transparent text-sm font-medium text-white outline-none cursor-pointer pr-2"
         >
           {LANGUAGES.map((lang) => (
-            <li key={lang.code}>
-              <button
-                type="button"
-                onClick={() => handleSelect(lang.code)}
-                className={`w-full flex items-center gap-2 text-left rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-black/5 ${
-                  lang.code === current ? "bg-blue-500/15 font-semibold text-blue-900" : ""
-                }`}
-              >
-                {lang.code === current && <span className="text-xs">✓</span>}
-                {lang.label}
-              </button>
-            </li>
+            <option key={lang.code} value={lang.code} className="bg-[#111] text-white">
+              {lang.label}
+            </option>
           ))}
-        </ul>
-      )}
+        </select>
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-white/70">
+          ▼
+        </span>
+      </div>
     </div>
   );
 }
