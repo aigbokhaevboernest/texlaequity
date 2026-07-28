@@ -1,33 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { carImages, formatUSD, toBTC } from "@/lib/cars";
+import { cars, formatUSD, toBTC } from "@/lib/cars";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-interface Car {
-  id: string;
-  model: string;
-  tagline: string | null;
-  price_usd: number;
-  range_mi: number | null;
-  top_speed: number | null;
-  zero_to_sixty: number | null;
-}
-
 const TeslaShowcase = () => {
-  const [cars, setCars] = useState<Car[]>([]);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const nav = useNavigate();
-
-  useEffect(() => {
-    supabase
-      .from("tesla_cars")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => data && setCars(data as Car[]));
-  }, []);
 
   const scroll = (dir: "l" | "r") => {
     scrollerRef.current?.scrollBy({ left: dir === "l" ? -420 : 420, behavior: "smooth" });
@@ -78,7 +58,7 @@ const TeslaShowcase = () => {
           >
             <div className="relative aspect-[4/3] rounded-3xl bg-surface overflow-hidden mb-5">
               <img
-                src={carImages[car.model]}
+                src={car.image}
                 alt={`Tesla ${car.model}`}
                 loading="lazy"
                 className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-700 ease-out"
