@@ -1,3 +1,11 @@
+import modelS from "@/assets/car-model-s.png";
+import model3 from "@/assets/car-model-3.png";
+import modelX from "@/assets/car-model-x.png";
+import modelY from "@/assets/car-model-y.png";
+import cybertruck from "@/assets/car-cybertruck.png";
+import semi from "@/assets/car-semi.png";
+import roadster from "@/assets/roadster.png";
+
 export type Stock = "In Stock" | "Limited Stock" | "Reserve Now";
 
 export interface Vehicle {
@@ -25,8 +33,7 @@ export const vehicles: Vehicle[] = [
     price: "$74,990",
     priceNum: 74990,
     badge: "In Stock",
-    image:
-      "https://digitalassets.tesla.com/tesla-contents/image/upload/h_2034,w_2880,c_fit,f_auto,q_auto:best/Mega-Menu-Vehicles-Model-S.png",
+    image: modelS,
     description:
       "The Model S redefines what a car can be. With over 400 miles of range, ludicrous acceleration, and a minimalist interior built around a 17\" cinematic display.",
   },
@@ -39,8 +46,7 @@ export const vehicles: Vehicle[] = [
     price: "$40,240",
     priceNum: 40240,
     badge: "In Stock",
-    image:
-      "https://digitalassets.tesla.com/tesla-contents/image/upload/h_2034,w_2880,c_fit,f_auto,q_auto:best/Mega-Menu-Vehicles-Model-3.png",
+    image: model3,
     description:
       "The world's best-selling electric car. The Model 3 combines long range, advanced safety, and cutting-edge technology in a sleek, affordable package.",
   },
@@ -53,8 +59,7 @@ export const vehicles: Vehicle[] = [
     price: "$79,990",
     priceNum: 79990,
     badge: "In Stock",
-    image:
-      "https://digitalassets.tesla.com/tesla-contents/image/upload/h_2034,w_2880,c_fit,f_auto,q_auto:best/Mega-Menu-Vehicles-Model-X.png",
+    image: modelX,
     description:
       "With iconic falcon wing doors, seating for up to 7, and Plaid performance that rivals supercars — the Model X is the most capable SUV ever built.",
   },
@@ -67,8 +72,7 @@ export const vehicles: Vehicle[] = [
     price: "$43,990",
     priceNum: 43990,
     badge: "In Stock",
-    image:
-      "https://digitalassets.tesla.com/tesla-contents/image/upload/h_2034,w_2880,c_fit,f_auto,q_auto:best/Mega-Menu-Vehicles-Model-Y.png",
+    image: modelY,
     description:
       "The perfect blend of versatility and performance. A spacious interior, panoramic glass roof, and up to 7-seat configuration.",
   },
@@ -81,8 +85,7 @@ export const vehicles: Vehicle[] = [
     price: "$59,990",
     priceNum: 59990,
     badge: "Limited Stock",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/2024_Tesla_Cybertruck_Foundation_Series_in_Stealth_Grey%2C_front_left.jpg/1280px-2024_Tesla_Cybertruck_Foundation_Series_in_Stealth_Grey%2C_front_left.jpg",
+    image: cybertruck,
     description:
       "Built with an ultra-hard stainless steel exoskeleton, armored glass, and tri-motor all-wheel drive — the toughest truck Tesla has made.",
   },
@@ -95,8 +98,7 @@ export const vehicles: Vehicle[] = [
     price: "$150,000",
     priceNum: 150000,
     badge: "Reserve Now",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tesla_Semi_at_Tesla_Delivery_Event.jpg/1280px-Tesla_Semi_at_Tesla_Delivery_Event.jpg",
+    image: semi,
     description:
       "The Tesla Semi transforms long-haul trucking with 500 miles of range, instant torque, and a driver-focused cabin.",
   },
@@ -109,8 +111,7 @@ export const vehicles: Vehicle[] = [
     price: "$200,000",
     priceNum: 200000,
     badge: "Reserve Now",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Tesla_Roadster_%282020%29.jpg/1280px-Tesla_Roadster_%282020%29.jpg",
+    image: roadster,
     description:
       "The new Roadster shatters every performance record. 620 miles of range, 0–60 in under 2 seconds, top speed exceeding 250 mph.",
   },
