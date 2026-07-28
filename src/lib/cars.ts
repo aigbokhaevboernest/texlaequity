@@ -1,15 +1,19 @@
 import modelS from "@/assets/car-model-s.png";
 import model3 from "@/assets/car-model-3.png";
 import modelX from "@/assets/car-model-x.png";
+import modelY from "@/assets/car-model-y.png";
 import cybertruck from "@/assets/car-cybertruck.png";
 import semi from "@/assets/car-semi.png";
+import roadster from "@/assets/roadster.png";
 
 export const carImages: Record<string, string> = {
   "Model S": modelS,
   "Model 3": model3,
   "Model X": modelX,
+  "Model Y": modelY,
   "Cybertruck": cybertruck,
   "Tesla Semi": semi,
+  "Roadster": roadster,
 };
 
 export const formatUSD = (n: number) =>
