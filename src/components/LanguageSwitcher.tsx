@@ -101,6 +101,11 @@ export default function LanguageSwitcher() {
   const [current, setCurrent] = useState("en");
 
   useEffect(() => {
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+
     loadGoogleTranslateScript();
 
     const cookieVal = getCookie(COOKIE_NAME);
