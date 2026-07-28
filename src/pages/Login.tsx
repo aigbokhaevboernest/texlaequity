@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 const REMEMBER_KEY = "tv_remember_email";
 
@@ -99,6 +100,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageSwitcher />
+      </div>
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
