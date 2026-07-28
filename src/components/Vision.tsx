@@ -35,7 +35,7 @@ const Vision = () => {
             Driving the future of sustainable wealth
           </h2>
           <p className="text-black/60 leading-relaxed max-w-md mx-auto md:mx-0 text-sm md:text-base">
-            Tesla's mission has always been to accelerate the world's transition to sustainable energy. Our platform extends that same vision to wealth — giving investors a real stake in that future.
+            Tesla's mission has always been to accelerate the world's transition to sustainable energy. Our platform extends that same vision to wealth, giving investors a real stake in that future.
           </p>
         </motion.div>
       </div>
