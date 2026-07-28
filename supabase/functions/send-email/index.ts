@@ -1,6 +1,5 @@
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL = "Tesla Equity <onboarding@resend.dev>"; // update to your verified Resend sender
-
+const FROM_EMAIL = "Tesla Equity <support@teslagrowthequity.com>";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
