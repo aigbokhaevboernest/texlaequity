@@ -100,7 +100,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-6 right-6 z-20">
+      <div className="absolute top-3 right-3 z-20">
         <LanguageSwitcher />
       </div>
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
