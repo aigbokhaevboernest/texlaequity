@@ -138,13 +138,13 @@ export default function LanguageSwitcher() {
       {/* Required host div for Google's script — kept in DOM but visually hidden */}
       <div id="google_translate_element" className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none" />
 
-      <div className="relative flex items-center gap-2 rounded-full border border-white/15 bg-black/40 backdrop-blur pl-4 pr-8 py-2">
-        <span className="text-base leading-none pointer-events-none">🌐</span>
+      <div className="relative flex items-center gap-1 rounded-full border border-white/15 bg-black/40 backdrop-blur pl-2.5 pr-5 py-1">
+        <span className="text-xs leading-none pointer-events-none">🌐</span>
         <select
           value={current}
           onChange={handleChange}
           aria-label="Select language"
-          className="appearance-none bg-transparent text-sm font-medium text-white outline-none cursor-pointer pr-2"
+          className="appearance-none bg-transparent text-xs font-medium text-white outline-none cursor-pointer pr-1 max-w-[64px] truncate"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang.code} value={lang.code} className="bg-[#111] text-white">
@@ -152,7 +152,7 @@ export default function LanguageSwitcher() {
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-white/70">
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-white/70">
           ▼
         </span>
       </div>
