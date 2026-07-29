@@ -51,18 +51,19 @@ const Login = () => {
 
     let loginEmail = parsed.data.identifier;
     if (!loginEmail.includes("@")) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("email" as never)
-        .eq("username", identifier)
-        .maybeSingle();
-      const found = (prof as { email?: string } | null)?.email;
-      if (!found) {
+      // Resolve username -> email via a security-definer RPC so we never
+      // expose profiles.email through a direct, publicly-readable select.
+      const { data: found, error: rpcError } = await supabase.rpc(
+        "get_email_for_username",
+        { uname: identifier }
+      );
+
+      if (rpcError || !found) {
         setLoading(false);
         toast.error("No account found with that username.");
         return;
       }
-      loginEmail = found;
+      loginEmail = found as string;
     }
 
     const { error } = await supabase.auth.signInWithPassword({
