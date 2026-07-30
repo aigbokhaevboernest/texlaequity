@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 
 const FEE_RATE = 0.00; // no platform fee
-const ADMIN_EMAIL = "jameshilterson@gmail.com";
+const ADMIN_EMAIL = "support@teslagrowthequity.com";
 
 // Tesla trades in USD on NASDAQ, regardless of the investor's account currency —
 // so price/fees/total are always shown in dollars here, never converted.
