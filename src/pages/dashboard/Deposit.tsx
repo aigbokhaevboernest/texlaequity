@@ -136,11 +136,12 @@ export default function Deposit() {
 
     // Look up first name for a personalized user-facing email.
     const { data: prof } = await supabase
-      .from("profiles")
-      .select("first_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    const firstName = (prof as any)?.first_name ?? "";
+  .from("profiles")
+  .select("full_name")
+  .eq("user_id", user.id)
+  .maybeSingle();
+const firstName = ((prof as any)?.full_name || "").trim().split(" ")[0] || "";
+
 
     // Confirmation email to the user.
     if (user.email) {
