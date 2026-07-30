@@ -1,34 +1,69 @@
-.loader {
-  width: 50px;
-  aspect-ratio: 1;
-  display: grid;
-}
-.loader:before,
-.loader:after {
-  content: "";
-  grid-area: 1/1;
-  border-radius: 50%;
-  background: #f03355;
-  -webkit-mask: repeating-linear-gradient(#000 0 5px, #0000 0 10px);
-  animation: l35 1s infinite;
-}
-.loader:after {
-  -webkit-mask: repeating-linear-gradient(#0000 0 5px, #000 0 10px);
-  --s: -1;
-}
-@keyframes l35 {
-  0%,
-  10% {
-    transform: translate(0) rotate(0);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Red Ring Loader</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  35% {
-    transform: translate(calc(var(--s, 1) * 50%)) rotate(0);
+
+  .loader-wrap {
+    position: relative;
+    width: 140px;
+    height: 140px;
   }
-  66% {
-    transform: translate(calc(var(--s, 1) * 50%)) rotate(calc(var(--s, 1) * 180deg));
+
+  .ring {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      rgba(220,20,20,0) 0deg,
+      rgba(220,20,20,0.15) 90deg,
+      rgba(220,20,20,0.6) 200deg,
+      #dc1414 300deg,
+      #dc1414 360deg
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 8px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 8px));
+    animation: spin 1.3s linear infinite;
   }
-  90%,
-  100% {
-    transform: translate(0) rotate(calc(var(--s, 1) * 180deg));
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
-}
+
+  .logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px;
+    height: 42px;
+  }
+
+  .logo svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+</style>
+</head>
+<body>
+  <div class="loader-wrap">
+    <div class="ring"></div>
+    <div class="logo">
+      <svg fill="#cc0000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362l-.004.002H12v-.002zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46v.003z"/>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
