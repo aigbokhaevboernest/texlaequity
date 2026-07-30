@@ -17,6 +17,19 @@ const countries = COUNTRIES;
 const currencies = CURRENCIES;
 const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
+// Public site key — safe to expose in frontend code. The matching secret
+// key lives only in the verify-recaptcha edge function's environment.
+const RECAPTCHA_SITE_KEY = "6LeSj2ktAAAAALLiOl6Bfc2q8l9wUS7PZPcPhdj6";
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (cb: () => void) => void;
+      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 const schema = z
   .object({
     full_name: z.string().trim().min(2, "Min 2 characters").max(100),
@@ -46,6 +59,7 @@ const Signup = () => {
   const { user, loading: authLoading, roleLoading } = useAuth();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
   const [accountType, setAccountType] = useState("Tesla Investment");
   const [form, setForm] = useState({
     full_name: "",
@@ -65,6 +79,26 @@ const Signup = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Load the reCAPTCHA v3 script once. It renders no visible UI (no
+  // checkbox, no challenge) — it just makes window.grecaptcha available so
+  // we can request a token right before submitting.
+  useEffect(() => {
+    if (window.grecaptcha) {
+      setRecaptchaReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.async = true;
+    script.onload = () => {
+      window.grecaptcha?.ready(() => setRecaptchaReady(true));
+    };
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
   useEffect(() => {
     if (authLoading || roleLoading || !user) return;
     nav("/dashboard", { replace: true });
@@ -80,6 +114,34 @@ const Signup = () => {
     }
 
     setLoading(true);
+
+    // Get an invisible reCAPTCHA token for this submission and have the
+    // edge function check it with Google before we create the account.
+    if (!recaptchaReady || !window.grecaptcha) {
+      setLoading(false);
+      toast.error("Security check is still loading — please try again in a moment.");
+      return;
+    }
+
+    let recaptchaToken: string;
+    try {
+      recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "signup" });
+    } catch {
+      setLoading(false);
+      toast.error("Security check failed to load. Please refresh and try again.");
+      return;
+    }
+
+    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+      "verify-recaptcha",
+      { body: { token: recaptchaToken } }
+    );
+
+    if (verifyError || !verifyResult?.success) {
+      setLoading(false);
+      toast.error("We couldn't verify you're not a bot. Please try again.");
+      return;
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim().toLowerCase(),
@@ -311,6 +373,18 @@ const Signup = () => {
             <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
             </Button>
+
+            <p className="text-[11px] text-center text-muted-foreground">
+              This site is protected by reCAPTCHA and the Google{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline">
+                Privacy Policy
+              </a>{" "}
+              and{" "}
+              <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline">
+                Terms of Service
+              </a>{" "}
+              apply.
+            </p>
           </form>
 
           <p className="text-sm text-center text-muted-foreground mt-6">
