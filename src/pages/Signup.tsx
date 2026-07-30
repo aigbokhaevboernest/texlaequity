@@ -139,7 +139,7 @@ const Signup = () => {
 <p style="margin:0 0 2px 0;">Account Type: <strong>${accountType}</strong></p>
 <p style="margin:0 0 12px 0;">Currency: <strong>${form.currency}</strong></p>
 <p style="margin:0 0 12px 0;">Please keep your login details safe and do not share them with anyone.</p>
-<p style="margin:0 0 12px 0;">For more information or complaints, please contact support@teslaequity.com or make use of the Live Chat on your dashboard for assistance.</p>
+<p style="margin:0 0 12px 0;">For more information or complaints, please contact support@teslagrowthequity.com or make use of the Live Chat on your dashboard for assistance.</p>
 <p style="margin:0;">Kind Regards,<br/>Tesla Equity Support Team</p>`,
         },
       }).catch(() => {});
