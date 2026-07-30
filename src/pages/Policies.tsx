@@ -8,7 +8,7 @@ const sections = [
   { id: "third", icon: Users, title: "Third Parties", body: "We share data only with trusted partners required to fulfill your order, such as payment processors, logistics providers, and financing partners." },
   { id: "cookies", icon: Cookie, title: "Cookies", body: "We use cookies and similar technologies to enhance your browsing experience, analyze traffic, and personalize content. You can disable cookies in your browser settings." },
   { id: "rights", icon: UserCheck, title: "Your Rights", body: "You may request access, correction, deletion, or export of your personal data at any time. We honor requests within 30 days." },
-  { id: "contact", icon: Mail, title: "Contact", body: "For privacy-related inquiries, contact us at jameshilterson@gmail.com." },
+  { id: "contact", icon: Mail, title: "Contact", body: "For privacy-related inquiries, contact us at support@teslagrowthequity.com." },
 ];
 
 const Policies = () => {
