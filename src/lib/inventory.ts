@@ -21,7 +21,7 @@ export interface Vehicle {
   description: string;
 }
 
-export const ORDER_EMAIL = "jameshilterson@gmail.com";
+export const ORDER_EMAIL = "support@teslagrowthequity.com";
 
 export const vehicles: Vehicle[] = [
   {
