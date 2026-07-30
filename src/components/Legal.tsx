@@ -52,6 +52,6 @@ export const Privacy = () => (
     <H>Your Rights</H>
     <p>You may request access, correction, or deletion of your personal data at any time.</p>
     <H>Contact</H>
-    <p>For privacy-related inquiries, contact us at jameshilterson@gmail.com.</p>
+    <p>For privacy-related inquiries, contact us at support@teslagrowthequity.com.</p>
   </Section>
 );
