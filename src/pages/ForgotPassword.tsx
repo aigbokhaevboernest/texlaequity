@@ -33,14 +33,32 @@ const ForgotPassword = () => {
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
+
+    // Only a valid email is accepted — anything else is rejected up front.
     const parsed = emailSchema.safeParse(cleanEmail);
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0].message);
+      toast.error("Please enter a valid email address");
       return;
     }
 
     setLoading(true);
     try {
+      // Check whether this email belongs to an existing account before
+      // generating/sending a code.
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", parsed.data)
+        .maybeSingle();
+
+      if (profileError) throw new Error(profileError.message);
+
+      if (!profile) {
+        setLoading(false);
+        toast.error("No account found with that email");
+        return;
+      }
+
       const resetCode = generateCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
