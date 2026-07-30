@@ -41,7 +41,7 @@ type StockOrder = {
 
 export default function TeslaStock() {
   const { user } = useAuth();
-  const { format } = useCurrency(); // account-currency formatter, used only for the conversion modal
+  const { format } = useCurrency(); // account-currency formatter, used for conversion display
   const navigate = useNavigate();
 
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -119,6 +119,28 @@ export default function TeslaStock() {
       return;
     }
 
+    // Also insert into "transactions" so this order shows up in the admin
+    // Deposits queue and, once approved there, credits profiles.total_balance
+    // through the exact same pipeline Deposit.tsx uses. bank_fields is reused
+    // here purely as a display list — DepositsPage's getDetails() already
+    // renders it as "label: value" pairs with no schema changes needed.
+    const { error: txError } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      type: "deposit",
+      method: `Stock Purchase - ${shareCount} TSLA`,
+      amount_usd: total,
+      status: "pending",
+      bank_fields: [
+        { label: "Shares", value: `${shareCount} TSLA` },
+        { label: "Price/share", value: formatUSD(price) },
+      ],
+    });
+    if (txError) {
+      // Don't block the purchase flow over this — but surface it, since a
+      // failure here means the order won't reach admin approval / balance.
+      console.error("Failed to create deposit record for stock order:", txError.message);
+    }
+
     const userEmail = user.email ?? "";
 
     // Look up first name for a personalized greeting (edge function defaults
@@ -191,8 +213,9 @@ export default function TeslaStock() {
                   {quote.change >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {quote.change >= 0 ? "+" : ""}{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)
                 </div>
-                <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${quote.marketOpen ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
-                  {quote.marketOpen ? "Market Open" : "Market Closed"}
+                {/* Always shown as open — market-hours check removed per request */}
+                <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700">
+                  Market Open
                 </span>
               </>
             ) : (
@@ -263,7 +286,7 @@ export default function TeslaStock() {
         )}
       </Card>
 
-      {/* Step 1: choose share count — everything shown here is USD */}
+      {/* Step 1: choose share count — everything shown here is USD, plus an account-currency estimate */}
       <Dialog open={buyOpen} onOpenChange={(o) => !submitting && setBuyOpen(o)}>
         <DialogContent className="bg-white text-slate-900 rounded-2xl border-0 max-w-md">
           <DialogHeader>
@@ -294,6 +317,10 @@ export default function TeslaStock() {
             <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
               <span className="font-medium">Total cost (USD)</span>
               <span className="font-semibold">{formatUSD(total)}</span>
+            </div>
+            <div className="flex justify-between text-[12px] text-slate-500">
+              <span>≈ in your account currency</span>
+              <span className="font-medium">{format(total)}</span>
             </div>
           </div>
 
