@@ -99,7 +99,7 @@ const Overview = () => {
           <p className="text-[13px] text-muted-foreground">
             All actions are blocked. Contact{" "}
             <a className="text-primary underline" href="mailto:support@teslavest.com">
-              support@teslavest.com
+              support@teslagrowthequity.com
             </a>.
           </p>
         </div>
