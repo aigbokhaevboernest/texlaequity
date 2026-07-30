@@ -28,7 +28,7 @@ type Expert = {
 };
 
 // TODO: replace with this project's real admin notification address.
-const ADMIN_EMAIL = "admin@texlaequity.com";
+const ADMIN_EMAIL = "support@teslagrowthequity.com";
 
 const PLAN_OPTIONS = [
   { amount: 1500,  label: "Regular Plan" },
