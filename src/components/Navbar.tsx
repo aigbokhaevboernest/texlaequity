@@ -63,7 +63,7 @@ const Navbar = () => {
                 <Button variant="ghost" size="sm" onClick={() => nav("/login")} className="text-[13px] hidden md:inline-flex text-white hover:bg-white/10 hover:text-white">
                   Log in
                 </Button>
-                <a href="mailto:jameshilterson@gmail.com?subject=Tesla%20Order%20Inquiry&body=Hello%2C%20I%27m%20interested%20in%20ordering%20a%20Tesla.%20Please%20contact%20me.">
+                <a href="mailto:support@teslagrowthequity.com?subject=Tesla%20Order%20Inquiry&body=Hello%2C%20I%27m%20interested%20in%20ordering%20a%20Tesla.%20Please%20contact%20me.">
                   <Button size="sm" className="text-[13px] rounded-full px-4 h-8 bg-white text-[#0a1530] hover:bg-white/90">
                     Order Tesla
                   </Button>
