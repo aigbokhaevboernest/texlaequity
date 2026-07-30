@@ -104,19 +104,31 @@ const Signup = () => {
       return;
     }
 
-    const script = document.createElement("script");
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-    script.async = true;
-    script.onload = () => {
-      window.grecaptcha?.ready(() => setRecaptchaReady(true));
+    // google.com/recaptcha/api.js can fail to load on some networks/devices
+    // (content blockers, iCloud Private Relay, "Hide IP from Trackers" in
+    // Safari, restrictive corporate/ISP networks). recaptcha.net is a
+    // Google-hosted alias that works in most of those cases. We try the
+    // primary host first, then fall back to recaptcha.net once before
+    // surfacing an error.
+    const loadScript = (src: string, onFail: () => void) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.onload = () => {
+        window.grecaptcha?.ready(() => setRecaptchaReady(true));
+      };
+      script.onerror = () => {
+        script.remove();
+        onFail();
+      };
+      document.head.appendChild(script);
     };
-    script.onerror = () => {
-      // Most common causes: an ad/content blocker on the browser, or this
-      // domain isn't listed under Domains for this key in the reCAPTCHA
-      // admin console.
-      toast.error("Security check failed to load. Please refresh and try again.");
-    };
-    document.head.appendChild(script);
+
+    loadScript(`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`, () => {
+      loadScript(`https://www.recaptcha.net/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`, () => {
+        toast.error("Security check failed to load. Please refresh and try again.");
+      });
+    });
     // No cleanup/removal here on purpose — see comment above.
   }, []);
 
@@ -394,18 +406,6 @@ const Signup = () => {
             <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
             </Button>
-
-            <p className="text-[11px] text-center text-muted-foreground">
-              This site is protected by reCAPTCHA and the Google{" "}
-              <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline">
-                Privacy Policy
-              </a>{" "}
-              and{" "}
-              <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline">
-                Terms of Service
-              </a>{" "}
-              apply.
-            </p>
           </form>
 
           <p className="text-sm text-center text-muted-foreground mt-6">
