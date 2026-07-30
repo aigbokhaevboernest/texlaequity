@@ -106,7 +106,7 @@ const Login = () => {
       </div>
       <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
-        <Link to="/" className="flex items-center justify-center mb-8 pr-16">
+        <Link to="/" className="flex items-center justify-center mb-8">
           <BrandLogo className="h-4 w-auto" />
         </Link>
 
