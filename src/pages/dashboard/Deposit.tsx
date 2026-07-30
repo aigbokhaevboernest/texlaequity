@@ -136,21 +136,24 @@ export default function Deposit() {
 
     // Look up first name for a personalized user-facing email.
     const { data: prof } = await supabase
-  .from("profiles")
-  .select("full_name")
-  .eq("user_id", user.id)
-  .maybeSingle();
-const firstName = ((prof as any)?.full_name || "").trim().split(" ")[0] || "";
-
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const firstName = ((prof as any)?.full_name || "").trim().split(" ")[0] || "";
 
     // Confirmation email to the user.
+    // NOTE: paragraph margins match the edge function's default spacing
+    // (18px) so this HTML doesn't look cramped when it passes through
+    // send-email untouched (looksLikeHtml short-circuits the wrapper's
+    // own paragraph spacing since this is already HTML).
     if (user.email) {
       void supabase.functions.invoke("send-email", {
         body: {
           to: user.email,
           first_name: firstName,
           subject: "Deposit Request Submitted",
-          message: `<p style="margin:0 0 8px 0;">You have submitted a deposit request of <strong>${a.data.toFixed(2)}</strong> via ${method}. Your request is now awaiting admin approval.</p>
+          message: `<p style="margin:0 0 18px 0;">You have submitted a deposit request of <strong>${a.data.toFixed(2)}</strong> via ${method}. Your request is now awaiting admin approval.</p>
 <p style="margin:0;">Once approved, the funds will be added to your balance to cover the service you requested.</p>`,
         },
       }).catch(() => {});
@@ -163,8 +166,8 @@ const firstName = ((prof as any)?.full_name || "").trim().split(" ")[0] || "";
         to: ADMIN_EMAIL,
         first_name: "Admin",
         subject: `Deposit request — ${method}`,
-        message: `<p style="margin:0 0 8px 0;">${user.email ?? "A user"} submitted a deposit request.</p>
-<p style="margin:0 0 8px 0;">Method: <strong>${method}</strong><br/>Amount: <strong>${a.data.toFixed(2)}</strong></p>
+        message: `<p style="margin:0 0 18px 0;">${user.email ?? "A user"} submitted a deposit request.</p>
+<p style="margin:0 0 18px 0;">Method: <strong>${method}</strong><br/>Amount: <strong>${a.data.toFixed(2)}</strong></p>
 ${proofLink ? `<p style="margin:0;">Proof of payment: <a href="${proofLink}">${proofLink}</a></p>` : `<p style="margin:0;">No proof of payment attached.</p>`}`,
       },
     }).catch(() => {});
