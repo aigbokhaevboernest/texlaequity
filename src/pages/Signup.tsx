@@ -82,21 +82,42 @@ const Signup = () => {
   // Load the reCAPTCHA v3 script once. It renders no visible UI (no
   // checkbox, no challenge) — it just makes window.grecaptcha available so
   // we can request a token right before submitting.
+  //
+  // Important: we do NOT remove the script on unmount. If someone
+  // navigates away from Signup and back, removing+re-adding the script
+  // tag can leave window.grecaptcha in a broken/half-initialized state,
+  // which is what causes grecaptcha.execute() to throw even though the
+  // script "loaded" the first time.
   useEffect(() => {
     if (window.grecaptcha) {
-      setRecaptchaReady(true);
+      window.grecaptcha.ready(() => setRecaptchaReady(true));
       return;
     }
+
+    const existing = document.querySelector<HTMLScriptElement>('script[src*="recaptcha/api.js"]');
+    if (existing) {
+      // Script tag is already on the page (e.g. from a previous mount) —
+      // just wait for grecaptcha to become available instead of adding
+      // a duplicate script tag.
+      existing.addEventListener("load", () => window.grecaptcha?.ready(() => setRecaptchaReady(true)));
+      if (window.grecaptcha) window.grecaptcha.ready(() => setRecaptchaReady(true));
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
     script.async = true;
     script.onload = () => {
       window.grecaptcha?.ready(() => setRecaptchaReady(true));
     };
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
+    script.onerror = () => {
+      // Most common causes: an ad/content blocker on the browser, or this
+      // domain isn't listed under Domains for this key in the reCAPTCHA
+      // admin console.
+      toast.error("Security check failed to load. Please refresh and try again.");
     };
+    document.head.appendChild(script);
+    // No cleanup/removal here on purpose — see comment above.
   }, []);
 
   useEffect(() => {
