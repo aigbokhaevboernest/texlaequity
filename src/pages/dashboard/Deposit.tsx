@@ -24,7 +24,7 @@ const COIN_COLORS: Record<string, { border: string; text: string }> = {
   USDT: { border: "border-emerald-500", text: "text-emerald-500" },
 };
 
-const ADMIN_EMAIL = "jameshilterson@gmail.com";
+const ADMIN_EMAIL = "support@teslagrowthequity.com";
 
 const qrCodeUrl = (address: string) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(address)}`;
