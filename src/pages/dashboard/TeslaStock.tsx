@@ -13,6 +13,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useLiveFxRate } from "@/hooks/useLiveFxRate";
 import { toast } from "sonner";
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { sendEmail } from "@/lib/sendEmail";
 
 const FEE_RATE = 0.00; // no platform fee
 const ADMIN_EMAIL = "support@teslagrowthequity.com";
