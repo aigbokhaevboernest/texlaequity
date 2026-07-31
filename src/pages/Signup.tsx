@@ -19,13 +19,26 @@ const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 // Public site key — safe to expose in frontend code. The matching secret
 // key lives only in the verify-recaptcha edge function's environment.
-const RECAPTCHA_SITE_KEY = "6LeSj2ktAAAAALLiOl6Bfc2q8l9wUS7PZPcPhdj6";
+//
+// ⚠️ This must be a reCAPTCHA v2 ("Checkbox") key, not the old v3 key —
+// generate one at https://www.google.com/recaptcha/admin and paste it here.
+const RECAPTCHA_SITE_KEY = "6Lfvsm0tAAAAABVVIirzrrbjdg40WLnjtJULU7SL";
 
 declare global {
   interface Window {
     grecaptcha?: {
       ready: (cb: () => void) => void;
-      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+      render: (
+        container: string | HTMLElement,
+        params: {
+          sitekey: string;
+          callback?: (token: string) => void;
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        }
+      ) => number;
+      getResponse: (widgetId?: number) => string;
+      reset: (widgetId?: number) => void;
     };
   }
 }
@@ -60,6 +73,8 @@ const Signup = () => {
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
   const [recaptchaReady, setRecaptchaReady] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [widgetId, setWidgetId] = useState<number | null>(null);
   const [accountType, setAccountType] = useState("Tesla Investment");
   const [form, setForm] = useState({
     full_name: "",
@@ -79,28 +94,36 @@ const Signup = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Load the reCAPTCHA v3 script once. It renders no visible UI (no
-  // checkbox, no challenge) — it just makes window.grecaptcha available so
-  // we can request a token right before submitting.
+  // Load the reCAPTCHA v2 script once (render=explicit, since we render the
+  // checkbox widget ourselves into #recaptcha-container below). Unlike v3,
+  // v2 renders a visible DOM widget, so it needs to be (re-)rendered on
+  // every mount rather than just checking window.grecaptcha once.
   //
-  // Important: we do NOT remove the script on unmount. If someone
-  // navigates away from Signup and back, removing+re-adding the script
-  // tag can leave window.grecaptcha in a broken/half-initialized state,
-  // which is what causes grecaptcha.execute() to throw even though the
-  // script "loaded" the first time.
+  // We do NOT remove the <script> tag on unmount — same reasoning as before:
+  // removing/re-adding it can leave window.grecaptcha half-initialized.
   useEffect(() => {
+    const renderWidget = () => {
+      if (!window.grecaptcha) return;
+      const container = document.getElementById("recaptcha-container");
+      if (!container || container.childElementCount > 0) return; // already rendered
+      const id = window.grecaptcha.render(container, {
+        sitekey: RECAPTCHA_SITE_KEY,
+        callback: (token: string) => setRecaptchaToken(token),
+        "expired-callback": () => setRecaptchaToken(null),
+        "error-callback": () => setRecaptchaToken(null),
+      });
+      setWidgetId(id);
+      setRecaptchaReady(true);
+    };
+
     if (window.grecaptcha) {
-      window.grecaptcha.ready(() => setRecaptchaReady(true));
+      window.grecaptcha.ready(renderWidget);
       return;
     }
 
     const existing = document.querySelector<HTMLScriptElement>('script[src*="recaptcha/api.js"]');
     if (existing) {
-      // Script tag is already on the page (e.g. from a previous mount) —
-      // just wait for grecaptcha to become available instead of adding
-      // a duplicate script tag.
-      existing.addEventListener("load", () => window.grecaptcha?.ready(() => setRecaptchaReady(true)));
-      if (window.grecaptcha) window.grecaptcha.ready(() => setRecaptchaReady(true));
+      existing.addEventListener("load", () => window.grecaptcha?.ready(renderWidget));
       return;
     }
 
@@ -114,9 +137,7 @@ const Signup = () => {
       const script = document.createElement("script");
       script.src = src;
       script.async = true;
-      script.onload = () => {
-        window.grecaptcha?.ready(() => setRecaptchaReady(true));
-      };
+      script.onload = () => window.grecaptcha?.ready(renderWidget);
       script.onerror = () => {
         script.remove();
         onFail();
@@ -124,12 +145,11 @@ const Signup = () => {
       document.head.appendChild(script);
     };
 
-    loadScript(`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`, () => {
-      loadScript(`https://www.recaptcha.net/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`, () => {
+    loadScript("https://www.google.com/recaptcha/api.js?render=explicit", () => {
+      loadScript("https://www.recaptcha.net/recaptcha/api.js?render=explicit", () => {
         toast.error("Security check failed to load. Please refresh and try again.");
       });
     });
-    // No cleanup/removal here on purpose — see comment above.
   }, []);
 
   useEffect(() => {
