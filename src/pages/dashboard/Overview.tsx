@@ -70,7 +70,12 @@ const Overview = () => {
   const expert = data?.expert ?? null;
   const isSuspended = profile?.status === "suspended";
 
-  const profileLoaded = !profileLoading && !!profile;
+  // Skeleton should only show while we're actually loading. Once loading
+  // finishes — whether or not a profile row was found — stop waiting.
+  // (ProfileContext already retries a few times before giving up on an
+  // empty row, so by the time profileLoading is false here, "no profile"
+  // is a real, final state, not a race we should keep spinning on.)
+  const profileLoaded = !profileLoading;
   const moneyReady = profileLoaded && currencyReady;
   const moneyOrSkeleton = (n: number) =>
     moneyReady ? format(n) : (<span className="inline-block h-7 w-24 rounded bg-muted animate-pulse" />);
