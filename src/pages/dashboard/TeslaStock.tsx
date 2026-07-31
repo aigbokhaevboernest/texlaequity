@@ -10,6 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useLiveFxRate } from "@/hooks/useLiveFxRate";
 import { toast } from "sonner";
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 
@@ -20,6 +21,26 @@ const ADMIN_EMAIL = "support@teslagrowthequity.com";
 // so price/fees/total are always shown in dollars here, never converted.
 const formatUSD = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+// Real conversion for the "≈ in your currency" display only — this page is
+// the one place a genuine USD→local conversion is needed (see
+// useLiveFxRate.ts). Deliberately separate from useCurrency()'s format(),
+// which must stay conversion-free for balances/deposits elsewhere.
+const CONVERTED_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", AUD: "A$", CAD: "C$", JPY: "¥",
+  SGD: "S$", AED: "AED ", NGN: "₦", BRL: "R$", INR: "₹",
+};
+const formatConverted = (usdAmount: number, currency: string, rate: number | null) => {
+  if (rate === null) return null; // caller should fall back to something else
+  const converted = usdAmount * rate;
+  const sym = CONVERTED_SYMBOLS[currency] ?? "";
+  const noDecimals = ["JPY", "NGN", "INR"].includes(currency) || Math.abs(converted) >= 1000;
+  const formatted = converted.toLocaleString("en-US", {
+    maximumFractionDigits: noDecimals ? 0 : 2,
+    minimumFractionDigits: 0,
+  });
+  return sym ? `${sym}${formatted}` : `${currency} ${formatted}`;
+};
 
 type Quote = {
   price: number;
@@ -41,7 +62,8 @@ type StockOrder = {
 
 export default function TeslaStock() {
   const { user } = useAuth();
-  const { format } = useCurrency(); // account-currency formatter, used for conversion display
+  const { currency, format } = useCurrency(); // format() is raw-only now; used for nothing here besides currency code
+  const fxRate = useLiveFxRate(currency);
   const navigate = useNavigate();
 
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -320,7 +342,9 @@ export default function TeslaStock() {
             </div>
             <div className="flex justify-between text-[12px] text-slate-500">
               <span>≈ in your account currency</span>
-              <span className="font-medium">{format(total)}</span>
+              <span className="font-medium">
+                {formatConverted(total, currency, fxRate) ?? "Loading rate…"}
+              </span>
             </div>
           </div>
 
@@ -358,7 +382,7 @@ export default function TeslaStock() {
             </div>
             <div className="flex justify-between pt-2 border-t border-slate-200 text-[14px]">
               <span className="font-medium">Total (your account currency)</span>
-              <span className="font-semibold">{format(total)}</span>
+              <span className="font-semibold">{formatConverted(total, currency, fxRate) ?? "Loading rate…"}</span>
             </div>
           </div>
 
