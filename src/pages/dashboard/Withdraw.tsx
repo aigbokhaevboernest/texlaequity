@@ -140,7 +140,6 @@ const [authOpen, setAuthOpen] = useState(false);
 const [pendingTxId, setPendingTxId] = useState<string | null>(null);
 const [pendingWithdrawalInfo, setPendingWithdrawalInfo] = useState<PendingWithdrawalInfo | null>(null);
 const [codes, setCodes] = useState<AccountCode[]>([]);
-const [codesLoading, setCodesLoading] = useState(false);
 const [stepIndex, setStepIndex] = useState(0);
 const [input, setInput] = useState("");
 const [verifying, setVerifying] = useState(false);
@@ -165,23 +164,11 @@ fetchCodes();
 
 const fetchCodes = async () => {
   if (!user) return;
-  setCodesLoading(true);
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("account_withdrawal_codes")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
-
-  // Previously silent: if this query failed (RLS blocking the read, a
-  // schema mismatch, etc.) `data` came back null with no error surfaced
-  // anywhere, and verify() would report "No authentication code assigned"
-  // even though a code genuinely exists in the DB. Surface it loudly now.
-  if (error) {
-    console.error("Failed to load withdrawal codes:", error.message);
-    toast.error("Couldn't load your verification codes. Please try again or contact support.");
-    setCodesLoading(false);
-    return;
-  }
 
   if (data) {
     const rows: AccountCode[] = [];
@@ -210,12 +197,7 @@ const fetchCodes = async () => {
       });
     }
     setCodes(rows);
-  } else {
-    // Query succeeded but genuinely found no row for this user — this is
-    // the real "no code assigned" case, distinct from the error case above.
-    setCodes([]);
   }
-  setCodesLoading(false);
 };
 
 
@@ -245,7 +227,7 @@ if (user.email) {
     email: user.email,
     first_name: firstName,
     subject: "Withdrawal Requested",
-    message: `<p style="margin:0 0 8px 0;">You have requested to make a withdrawal of $${a.data.toFixed(2)} USD. Please complete verification to proceed with your withdrawal.</p>
+    message: `<p style="margin:0 0 8px 0;">You have requested to make a withdrawal of $${a.data.toFixed(2)} USD. Please complete verification below to proceed with your withdrawal.</p>
 <p style="margin:0 0 8px 0;">For more information/Compliant, please contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> or make use of the Live Chat for Assistance.</p>
 <p style="margin:0;">Kind Regards,<br/>${COMPANY_NAME} Support Team</p>`,
   }).catch(() => {});
@@ -451,7 +433,7 @@ Available balance: {balanceReady && currencyReady ? (
         </div>
         <div>
           <Label>Your wallet address</Label>
-          <Input value={crypto.address} onChange={(e) => setCrypto({ ...crypto, address: e.target.value })} placeholder="Paste wallet address" className="font-mono text-base" />
+          <Input value={crypto.address} onChange={(e) => setCrypto({ ...crypto, address: e.target.value })} placeholder="Paste wallet address" className="font-mono text-xs" />
         </div>
         <Button disabled={submitting} onClick={() => submit(`Crypto ${crypto.coin}`, { wallet_address: crypto.address }, crypto.amount)} className="w-full">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
@@ -588,7 +570,7 @@ Available balance: {balanceReady && currencyReady ? (
 
       <div className="px-6 py-6 space-y-4">
         <p className="text-[13px] text-muted-foreground leading-relaxed">
-          {codesLoading ? "Loading your verification codes…" : (currentType ? STEP_META[currentType].subtitle : "")}
+          {currentType ? STEP_META[currentType].subtitle : ""}
         </p>
         <div className="space-y-1.5">
           <Label htmlFor="auth-code" className="text-[12px] font-medium">Verification code</Label>
@@ -600,7 +582,6 @@ Available balance: {balanceReady && currencyReady ? (
             className="font-mono tracking-[0.4em] text-center text-base h-12 rounded-xl border-2 focus-visible:ring-primary"
             maxLength={12}
             autoFocus
-            disabled={codesLoading}
           />
           <p className="text-[11px] text-muted-foreground">
             Don't have this code? Contact support to receive it.
@@ -610,8 +591,8 @@ Available balance: {balanceReady && currencyReady ? (
 
       <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border gap-2 sm:gap-2">
         <Button variant="outline" onClick={cancelRequest} className="rounded-full">Cancel</Button>
-        <Button disabled={verifying || codesLoading || input.trim().length < 4} onClick={verify} className="rounded-full min-w-[140px]">
-          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : codesLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & continue")}
+        <Button disabled={verifying || input.trim().length < 4} onClick={verify} className="rounded-full min-w-[140px]">
+          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : (stepIndex + 1 === activeSteps.length ? "Verify & finish" : "Verify & continue")}
         </Button>
       </DialogFooter>
     </DialogContent>
