@@ -102,7 +102,7 @@ export default function Plans() {
     if (user?.email) {
       void supabase.functions.invoke("send-email", {
         body: {
-          to: user.email,
+          email: user.email,
           first_name: firstName,
           subject: `Plan Selected: ${selected.name}`,
           message: `<p style="margin:0 0 18px 0;">You have selected the <strong>${selected.name}</strong> plan.</p>
@@ -119,7 +119,7 @@ export default function Plans() {
     // Notify admin
     void supabase.functions.invoke("send-email", {
       body: {
-        to: ADMIN_EMAIL,
+        email: ADMIN_EMAIL,
         first_name: "Admin",
         subject: `Plan interest — ${selected.name}`,
         message: `<p style="margin:0 0 18px 0;">${user?.email ?? "A user"} has selected the <strong>${selected.name}</strong> plan and is proceeding to deposit.</p>
