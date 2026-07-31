@@ -20,8 +20,7 @@ const genders = ["Male", "Female", "Non-binary", "Prefer not to say"];
 // Public site key — safe to expose in frontend code. The matching secret
 // key lives only in the verify-recaptcha edge function's environment.
 //
-// ⚠️ This must be a reCAPTCHA v2 ("Checkbox") key, not the old v3 key —
-// generate one at https://www.google.com/recaptcha/admin and paste it here.
+// This is a reCAPTCHA v2 ("Checkbox") key, not v3.
 const RECAPTCHA_SITE_KEY = "6Lfvsm0tAAAAABVVIirzrrbjdg40WLnjtJULU7SL";
 
 declare global {
@@ -168,20 +167,11 @@ const Signup = () => {
 
     setLoading(true);
 
-    // Get an invisible reCAPTCHA token for this submission and have the
-    // edge function check it with Google before we create the account.
-    if (!recaptchaReady || !window.grecaptcha) {
+    // v2: the token was already captured by the checkbox's callback when
+    // the user solved it — we just read what's stored, we don't fetch one.
+    if (!recaptchaReady || !recaptchaToken) {
       setLoading(false);
-      toast.error("Security check is still loading — please try again in a moment.");
-      return;
-    }
-
-    let recaptchaToken: string;
-    try {
-      recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "signup" });
-    } catch {
-      setLoading(false);
-      toast.error("Security check failed to load. Please refresh and try again.");
+      toast.error("Please check the box to confirm you're not a robot.");
       return;
     }
 
@@ -192,6 +182,9 @@ const Signup = () => {
 
     if (verifyError || !verifyResult?.success) {
       setLoading(false);
+      // Checkbox tokens are single-use — reset so the user can check it again.
+      if (widgetId !== null) window.grecaptcha?.reset(widgetId);
+      setRecaptchaToken(null);
       toast.error("We couldn't verify you're not a bot. Please try again.");
       return;
     }
@@ -423,7 +416,9 @@ const Signup = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full shadow-elegant" disabled={loading}>
+            <div id="recaptcha-container" className="flex justify-center py-1" />
+
+            <Button type="submit" className="w-full shadow-elegant" disabled={loading || !recaptchaToken}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
             </Button>
           </form>
