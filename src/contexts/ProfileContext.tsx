@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -17,6 +17,12 @@ export interface Profile {
 const PROFILE_COLUMNS =
   "full_name, username, avatar_url, account_level, status, total_balance, profit, deposit, assigned_expert_id";
 
+// A brand-new signup's profile row can lag a moment behind auth.signUp()
+// resolving (the insert happens in a separate request right after). Retry
+// a handful of times, briefly, before accepting "no profile" as final.
+const MAX_FETCH_RETRIES = 6;
+const RETRY_DELAY_MS = 500;
+
 interface ProfileContextValue {
   profile: Profile | null;
   loading: boolean;
@@ -27,8 +33,9 @@ const ProfileContext = createContext<ProfileContextValue | undefined>(undefined)
 
 /**
  * Single live source of truth for the logged-in user's profile row.
- * Fetches once, then patches state in place on every Postgres change
- * (via Supabase Realtime) — no polling, no manual refresh required.
+ * Fetches once (retrying briefly if the row isn't there yet), then patches
+ * state in place on every Postgres change (via Supabase Realtime) — no
+ * polling, no manual refresh required after the initial load settles.
  *
  * Mount this ONCE, above DashboardLayout, so every page/component
  * that calls useProfile() shares the same subscription and state.
@@ -38,24 +45,43 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async () => {
+  // Guards against a stale retry (e.g. user logs out mid-retry-loop)
+  // applying state for the wrong user after the fact.
+  const activeUserIdRef = useRef<string | null>(null);
+
+  const fetchProfile = useCallback(async (attempt = 0) => {
     if (!user) {
       setProfile(null);
       setLoading(false);
       return;
     }
+
     const { data, error } = await supabase
       .from("profiles")
       .select(PROFILE_COLUMNS)
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (activeUserIdRef.current !== user.id) return; // user changed while this was in flight
+
     if (error) console.warn("[profile] fetch error:", error.message);
+
+    if (!data && !error && attempt < MAX_FETCH_RETRIES) {
+      // No row yet (most likely: right after signup, insert hasn't landed).
+      // Stay in "loading" and try again shortly rather than giving up.
+      setTimeout(() => {
+        if (activeUserIdRef.current === user.id) fetchProfile(attempt + 1);
+      }, RETRY_DELAY_MS);
+      return;
+    }
+
     setProfile((data as Profile | null) ?? null);
     setLoading(false);
   }, [user?.id]);
 
   // Initial (and user-change) fetch
   useEffect(() => {
+    activeUserIdRef.current = user?.id ?? null;
     setLoading(true);
     fetchProfile();
   }, [fetchProfile]);
@@ -74,8 +100,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             setProfile(null);
             return;
           }
-          // Merge instead of replace so we never briefly show partial/undefined fields
+          // Merge instead of replace so we never briefly show partial/undefined
+          // fields. Spreading `prev` when it's still null is a no-op in JS
+          // (not an error), so this also correctly "sets" the profile the
+          // first time an INSERT lands while we were mid-retry above.
           setProfile((prev) => ({ ...(prev as Profile), ...(payload.new as Partial<Profile>) }));
+          setLoading(false);
         },
       )
       .subscribe();
