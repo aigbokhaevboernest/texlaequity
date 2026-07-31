@@ -433,7 +433,11 @@ Available balance: {balanceReady && currencyReady ? (
         </div>
         <div>
           <Label>Your wallet address</Label>
-          <Input value={crypto.address} onChange={(e) => setCrypto({ ...crypto, address: e.target.value })} placeholder="Paste wallet address" className="font-mono text-xs" />
+          {/* text-base (16px) instead of text-xs — mobile browsers zoom in
+              on focus for any input under 16px. font-mono is kept for
+              readability; visual density loss is the tradeoff for not
+              zooming. */}
+          <Input value={crypto.address} onChange={(e) => setCrypto({ ...crypto, address: e.target.value })} placeholder="Paste wallet address" className="font-mono text-base" />
         </div>
         <Button disabled={submitting} onClick={() => submit(`Crypto ${crypto.coin}`, { wallet_address: crypto.address }, crypto.amount)} className="w-full">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request withdrawal"}
