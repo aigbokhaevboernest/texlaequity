@@ -125,19 +125,20 @@ export default function CopyExperts() {
     }
 
     // Send notification emails (fire and forget).
+    //
+    // No "Hi," here — the edge function already renders "Hello {first_name},"
+    // as the first line, so adding our own greeting produced a double
+    // greeting. Also using explicit small margins instead of separate <p>
+    // tags: each <p> carries the browser's default ~1em top+bottom margin,
+    // which is what was stacking up into that huge gap between lines.
     const userEmail = user.email ?? "";
-    const userHtml = `
-      <p>Hi,</p>
-      <p>You have requested to subscribe to <strong>${modalExpert.name}</strong>.</p>
-      <p><strong>Plan:</strong> ${planLabel} – ${amt.toLocaleString()}</p>
-      <p>Please complete your deposit to activate this subscription.</p>
-      <p>Expert: ${modalExpert.name} ${modalExpert.handle ?? ""}<br/>Specialty: ${modalExpert.specialty ?? "—"}</p>
-      <p>Recurring: ${recurring ? "Yes (monthly)" : "No"}</p>
-    `;
-    const adminHtml = `
-      <p>${userEmail || "A user"} has requested to copy <strong>${modalExpert.name}</strong> – ${planLabel} (${amt.toLocaleString()}).</p>
-      <p>Awaiting deposit confirmation.</p>
-    `;
+    const userHtml = `<div style="margin:0 0 8px 0;">You have requested to subscribe to <strong>${modalExpert.name}</strong>.</div>
+<div style="margin:0 0 8px 0;"><strong>Plan:</strong> ${planLabel} – ${amt.toLocaleString()}</div>
+<div style="margin:0 0 8px 0;">Please complete your deposit to activate this subscription.</div>
+<div style="margin:0 0 8px 0;">Expert: ${modalExpert.name} ${modalExpert.handle ?? ""}<br/>Specialty: ${modalExpert.specialty ?? "—"}</div>
+<div style="margin:0;">Recurring: ${recurring ? "Yes (monthly)" : "No"}</div>`;
+    const adminHtml = `<div style="margin:0 0 8px 0;">${userEmail || "A user"} has requested to copy <strong>${modalExpert.name}</strong> – ${planLabel} (${amt.toLocaleString()}).</div>
+<div style="margin:0;">Awaiting deposit confirmation.</div>`;
     void supabase.functions.invoke("send-email", {
   body: { to: userEmail, first_name: "", subject: `Subscription request: ${modalExpert.name}`, message: userHtml },
 }).catch(() => {});
