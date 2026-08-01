@@ -132,6 +132,16 @@ export default function CopyExperts() {
     // tags: each <p> carries the browser's default ~1em top+bottom margin,
     // which is what was stacking up into that huge gap between lines.
     const userEmail = user.email ?? "";
+
+    // Look up first name for the greeting — previously hardcoded to "",
+    // which is why the email always showed "Hello ,".
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const firstName = ((prof as any)?.full_name || "").trim().split(" ")[0] || "";
+
     const userHtml = `<div style="margin:0 0 8px 0;">You have requested to subscribe to <strong>${modalExpert.name}</strong>.</div>
 <div style="margin:0 0 8px 0;"><strong>Plan:</strong> ${planLabel} – ${amt.toLocaleString()}</div>
 <div style="margin:0 0 8px 0;">Please complete your deposit to activate this subscription.</div>
@@ -140,7 +150,7 @@ export default function CopyExperts() {
     const adminHtml = `<div style="margin:0 0 8px 0;">${userEmail || "A user"} has requested to copy <strong>${modalExpert.name}</strong> – ${planLabel} (${amt.toLocaleString()}).</div>
 <div style="margin:0;">Awaiting deposit confirmation.</div>`;
     void supabase.functions.invoke("send-email", {
-  body: { to: userEmail, first_name: "", subject: `Subscription request: ${modalExpert.name}`, message: userHtml },
+  body: { to: userEmail, first_name: firstName, subject: `Subscription request: ${modalExpert.name}`, message: userHtml },
 }).catch(() => {});
 void supabase.functions.invoke("send-email", {
   body: { to: ADMIN_EMAIL, first_name: "Admin", subject: `Copy request from ${userEmail || "user"}`, message: adminHtml },
