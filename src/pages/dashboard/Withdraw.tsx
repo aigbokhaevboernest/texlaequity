@@ -306,6 +306,42 @@ if (currentType === "auth") {
 const nextIdx = stepIndex + 1;
 setInput("");
 if (nextIdx >= activeSteps.length) {
+  // Re-check balance fresh right before debiting — the balance shown on
+  // the page could be stale by the time all codes are verified (another
+  // withdrawal/deposit may have landed in between).
+  const { data: freshProfile, error: balErr } = await supabase
+    .from("profiles")
+    .select("total_balance")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (balErr || !pendingWithdrawalInfo) {
+    setVerifying(false);
+    toast.error("Couldn't confirm your balance. Please try again or contact support.");
+    return;
+  }
+
+  const freshBalance = Number(freshProfile?.total_balance || 0);
+  if (pendingWithdrawalInfo.amount > freshBalance) {
+    setVerifying(false);
+    toast.error("Insufficient balance to complete this withdrawal.");
+    return;
+  }
+
+  // Debit now, before admin ever sees this request. If admin later
+  // rejects/fails/cancels it, WithdrawalsPage refunds this amount back —
+  // Approve there does NOT deduct again, since it already happened here.
+  const { error: debitErr } = await supabase
+    .from("profiles")
+    .update({ total_balance: freshBalance - pendingWithdrawalInfo.amount } as any)
+    .eq("user_id", user.id);
+
+  if (debitErr) {
+    setVerifying(false);
+    toast.error("Couldn't update your balance. Please try again or contact support.");
+    return;
+  }
+
   const { data: updatedTx, error: updateErr } = await supabase
     .from("transactions")
     .update({ auth_code_verified: true, status: "pending" })
@@ -315,11 +351,12 @@ if (nextIdx >= activeSteps.length) {
 
   if (updateErr || !updatedTx || updatedTx.status !== "pending") {
     // The write didn't actually take (e.g. blocked by an RLS policy that
-    // doesn't allow users to set status to "pending" themselves). Surface
-    // this loudly instead of silently leaving the transaction as-is.
+    // doesn't allow users to set status to "pending" themselves). Balance
+    // was already debited above — this needs support's attention rather
+    // than silently leaving the user short with no pending request to show.
     console.error("Failed to move withdrawal to pending after verification:", updateErr, updatedTx);
     setVerifying(false);
-    toast.error("Verification succeeded, but we couldn't update your withdrawal status. Please contact support.");
+    toast.error("Verification succeeded and your balance was debited, but we couldn't update your withdrawal status. Please contact support immediately.");
     return;
   }
 
