@@ -113,17 +113,31 @@ export default function LanguageSwitcher() {
 
     loadGoogleTranslateScript();
 
-    // Google's banner iframe is hidden via CSS, but Google also sets an
-    // inline `top` offset on <body> to make room for it. Watch for that and
-    // snap it back to 0 so nothing shifts down / gets obstructed.
-    const resetBodyTop = () => {
+    // Google's banner iframe is hidden via CSS, but Google also sets inline
+    // styles (including an inline `top` offset on <body>) after that CSS
+    // loads, which can win the timing race. This actively re-hides the
+    // banner iframe itself and resets the body offset whenever Google
+    // touches the DOM, as a backstop to the CSS rules in index.css.
+    const suppressBanner = () => {
       if (document.body.style.top && document.body.style.top !== "0px") {
         document.body.style.top = "0px";
       }
+      document.querySelectorAll<HTMLElement>(
+        'iframe.goog-te-banner-frame, iframe[id^="goog-gt-tt"], .goog-te-banner-frame'
+      ).forEach((el) => {
+        el.style.display = "none";
+        el.style.visibility = "hidden";
+        el.style.height = "0px";
+      });
     };
-    const observer = new MutationObserver(resetBodyTop);
-    observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
-    resetBodyTop();
+    const observer = new MutationObserver(suppressBanner);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["style"],
+      childList: true,
+      subtree: true,
+    });
+    suppressBanner();
 
     const cookieVal = getCookie(COOKIE_NAME);
     if (cookieVal) {
@@ -145,6 +159,8 @@ export default function LanguageSwitcher() {
       setLangCookie(supported.code);
       window.location.reload();
     }
+
+    return () => observer.disconnect();
   }, []);
 
   // Close the dropdown on outside click / Escape so it doesn't linger over
