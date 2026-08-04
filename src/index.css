@@ -275,4 +275,24 @@ body {
   box-shadow: none !important;
 }
 
-   
+   /* Hide Google Translate's top banner iframe */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+/* Google pushes body down with an inline top offset to make room for the
+   banner — force it back to 0 */
+body {
+  top: 0px !important;
+}
+
+/* Optional: also hide the little Google icon/tooltip some versions inject */
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+
