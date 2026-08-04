@@ -32,6 +32,7 @@ import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
+import LanguageSwitcher from "./components/LanguageSwitcher";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,9 @@ const App = () => (
             <ProfileProvider>
               <ErrorBoundary>
                 <AppRoutes />
+                {/* Mounted once here (not per-page) so it persists — floating,
+                    bottom-left — across every route instead of just Login/Signup. */}
+                <LanguageSwitcher />
               </ErrorBoundary>
             </ProfileProvider>
           </AuthProvider>
