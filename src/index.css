@@ -254,45 +254,35 @@
     to { opacity: 1; filter: blur(0); transform: translateY(0); }
   }
 }
-@keyframes flash {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
-}
+
+/* ── Google Translate overrides ───────────────────────────────────────────
+   Hides the top translate banner + tooltip/highlight artifacts. Kept as a
+   single block, deliberately broad (multiple selectors + attribute matches)
+   because Google's markup/classnames can vary slightly by load. This is a
+   backstop — LanguageSwitcher.tsx also removes/hides the banner node
+   directly via JS on mount, since inline styles Google applies after this
+   stylesheet loads can otherwise win the timing race. */
+.goog-te-banner-frame,
 .goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+iframe[id^="goog-gt-tt"],
+iframe[src*="translate.google.com/translate_static"],
 .goog-te-gadget-icon,
 #goog-gt-tt,
 .goog-tooltip,
 .goog-tooltip:hover {
   display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  opacity: 0 !important;
 }
 
-body {
-  top: 0 !important;
-}
-
-.goog-text-highlight {
-  background: none !important;
-  box-shadow: none !important;
-}
-
-   /* Hide Google Translate's top banner iframe */
-.goog-te-banner-frame.skiptranslate {
-  display: none !important;
-}
-
-/* Google pushes body down with an inline top offset to make room for the
-   banner — force it back to 0 */
-body {
+html body {
   top: 0px !important;
+  position: static !important;
 }
 
-/* Optional: also hide the little Google icon/tooltip some versions inject */
-.goog-tooltip,
-.goog-tooltip:hover {
-  display: none !important;
-}
 .goog-text-highlight {
   background: none !important;
   box-shadow: none !important;
 }
-
