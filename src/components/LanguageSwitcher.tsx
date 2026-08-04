@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Globe } from "lucide-react";
 
 declare global {
   interface Window {
@@ -19,34 +20,37 @@ declare global {
 }
 
 // Add/remove languages here freely — code must be a valid Google Translate code.
+// `flag` is just a visual emoji flag next to the language name (matches the
+// convention Google's own widget uses — flag of a representative country,
+// not a literal "this is the country" claim).
 const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Spanish" },
-  { code: "fr", label: "French" },
-  { code: "de", label: "German" },
-  { code: "it", label: "Italian" },
-  { code: "pt", label: "Portuguese" },
-  { code: "nl", label: "Dutch" },
-  { code: "pl", label: "Polish" },
-  { code: "hu", label: "Hungarian" },
-  { code: "ro", label: "Romanian" },
-  { code: "sv", label: "Swedish" },
-  { code: "el", label: "Greek" },
-  { code: "cs", label: "Czech" },
-  { code: "uk", label: "Ukrainian" },
-  { code: "ru", label: "Russian" },
-  { code: "tr", label: "Turkish" },
-  { code: "ar", label: "Arabic" },
-  { code: "he", label: "Hebrew" },
-  { code: "hi", label: "Hindi" },
-  { code: "bn", label: "Bengali" },
-  { code: "zh-CN", label: "Chinese (Simplified)" },
-  { code: "ja", label: "Japanese" },
-  { code: "ko", label: "Korean" },
-  { code: "vi", label: "Vietnamese" },
-  { code: "th", label: "Thai" },
-  { code: "id", label: "Indonesian" },
-  { code: "sw", label: "Swahili" },
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "pt", label: "Português", flag: "🇵🇹" },
+  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
+  { code: "pl", label: "Polski", flag: "🇵🇱" },
+  { code: "hu", label: "Magyar", flag: "🇭🇺" },
+  { code: "ro", label: "Română", flag: "🇷🇴" },
+  { code: "sv", label: "Svenska", flag: "🇸🇪" },
+  { code: "el", label: "Ελληνικά", flag: "🇬🇷" },
+  { code: "cs", label: "Čeština", flag: "🇨🇿" },
+  { code: "uk", label: "Українська", flag: "🇺🇦" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "tr", label: "Türkçe", flag: "🇹🇷" },
+  { code: "ar", label: "العربية", flag: "🇸🇦" },
+  { code: "he", label: "עברית", flag: "🇮🇱" },
+  { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
+  { code: "bn", label: "বাংলা", flag: "🇧🇩" },
+  { code: "zh-CN", label: "中文 (简体)", flag: "🇨🇳" },
+  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "ko", label: "한국어", flag: "🇰🇷" },
+  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", label: "ไทย", flag: "🇹🇭" },
+  { code: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "sw", label: "Kiswahili", flag: "🇰🇪" },
 ];
 
 const PAGE_LANGUAGE = "en";
@@ -99,12 +103,13 @@ function loadGoogleTranslateScript() {
 
 export default function LanguageSwitcher() {
   const [current, setCurrent] = useState("en");
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
-    window.scrollTo(0, 0);
 
     loadGoogleTranslateScript();
 
@@ -130,37 +135,83 @@ export default function LanguageSwitcher() {
     }
   }, []);
 
-  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const code = e.target.value;
+  // Close the dropdown on outside click / Escape so it doesn't linger over
+  // page content while the user navigates around.
+  useEffect(() => {
+    if (!open) return;
+
+    const onClickOutside = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [open]);
+
+  function selectLanguage(code: string) {
+    setOpen(false);
     if (code === current) return;
     if (code === PAGE_LANGUAGE) clearLangCookie();
     else setLangCookie(code);
     window.location.reload();
   }
 
-  return (
-    <div className="relative inline-block">
-      {/* Required host div for Google's script — kept in DOM but visually hidden */}
-      <div id="google_translate_element" className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none" />
+  const currentLang = LANGUAGES.find((l) => l.code === current) ?? LANGUAGES[0];
 
-      <div className="relative flex items-center gap-1 rounded-full border border-white/15 bg-black/40 backdrop-blur pl-2.5 pr-5 py-1">
-        <span className="text-xs leading-none pointer-events-none">🌐</span>
-        <select
-          value={current}
-          onChange={handleChange}
+  return (
+    <div ref={rootRef} className="fixed bottom-4 left-4 z-[9999]">
+      {/* Required host div for Google's script — kept in DOM but visually hidden */}
+      <div
+        id="google_translate_element"
+        className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none"
+      />
+
+      {/* Dropdown panel — opens upward since the button sits at the bottom */}
+      {open && (
+        <div
+          role="listbox"
           aria-label="Select language"
-          className="appearance-none bg-transparent text-xs font-medium text-white outline-none cursor-pointer pr-1 max-w-[64px] truncate"
+          className="absolute bottom-full left-0 mb-2 w-64 max-h-80 overflow-y-auto rounded-xl border border-black/10 bg-white shadow-xl py-1"
         >
           {LANGUAGES.map((lang) => (
-            <option key={lang.code} value={lang.code} className="bg-[#111] text-white">
-              {lang.label}
-            </option>
+            <button
+              key={lang.code}
+              type="button"
+              role="option"
+              aria-selected={lang.code === current}
+              onClick={() => selectLanguage(lang.code)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-[15px] hover:bg-black/5 transition-colors ${
+                lang.code === current ? "bg-black/[0.04] font-medium" : ""
+              }`}
+            >
+              <span className="text-lg leading-none shrink-0">{lang.flag}</span>
+              <span className="text-[#111] truncate">{lang.label}</span>
+            </button>
           ))}
-        </select>
-        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-white/70">
-          ▼
-        </span>
-      </div>
+        </div>
+      )}
+
+      {/* Floating trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/70 backdrop-blur px-3.5 py-2.5 text-white shadow-lg hover:bg-black/80 transition-colors"
+      >
+        <Globe className="w-4 h-4" />
+        <span className="text-lg leading-none">{currentLang.flag}</span>
+        <span className="text-[10px] text-white/70">▼</span>
+      </button>
     </div>
   );
 }
