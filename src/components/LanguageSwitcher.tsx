@@ -113,6 +113,18 @@ export default function LanguageSwitcher() {
 
     loadGoogleTranslateScript();
 
+    // Google's banner iframe is hidden via CSS, but Google also sets an
+    // inline `top` offset on <body> to make room for it. Watch for that and
+    // snap it back to 0 so nothing shifts down / gets obstructed.
+    const resetBodyTop = () => {
+      if (document.body.style.top && document.body.style.top !== "0px") {
+        document.body.style.top = "0px";
+      }
+    };
+    const observer = new MutationObserver(resetBodyTop);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
+    resetBodyTop();
+
     const cookieVal = getCookie(COOKIE_NAME);
     if (cookieVal) {
       const to = cookieVal.split("/")[2];
