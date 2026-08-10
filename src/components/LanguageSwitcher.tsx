@@ -64,8 +64,15 @@ function setLangCookie(targetCode: string) {
   const oneYear = 60 * 60 * 24 * 365;
   document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${oneYear}`;
   const host = window.location.hostname;
+  // Skip domain-scoped cookies on plain IPs / localhost, where a leading
+  // dot isn't valid.
+  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+  if (host === "localhost" || isIp) return;
   const parts = host.split(".");
-  if (parts.length > 2) {
+  // parts.length >= 2 covers both apex (example.com) and subdomains
+  // (www.example.com) — previously only subdomains got the domain-scoped
+  // cookie, so language didn't persist when a user landed on the apex host.
+  if (parts.length >= 2) {
     const parentDomain = "." + parts.slice(-2).join(".");
     document.cookie = `${COOKIE_NAME}=${value}; path=/; domain=${parentDomain}; max-age=${oneYear}`;
   }
@@ -107,7 +114,7 @@ function applyGoogleLang(code: string): boolean {
   if (!combo) return false;
   if (combo.value === code) return true;
   combo.value = code;
-  combo.dispatchEvent(new Event("change"));
+  combo.dispatchEvent(new Event("change", { bubbles: true }));
   return true;
 }
 
