@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { CURRENCIES, COUNTRIES } from "@/lib/locations";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const countries = COUNTRIES;
 const currencies = CURRENCIES;
@@ -286,9 +285,6 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-hero flex items-start justify-center p-6 pt-20 relative overflow-hidden">
-      <div className="absolute top-4 right-3 z-20">
-        <LanguageSwitcher />
-      </div>
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
