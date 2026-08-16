@@ -55,7 +55,6 @@ export default function Cars() {
     loadOrders();
   }, [user?.id]);
 
-  // Live updates when admin approves/rejects the linked deposit
   useEffect(() => {
     if (!user) return;
     const ch = supabase
@@ -69,8 +68,12 @@ export default function Cars() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
 
-  const sendOrderEmail = async (vehicle: (typeof vehicles)[0], priceUsd: number, status: OrderStatus) => {
+  const sendDepositInstructionsEmail = async (
+    vehicle: (typeof vehicles)[0],
+    priceUsd: number
+  ) => {
     if (!user) return;
+
     const displayAmount = priceUsd > 0 ? format(priceUsd) : vehicle.price;
 
     const { data: prof } = await supabase
@@ -80,22 +83,32 @@ export default function Cars() {
       .maybeSingle();
     const firstName = ((prof as any)?.full_name || "").trim().split(" ")[0] || "";
 
-    const messages: Record<OrderStatus, string> = {
-      awaiting_deposit: `<p>You've started an order for the <strong>${vehicle.model}</strong> (${displayAmount}).</p><p>To secure your order, please complete your deposit of <strong>${displayAmount}</strong> from the Deposit page. Your order status is currently <strong>Awaiting deposit</strong>.</p>`,
-      processing: `<p>We've received your deposit submission for the <strong>${vehicle.model}</strong>. Your order status is now <strong>Processing</strong> while we confirm your payment.</p>`,
-      approved: `<p>Your deposit for the <strong>${vehicle.model}</strong> has been approved. Your order is now <strong>Processing</strong> toward delivery.</p>`,
-      rejected: `<p>We were unable to approve your deposit for the <strong>${vehicle.model}</strong>. Please contact support.</p>`,
-    };
-
     if (user.email) {
-      void supabase.functions.invoke("send-email", {
-        body: { email: user.email, first_name: firstName, subject: `${vehicle.model} order update`, message: messages[status] },
-      }).catch(() => {});
+      void supabase.functions
+        .invoke("send-email", {
+          body: {
+            to: user.email,
+            first_name: firstName,
+            subject: `Your ${vehicle.model} order — deposit instructions`,
+            message: `<p style="margin:0 0 18px 0;">You've started an order for the <strong>${vehicle.model}</strong> (${displayAmount}).</p>
+<p style="margin:0 0 18px 0;">To secure your order, please complete your deposit of <strong>${displayAmount}</strong> from the Deposit page using either crypto or bank transfer. Choose your method, follow the on-screen instructions, and attach proof of payment.</p>
+<p style="margin:0;">Your order status is currently <strong>Awaiting deposit</strong>. We'll email you again once your deposit is confirmed.</p>`,
+          },
+        })
+        .catch(() => {});
     }
 
-    void supabase.functions.invoke("send-email", {
-      body: { email: ADMIN_EMAIL, subject: `Car order update — ${vehicle.model}`, message: `<p>${user.email ?? "A user"}'s order for <strong>${vehicle.model}</strong> is now <strong>${STATUS_META[status].label}</strong>.</p>` },
-    }).catch(() => {});
+    void supabase.functions
+      .invoke("send-email", {
+        body: {
+          to: ADMIN_EMAIL,
+          first_name: "Admin",
+          subject: `New car order — ${vehicle.model}`,
+          message: `<p style="margin:0 0 18px 0;">${user.email ?? "A user"} started an order for the <strong>${vehicle.model}</strong>.</p>
+<p style="margin:0;">Deposit amount due: <strong>${displayAmount}</strong></p>`,
+        },
+      })
+      .catch(() => {});
   };
 
   const handleConfirm = async () => {
@@ -115,7 +128,7 @@ export default function Cars() {
       return;
     }
 
-    void sendOrderEmail(vehicle, priceUsd, "awaiting_deposit");
+    void sendDepositInstructionsEmail(vehicle, priceUsd);
     loadOrders();
 
     setTimeout(() => {
@@ -181,7 +194,6 @@ export default function Cars() {
         ))}
       </div>
 
-      {/* Order history */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="p-6 pb-0">
           <h2 className="font-display text-lg font-medium mb-4">Order History</h2>
