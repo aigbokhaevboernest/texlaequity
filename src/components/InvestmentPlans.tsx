@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 const plans = [
   {
     name: "Basic",
-    price: "$100",
+    price: "$1000",
     roi: "8%",
     period: "monthly",
     features: ["Daily payouts", "BTC / ETH / USDT", "Basic analytics", "Email support"],
@@ -14,7 +14,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "$1,000",
+    price: "$5,000",
     roi: "14%",
     period: "monthly",
     features: ["Daily payouts", "Copy trading access", "Priority withdrawals", "Tesla discount 2%", "24/7 chat support"],
