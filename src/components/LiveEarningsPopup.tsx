@@ -68,11 +68,12 @@ export const LiveEarningsPopup = () => {
           100% { transform: translateY(0); opacity: 1; }
         }
       `}</style>
-      <div
-        key={item.id}
-        className="fixed bottom-6 left-6 z-50"
-        style={{ animation: "earnings-slide-up 400ms ease-out both" }}
-      >
+     <div
+  key={item.id}
+  className="fixed bottom-24 left-6 z-50"
+  style={{ animation: "earnings-slide-up 400ms ease-out both" }}
+>
+
         <div
           className="flex items-center gap-3 rounded-xl shadow-elegant p-3 pr-5 max-w-[340px]"
           style={{ backgroundColor: "#1BD7C5", color: "#FFFFFF" }}
