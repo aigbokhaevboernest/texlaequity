@@ -285,7 +285,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-hero flex items-start justify-center p-6 pt-20 relative overflow-hidden">
+<div className="min-h-screen bg-hero flex items-start justify-center p-6 pt-20 pb-32 relative overflow-hidden">
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] blob opacity-40 pointer-events-none" />
       <div className="w-full max-w-md relative">
         <Link to="/" className="flex items-center justify-center mb-8">
