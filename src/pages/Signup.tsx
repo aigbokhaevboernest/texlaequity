@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { CURRENCIES, COUNTRIES } from "@/lib/locations";
+import { LiveEarningsPopup } from "@/components/LiveEarningsPopup";
 
 const countries = COUNTRIES;
 const currencies = CURRENCIES;
@@ -463,6 +464,7 @@ const Signup = () => {
           </p>
         </motion.div>
       </div>
+      <LiveEarningsPopup />
     </div>
   );
 };
