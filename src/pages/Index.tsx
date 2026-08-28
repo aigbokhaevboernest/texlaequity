@@ -8,6 +8,7 @@ import Services from "@/components/Services";
 import Leaderboard from "@/components/Leaderboard";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
+import { LiveEarningsPopup } from "@/components/LiveEarningsPopup";
 
 const Index = () => {
   return (
@@ -24,6 +25,7 @@ const Index = () => {
         <CTASection />
       </main>
       <Footer />
+      <LiveEarningsPopup />
     </>
   );
 };
