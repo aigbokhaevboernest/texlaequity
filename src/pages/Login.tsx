@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 import { useAuth } from "@/hooks/useAuth";
+import { LiveEarningsPopup } from "@/components/LiveEarningsPopup";
 const REMEMBER_KEY = "tv_remember_email";
 
 const loginSchema = z.object({
@@ -181,6 +182,7 @@ const Login = () => {
       </div>
 
       <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
+      <LiveEarningsPopup />
     </div>
   );
 };
