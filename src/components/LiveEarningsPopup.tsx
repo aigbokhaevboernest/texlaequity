@@ -6,7 +6,7 @@ const NAMES = [
   "Elena", "Carlos", "Priya", "Amara", "David", "Noah", "Fatima", "Hiroshi",
   "Isabella", "Lucas", "Mei", "Omar", "Grace", "Anton", "Nadia", "Ravi",
 ];
-const COUNTRIES = ["Italy", "USA", "Canada", "UAE", "Japan", "Germany", "Brazil", "Singapore", "France", "Spain", "Australia"];
+const COUNTRIES = ["Italy", "Canada", "UAE", "Japan", "Germany", "Brazil", "Singapore", "France", "Spain", "Australia", "USA"];
 const CAR_MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"];
 
 type ActionType = "earned" | "withdrew" | "deposit" | "joined" | "stock" | "car";
@@ -50,17 +50,26 @@ export const LiveEarningsPopup = () => {
   >(null);
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismissedRef = useRef(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const dismiss = () => {
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
+    // stop any future popups for the rest of this session (until refresh)
+    dismissedRef.current = true;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     setItem(null);
   };
 
   useEffect(() => {
     const tick = () => {
+      if (dismissedRef.current) return;
       const action = rand(ACTIONS);
       setItem({
         id: Date.now(),
@@ -77,10 +86,10 @@ export const LiveEarningsPopup = () => {
       hideTimeoutRef.current = setTimeout(() => setItem(null), 5000);
     };
     const initial = setTimeout(tick, 2500);
-    const interval = setInterval(tick, 8000);
+    intervalRef.current = setInterval(tick, 8000);
     return () => {
       clearTimeout(initial);
-      clearInterval(interval);
+      if (intervalRef.current) clearInterval(intervalRef.current);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
   }, []);
