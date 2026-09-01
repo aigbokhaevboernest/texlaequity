@@ -6,7 +6,7 @@ const NAMES = [
   "Elena", "Carlos", "Priya", "Amara", "David", "Noah", "Fatima", "Hiroshi",
   "Isabella", "Lucas", "Mei", "Omar", "Grace", "Anton", "Nadia", "Ravi",
 ];
-const COUNTRIES = ["Italy", "Canada", "UAE", "Japan", "Germany", "Brazil", "Singapore", "France", "Spain", "Australia"];
+const COUNTRIES = ["Italy", "USA", "Canada", "UAE", "Japan", "Germany", "Brazil", "Singapore", "France", "Spain", "Australia"];
 const CAR_MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"];
 
 type ActionType = "earned" | "withdrew" | "deposit" | "joined" | "stock" | "car";
