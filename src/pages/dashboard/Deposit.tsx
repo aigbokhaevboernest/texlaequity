@@ -1,14 +1,22 @@
 import { useRef, useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { Loader2, Copy, Upload, X, ImageIcon, Landmark, Bitcoin, ArrowRight } from "lucide-react";
+import { Loader2, Copy, Upload, X, ImageIcon, Landmark, Bitcoin, ArrowRight, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 
@@ -26,6 +34,10 @@ const COIN_COLORS: Record<string, { border: string; text: string }> = {
 
 const ADMIN_EMAIL = "support@teslagrowthequity.com";
 
+// Adjust these if your routes differ.
+const TRANSACTIONS_ROUTE = "/dashboard/transactions";
+const OVERVIEW_ROUTE = "/dashboard";
+
 const qrCodeUrl = (address: string) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(address)}`;
 
@@ -40,8 +52,14 @@ type Bank = {
   assigned_user_ids: string[];
 };
 
+type DepositConfirmation = {
+  method: string;
+  amount: number;
+};
+
 export default function Deposit() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [crypto, setCrypto] = useState({ coin: "BTC", amount: "" });
@@ -58,6 +76,8 @@ export default function Deposit() {
   const [bankProofPreview, setBankProofPreview] = useState<string | null>(null);
   const [uploadingBankProof, setUploadingBankProof] = useState(false);
   const bankProofRef = useRef<HTMLInputElement>(null);
+
+  const [confirmation, setConfirmation] = useState<DepositConfirmation | null>(null);
 
   useEffect(() => {
     const amountParam = searchParams.get("amount");
@@ -172,7 +192,7 @@ ${proofLink ? `<p style="margin:0;">Proof of payment: <a href="${proofLink}">${p
       },
     }).catch(() => {});
 
-    toast.success("Deposit request submitted.");
+    setConfirmation({ method, amount: a.data });
     return true;
   };
 
@@ -401,6 +421,51 @@ ${proofLink ? `<p style="margin:0;">Proof of payment: <a href="${proofLink}">${p
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!confirmation} onOpenChange={(open) => { if (!open) setConfirmation(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-2">
+              <CheckCircle2 className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="text-center">Deposit Submitted</DialogTitle>
+            <DialogDescription className="text-center">
+              Your deposit request has been received and is awaiting admin approval. Funds will reflect in your balance once confirmed.
+            </DialogDescription>
+          </DialogHeader>
+
+          {confirmation && (
+            <div className="rounded-xl bg-muted/40 p-4 space-y-2 text-[13px]">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Method</span>
+                <span className="font-medium">{confirmation.method}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount</span>
+                <span className="font-medium">${confirmation.amount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status</span>
+                <span className="font-medium">Pending approval</span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="sm:grid sm:grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setConfirmation(null); navigate(TRANSACTIONS_ROUTE); }}
+            >
+              View Transaction
+            </Button>
+            <Button
+              onClick={() => { setConfirmation(null); navigate(OVERVIEW_ROUTE); }}
+            >
+              Go Home
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
