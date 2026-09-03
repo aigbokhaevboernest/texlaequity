@@ -4,8 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TeslaVest Design System — light Tesla-inspired with red accents, glassmorphism, futuristic feel.
-   All colors MUST be HSL. */
 
 @layer base {
   :root {
