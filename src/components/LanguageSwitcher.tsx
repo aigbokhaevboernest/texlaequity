@@ -36,7 +36,7 @@ const LANGUAGES = [
   { code: "cs", label: "Čeština", flag: "🇨🇿" },
   { code: "uk", label: "Українська", flag: "🇺🇦" },
   { code: "ru", label: "Русский", flag: "🇷🇺" },
-  { code: "tr", label: "Türkçe", flag: "🇹🇷" },
+  { code: "tr", label: "Türkçe", flag: "🇹" },
   { code: "ar", label: "العربية", flag: "🇸🇦" },
   { code: "he", label: "עברית", flag: "🇮🇱" },
   { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
@@ -178,6 +178,7 @@ export default function LanguageSwitcher() {
       const to = cookieVal.split("/")[2];
       if (to && to !== PAGE_LANGUAGE) {
         setCurrent(to);
+        document.documentElement.setAttribute("lang", to);
         applyGoogleLangWithRetry(to);
       }
       return () => observer.disconnect();
@@ -193,6 +194,7 @@ export default function LanguageSwitcher() {
       if (supported && supported.code !== PAGE_LANGUAGE) {
         setLangCookie(supported.code);
         setCurrent(supported.code);
+        document.documentElement.setAttribute("lang", supported.code);
         applyGoogleLangWithRetry(supported.code);
       }
     }
@@ -225,6 +227,7 @@ export default function LanguageSwitcher() {
     setOpen(false);
     if (code === current) return;
     setCurrent(code);
+    document.documentElement.setAttribute("lang", code);
 
     if (code === PAGE_LANGUAGE) {
       // "Back to English" — clear the cookie so refreshes stay untranslated,
