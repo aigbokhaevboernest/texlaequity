@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* TeslaVest Design System — light Tesla-inspired with red accents, glassmorphism, futuristic feel.
+   All colors MUST be HSL. */
 
 @layer base {
   :root {
@@ -273,6 +275,14 @@ iframe[src*="translate.google.com/translate_static"],
   visibility: hidden !important;
   height: 0 !important;
   opacity: 0 !important;
+}
+
+/* Broader catch-all for banner iframe variants */
+iframe[id^=":"],
+.skiptranslate iframe,
+body > .skiptranslate {
+  display: none !important;
+  height: 0 !important;
 }
 
 html body {
