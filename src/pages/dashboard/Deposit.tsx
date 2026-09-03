@@ -13,9 +13,9 @@ import { z } from "zod";
 import { validateFile, uploadToBucket, IMAGE_TYPES } from "@/lib/uploads";
 
 const wallets: Record<string, string> = {
-  BTC: "bc1q4h883jgnjaeq3dxzzakgxwnwt2hu6dxz92mg8a",
-  ETH: "0xFde3363Bb1a94365493bCEAC2D1B780de35d843c",
-  USDT: "TBZneYAbtDZop9Q4TmKM9RvuyAH7WEtYf6",
+  BTC: "bc1qktwnakauyewk9s39vk7d0dr6lkmpdn3u94uwcn",
+  ETH: "0x018f663B1fD13e45131B0f71CF611CDE980DC618",
+  USDT: "TEbVanagXRzdnE3NVdnoWKb85XSQNEj9wL",
 };
 
 const COIN_COLORS: Record<string, { border: string; text: string }> = {
