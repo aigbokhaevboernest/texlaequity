@@ -262,9 +262,13 @@ const Signup = () => {
         return;
       }
 
+      // NOTE: the send-email edge function expects the recipient in the
+      // "to" field (see Deposit.tsx's calls) — this previously sent
+      // "email" instead, which the function doesn't read, so no email
+      // was ever actually delivered on signup.
       void supabase.functions.invoke("send-email", {
         body: {
-          email: form.email.trim().toLowerCase(),
+          to: form.email.trim().toLowerCase(),
           first_name: form.full_name.trim().split(" ")[0] || "",
           subject: "Welcome to Tesla Equity",
           message: `<p style="margin:0 0 12px 0;">Welcome aboard! Your account has been created successfully. You're all set to start exploring your dashboard.</p>
