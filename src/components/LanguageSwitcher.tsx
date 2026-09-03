@@ -154,7 +154,7 @@ export default function LanguageSwitcher() {
         document.body.style.top = "0px";
       }
       document.querySelectorAll<HTMLElement>(
-        'iframe.goog-te-banner-frame, iframe[id^="goog-gt-tt"], .goog-te-banner-frame'
+        'iframe.goog-te-banner-frame, iframe[id^="goog-gt-tt"], .goog-te-banner-frame, .skiptranslate iframe, body > .skiptranslate'
       ).forEach((el) => {
         el.style.display = "none";
         el.style.visibility = "hidden";
