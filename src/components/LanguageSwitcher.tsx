@@ -190,30 +190,44 @@ export default function LanguageSwitcher() {
       });
     };
 
-    // Debounced: new nodes (a modal opening, a toast appearing) schedule a
-    // retranslate a beat later. Debouncing avoids fighting Google's own DOM
-    // rewrites, which are themselves mutations and would otherwise
-    // re-trigger this callback in a loop.
+    // Debounced + cooldown-guarded: new top-level nodes under <body> (a
+    // modal portal mounting, a toast stack appearing) schedule a
+    // retranslate a beat later. `retranslating` blocks re-entry so Google's
+    // own DOM rewrite — which is itself a mutation — can't immediately
+    // reschedule another pass and spiral into a freeze.
+    let retranslating = false;
     const scheduleRetranslate = () => {
-      if (currentRef.current === PAGE_LANGUAGE) return;
+      if (currentRef.current === PAGE_LANGUAGE || retranslating) return;
       if (retranslateTimer.current) clearTimeout(retranslateTimer.current);
       retranslateTimer.current = setTimeout(() => {
+        retranslating = true;
         forceRetranslate(currentRef.current);
+        setTimeout(() => { retranslating = false; }, 1500);
       }, 400);
     };
 
-    const observer = new MutationObserver((mutations) => {
-      suppressBanner();
-      const hasNewNodes = mutations.some((m) => m.addedNodes.length > 0);
-      if (hasNewNodes) scheduleRetranslate();
-    });
-    observer.observe(document.body, {
+    // Banner suppression only needs to react to style-attribute changes
+    // (Google's own inline-style pokes), so this stays scoped to attributes
+    // and doesn't fire on every text/content mutation in the tree.
+    const bannerObserver = new MutationObserver(suppressBanner);
+    bannerObserver.observe(document.body, {
       attributes: true,
       attributeFilter: ["style"],
-      childList: true,
       subtree: true,
     });
     suppressBanner();
+
+    // Deliberately shallow: childList on <body> itself, not subtree. This
+    // catches new portal roots (dialogs, toast containers) mounting
+    // directly under <body>, without reacting to ordinary re-renders
+    // happening inside the app's own root node (e.g. typing in a field),
+    // which is what caused both the "only translates on interaction"
+    // symptom and the freeze.
+    const portalObserver = new MutationObserver((mutations) => {
+      const hasNewNodes = mutations.some((m) => m.addedNodes.length > 0);
+      if (hasNewNodes) scheduleRetranslate();
+    });
+    portalObserver.observe(document.body, { childList: true });
 
     // Re-apply translation state on load/refresh — the cookie alone doesn't
     // reliably make Google re-translate on its own, so once the widget is
@@ -227,7 +241,8 @@ export default function LanguageSwitcher() {
         applyGoogleLangWithRetry(to);
       }
       return () => {
-        observer.disconnect();
+        bannerObserver.disconnect();
+        portalObserver.disconnect();
         if (retranslateTimer.current) clearTimeout(retranslateTimer.current);
       };
     }
@@ -248,7 +263,8 @@ export default function LanguageSwitcher() {
     }
 
     return () => {
-      observer.disconnect();
+      bannerObserver.disconnect();
+      portalObserver.disconnect();
       if (retranslateTimer.current) clearTimeout(retranslateTimer.current);
     };
   }, []);
