@@ -109,20 +109,29 @@ function loadGoogleTranslateScript() {
 // of reloading the page. This is what the widget's own UI does internally —
 // setting the value and firing `change` makes Google rewrite the DOM in
 // place, with no navigation.
-function applyGoogleLang(code: string): boolean {
+//
+// Checking combo.options.length matters: right after a cold page load
+// (e.g. a refresh) the <select> element itself can exist in the DOM before
+// Google has finished populating it with <option> entries. Writing a value
+// that doesn't match any option gets silently reset by the browser, which
+// is what made translation flaky specifically on refresh — we'd "succeed"
+// (return true from a stale/blank value check) before the widget was
+// actually ready.
+function applyGoogleLang(code: string, force = false): boolean {
   const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-  if (!combo) return false;
-  if (combo.value === code) return true;
+  if (!combo || combo.options.length <= 1) return false;
+  if (combo.value === code && !force) return true;
   combo.value = code;
   combo.dispatchEvent(new Event("change", { bubbles: true }));
   return true;
 }
 
-// The combo element only exists once Google's script has finished booting
-// and injecting its widget, which happens async and can take a beat —
-// especially right after a refresh. Poll briefly instead of assuming it's
-// there immediately.
-function applyGoogleLangWithRetry(code: string, attempts = 30, intervalMs = 200) {
+// The combo element (and its options) only exist once Google's script has
+// finished booting and injecting its widget, which happens async and can
+// take several seconds on a cold refresh, especially on slower connections.
+// 30 attempts at 200ms (6s) was cutting this off too early — bumped to give
+// the widget more runway before we give up.
+function applyGoogleLangWithRetry(code: string, attempts = 75, intervalMs = 200) {
   let tries = 0;
   const interval = setInterval(() => {
     tries += 1;
@@ -136,10 +145,29 @@ function applyGoogleLangWithRetry(code: string, attempts = 30, intervalMs = 200)
   if (applied) clearInterval(interval);
 }
 
+// Google's own DOM-mutation watcher doesn't reliably catch content mounted
+// into React portals (dialogs, toast stacks) that appear well after the
+// initial scan. Re-firing "change" on the combo — even with the same value
+// — makes Google re-walk the current DOM and translate anything new. This
+// is the supported trigger for "translate again" since there's no public
+// API for it.
+function forceRetranslate(code: string) {
+  applyGoogleLang(code, true);
+}
+
 export default function LanguageSwitcher() {
   const [current, setCurrent] = useState("en");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  // Mirrors `current` for use inside the mutation observer callback, which
+  // is set up once on mount and would otherwise close over a stale value.
+  const currentRef = useRef("en");
+  const retranslateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setLang = (code: string) => {
+    currentRef.current = code;
+    setCurrent(code);
+  };
 
   useEffect(() => {
     loadGoogleTranslateScript();
@@ -161,7 +189,24 @@ export default function LanguageSwitcher() {
         el.style.height = "0px";
       });
     };
-    const observer = new MutationObserver(suppressBanner);
+
+    // Debounced: new nodes (a modal opening, a toast appearing) schedule a
+    // retranslate a beat later. Debouncing avoids fighting Google's own DOM
+    // rewrites, which are themselves mutations and would otherwise
+    // re-trigger this callback in a loop.
+    const scheduleRetranslate = () => {
+      if (currentRef.current === PAGE_LANGUAGE) return;
+      if (retranslateTimer.current) clearTimeout(retranslateTimer.current);
+      retranslateTimer.current = setTimeout(() => {
+        forceRetranslate(currentRef.current);
+      }, 400);
+    };
+
+    const observer = new MutationObserver((mutations) => {
+      suppressBanner();
+      const hasNewNodes = mutations.some((m) => m.addedNodes.length > 0);
+      if (hasNewNodes) scheduleRetranslate();
+    });
     observer.observe(document.body, {
       attributes: true,
       attributeFilter: ["style"],
@@ -177,11 +222,14 @@ export default function LanguageSwitcher() {
     if (cookieVal) {
       const to = cookieVal.split("/")[2];
       if (to && to !== PAGE_LANGUAGE) {
-        setCurrent(to);
+        setLang(to);
         document.documentElement.setAttribute("lang", to);
         applyGoogleLangWithRetry(to);
       }
-      return () => observer.disconnect();
+      return () => {
+        observer.disconnect();
+        if (retranslateTimer.current) clearTimeout(retranslateTimer.current);
+      };
     }
 
     if (!sessionStorage.getItem(AUTO_DETECT_FLAG)) {
@@ -193,13 +241,16 @@ export default function LanguageSwitcher() {
       );
       if (supported && supported.code !== PAGE_LANGUAGE) {
         setLangCookie(supported.code);
-        setCurrent(supported.code);
+        setLang(supported.code);
         document.documentElement.setAttribute("lang", supported.code);
         applyGoogleLangWithRetry(supported.code);
       }
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (retranslateTimer.current) clearTimeout(retranslateTimer.current);
+    };
   }, []);
 
   // Close the dropdown on outside click / Escape.
@@ -226,7 +277,7 @@ export default function LanguageSwitcher() {
   function selectLanguage(code: string) {
     setOpen(false);
     if (code === current) return;
-    setCurrent(code);
+    setLang(code);
     document.documentElement.setAttribute("lang", code);
 
     if (code === PAGE_LANGUAGE) {
