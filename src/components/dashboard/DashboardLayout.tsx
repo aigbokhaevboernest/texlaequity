@@ -9,7 +9,7 @@ import CybercabLoginToast from "@/components/CybercabLoginToast";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
-  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet,TrendingUp,
+  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet, TrendingUp, Rocket,
 } from "lucide-react";
 
 const items = [
@@ -62,7 +62,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (!user) nav("/login", { replace: true });
   }, [user, authLoading, nav]);
 
-  // Live, shared profile — updates instantly on any DB change, no refresh needed.
   const { profile } = useProfile();
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
@@ -77,27 +76,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isSuspended = profile?.status === "suspended";
   const isOverview = location.pathname === "/dashboard";
-  const allowedWhileSuspended = isOverview; // can see balance only
+  const allowedWhileSuspended = isOverview;
 
   const handleSignOut = async () => {
-  nav("/login", { replace: true });
-  await signOut();
-};
-
-
-
+    nav("/login", { replace: true });
+    await signOut();
+  };
 
   const initials = (profile?.full_name || profile?.username || "U")
     .split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen bg-mesh">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/60">
-     <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
-  <Link to="/" className="flex items-center justify-start">
-    <BrandLogo className="h-4 w-auto" />
-  </Link>
+      <CybercabLoginToast />
 
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/60">
+        <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center justify-start">
+            <BrandLogo className="h-4 w-auto" />
+          </Link>
 
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 pr-2">
