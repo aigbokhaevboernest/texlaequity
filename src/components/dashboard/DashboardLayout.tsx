@@ -22,6 +22,7 @@ const items = [
   { to: "/dashboard/kyc", label: "AML / KYC", icon: ShieldCheck },
   { to: "/dashboard/plans", label: "Trading Plans", icon: LineChart },
   { to: "/dashboard/tesla-stock", label: "Tesla Stock", icon: TrendingUp },
+  { to: "/dashboard/cybercab", label: "Cybercab", icon: Rocket },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
