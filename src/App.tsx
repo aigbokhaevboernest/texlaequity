@@ -33,6 +33,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import Cybercab from "./pages/dashboard/Cybercab";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/settings" element={<DashboardLayout><DashSettings /></DashboardLayout>} />
         <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
         <Route path="/dashboard/tesla-stock" element={<DashboardLayout><TeslaStock /></DashboardLayout>} />
+        <Route path="/dashboard/cybercab" element={<DashboardLayout><Cybercab /></DashboardLayout>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
