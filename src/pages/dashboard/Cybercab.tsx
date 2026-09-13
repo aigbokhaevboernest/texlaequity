@@ -9,7 +9,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import cybercabImg from "@/assets/cybercab.png";
 import {
-  CYBERCAB_INVEST_OPTIONS, EMPTY_HOLDING, INFO_TABS, InfoTab, OVERVIEW_TEXT,
+  CYBERCAB_INVEST_OPTIONS, INFO_TABS, InfoTab, OVERVIEW_TEXT,
 } from "@/lib/cybercab";
 
 const GOLD = "#B8862F";
@@ -19,6 +19,7 @@ const GOLD_BORDER = "border-[#B8862F]/30";
 const GOLD_SOFT_BG = "bg-[#B8862F]/10";
 
 const ADMIN_EMAIL = "admin@texlaequity.com";
+const DEFAULT_UNIT_PRICE = 30000;
 
 type InvestmentRow = {
   id: string;
@@ -50,6 +51,9 @@ export default function Cybercab() {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [unitPrice, setUnitPrice] = useState(DEFAULT_UNIT_PRICE);
+  const [portfolioChangePct, setPortfolioChangePct] = useState(0);
+
   const loadInvestments = async () => {
     if (!user) return;
     const { data } = await supabase
@@ -68,19 +72,52 @@ export default function Cybercab() {
     setDocuments((data as DocumentRow[] | null) ?? []);
   };
 
+  const loadUnitPrice = async () => {
+    const { data } = await supabase
+      .from("cybercab_settings")
+      .select("unit_price_usd")
+      .eq("id", 1)
+      .maybeSingle();
+    if (data) setUnitPrice(Number((data as { unit_price_usd: number }).unit_price_usd));
+  };
+
   useEffect(() => {
-    Promise.all([loadInvestments(), loadDocuments()]).finally(() => setLoading(false));
+    Promise.all([loadInvestments(), loadDocuments(), loadUnitPrice()]).finally(() => setLoading(false));
   }, [user?.id]);
 
-  const activeInvestments = investments.filter((i) => i.status === "active" || i.status === "completed");
-  const holding = activeInvestments.length
-    ? {
-        totalInvested: activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0),
-        unitsHeld: activeInvestments.reduce((s, i) => s + Number(i.units), 0),
-        currentValue: activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0), // no live valuation yet
-        portfolioChangePct: 0,
-      }
-    : EMPTY_HOLDING;
+  // Cosmetic-only ticker, unrelated to real invested amounts
+  useEffect(() => {
+    const tick = () => setPortfolioChangePct(Math.random() * 4.5 + 0.1);
+    tick();
+    const interval = setInterval(tick, 12000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Live updates when admin approves/rejects the linked deposit
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`cybercab-investments-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "cybercab_investments", filter: `user_id=eq.${user.id}` },
+        () => loadInvestments()
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
+
+  const activeInvestments = investments.filter((i) => i.status === "active");
+  const totalInvested = activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0);
+  const unitsHeld = unitPrice > 0 ? Math.floor(totalInvested / unitPrice) : 0;
+  const currentValue = totalInvested;
+
+  const holding = {
+    totalInvested,
+    unitsHeld,
+    currentValue,
+    portfolioChangePct,
+  };
 
   const openInvest = () => {
     setSelectedAmount(null);
@@ -97,17 +134,15 @@ export default function Cybercab() {
     }
     setConfirming(true);
 
-    const { error } = await supabase.from("cybercab_investments").insert({
-      user_id: user.id,
-      plan_id: "cybercab",
-      amount_usd: finalAmount,
-      units: 0,
-      status: "pending",
-    });
+    const { data: invRow, error } = await supabase
+      .from("cybercab_investments")
+      .insert({ user_id: user.id, plan_id: "cybercab", amount_usd: finalAmount, units: 0, status: "pending" })
+      .select("id")
+      .maybeSingle();
 
-    if (error) {
+    if (error || !invRow) {
       setConfirming(false);
-      toast.error(error.message);
+      toast.error(error?.message ?? "Something went wrong");
       return;
     }
 
@@ -132,7 +167,7 @@ export default function Cybercab() {
       setInvestOpen(false);
       loadInvestments();
       toast.success("Investment request submitted. Continue with deposit.");
-      nav(`/dashboard/deposit?amount=${finalAmount}`);
+      nav(`/dashboard/deposit?amount=${finalAmount}&cybercab_investment_id=${invRow.id}`);
     }, 500);
   };
 
@@ -148,18 +183,34 @@ export default function Cybercab() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { icon: PieChart, label: "Total Invested", value: format(holding.totalInvested) },
-          { icon: TrendingUp, label: "Current Value", value: format(holding.currentValue) },
-          { icon: Package, label: "Units Held", value: holding.unitsHeld.toString() },
-          { icon: Rocket, label: "Portfolio Change", value: `${holding.portfolioChangePct >= 0 ? "+" : ""}${holding.portfolioChangePct.toFixed(2)}%` },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
-            <s.icon className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
-            <p className="text-[11px] text-muted-foreground mb-1">{s.label}</p>
-            <p className="font-display text-lg font-medium">{s.value}</p>
-          </div>
-        ))}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <PieChart className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
+          <p className="text-[11px] text-muted-foreground mb-1">Total Invested</p>
+          <p className="font-display text-lg font-medium">
+            {loading ? "—" : format(holding.totalInvested)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <TrendingUp className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
+          <p className="text-[11px] text-muted-foreground mb-1">Current Value</p>
+          <p className="font-display text-lg font-medium">
+            {loading ? "—" : format(holding.currentValue)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <Package className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
+          <p className="text-[11px] text-muted-foreground mb-1">Units Held</p>
+          <p className="font-display text-lg font-medium">
+            {loading ? "—" : holding.unitsHeld.toString()}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <Rocket className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
+          <p className="text-[11px] text-muted-foreground mb-1">Portfolio Change</p>
+          <p className="font-display text-lg font-medium text-emerald-600">
+            +{holding.portfolioChangePct.toFixed(2)}%
+          </p>
+        </div>
       </div>
 
       {/* Invest card */}
@@ -168,7 +219,7 @@ export default function Cybercab() {
         <div className="p-6">
           <h2 className="font-display text-lg font-medium mb-1">Invest in Cybercab</h2>
           <p className="text-[13px] text-muted-foreground mb-5">
-            Choose an amount of $5,000 or more to start your Cybercab investment.
+            Choose an amount of $5,000 or more to start your Cybercab investment. Current unit price: {format(unitPrice)}.
           </p>
           <Button
             className={`w-full ${GOLD_BG} hover:opacity-90 text-white`}
@@ -200,10 +251,12 @@ export default function Cybercab() {
                 </div>
                 <div className="text-right text-[12px]">
                   <p className="font-medium">{format(Number(inv.amount_usd))}</p>
-                  <p className="text-muted-foreground">{inv.units} units</p>
+                  <p className="text-muted-foreground">
+                    {inv.status === "active" ? Math.floor(Number(inv.amount_usd) / unitPrice) : 0} units
+                  </p>
                 </div>
                 <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${
-                  inv.status === "active" || inv.status === "completed"
+                  inv.status === "active"
                     ? `${GOLD_SOFT_BG} ${GOLD_TEXT} ${GOLD_BORDER}`
                     : "bg-muted text-muted-foreground border-border"
                 }`}>
