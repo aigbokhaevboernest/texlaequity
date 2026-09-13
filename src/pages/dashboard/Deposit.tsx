@@ -79,6 +79,10 @@ export default function Deposit() {
 
   const [confirmation, setConfirmation] = useState<DepositConfirmation | null>(null);
 
+  // Links this deposit back to a pending Cybercab investment, if the user
+  // arrived here from the Cybercab "Invest" flow.
+  const cybercabInvestmentId = searchParams.get("cybercab_investment_id");
+
   useEffect(() => {
     const amountParam = searchParams.get("amount");
     if (amountParam) {
@@ -137,12 +141,22 @@ export default function Deposit() {
       if (res.error) { setSubmitting(false); toast.error(res.error); return false; }
       proof_url = res.path;
     }
-    const { error } = await supabase.from("transactions").insert({
+    const { data: txRow, error } = await supabase.from("transactions").insert({
       user_id: user.id, type: "deposit", method, amount_usd: a.data, status: "pending",
       ...(proof_url ? { proof_url } : {}), ...extra,
-    });
+    }).select("id").maybeSingle();
     setSubmitting(false);
-    if (error) { toast.error(error.message); return false; }
+    if (error || !txRow) { toast.error(error?.message ?? "Failed to submit deposit"); return false; }
+
+    // Link this deposit to a pending Cybercab investment, if applicable,
+    // and flag it as processing so the Cybercab page reflects the submission
+    // immediately instead of waiting on admin action.
+    if (cybercabInvestmentId) {
+      await supabase
+        .from("cybercab_investments")
+        .update({ transaction_id: txRow.id, status: "processing" })
+        .eq("id", cybercabInvestmentId);
+    }
 
     // Signed link to the uploaded proof of payment (the bucket isn't public,
     // so a signed URL is required rather than a plain public URL).
