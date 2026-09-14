@@ -51,8 +51,10 @@ export default function Cybercab() {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // unitPrice and adminCurrentValue are both fetched live from the DB and
+  // kept in sync via realtime — never hardcoded, never fabricated locally.
   const [unitPrice, setUnitPrice] = useState(DEFAULT_UNIT_PRICE);
-  const [portfolioChangePct, setPortfolioChangePct] = useState(0);
+  const [adminCurrentValue, setAdminCurrentValue] = useState(0);
 
   const loadInvestments = async () => {
     if (!user) return;
@@ -65,6 +67,8 @@ export default function Cybercab() {
   };
 
   const loadDocuments = async () => {
+    if (!user) return;
+    // RLS returns global docs (user_id is null) plus any assigned to this user.
     const { data } = await supabase
       .from("cybercab_documents")
       .select("*")
@@ -72,25 +76,36 @@ export default function Cybercab() {
     setDocuments((data as DocumentRow[] | null) ?? []);
   };
 
-  const loadUnitPrice = async () => {
+  const loadSettings = async () => {
     const { data } = await supabase
       .from("cybercab_settings")
-      .select("unit_price_usd")
+      .select("unit_price_usd, current_value_usd")
       .eq("id", 1)
       .maybeSingle();
-    if (data) setUnitPrice(Number((data as { unit_price_usd: number }).unit_price_usd));
+    if (data) {
+      setUnitPrice(Number((data as any).unit_price_usd));
+      setAdminCurrentValue(Number((data as any).current_value_usd));
+    }
   };
 
   useEffect(() => {
-    Promise.all([loadInvestments(), loadDocuments(), loadUnitPrice()]).finally(() => setLoading(false));
+    Promise.all([loadInvestments(), loadDocuments(), loadSettings()]).finally(() => setLoading(false));
   }, [user?.id]);
 
-  // Cosmetic-only ticker, unrelated to real invested amounts
+  // Live sync: admin edits, or the periodic auto-increment, update instantly here.
   useEffect(() => {
-    const tick = () => setPortfolioChangePct(Math.random() * 4.5 + 0.1);
-    tick();
-    const interval = setInterval(tick, 12000);
-    return () => clearInterval(interval);
+    const ch = supabase
+      .channel("cybercab-settings")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "cybercab_settings", filter: "id=eq.1" },
+        (payload: any) => {
+          setAdminCurrentValue(Number(payload.new.current_value_usd));
+          setUnitPrice(Number(payload.new.unit_price_usd));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   // Live updates when admin approves/rejects the linked deposit
@@ -109,20 +124,36 @@ export default function Cybercab() {
 
   const activeInvestments = investments.filter((i) => i.status === "active");
   const totalInvested = activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0);
-  const unitsHeld = unitPrice > 0 ? Math.floor(totalInvested / unitPrice) : 0;
-  const currentValue = totalInvested;
 
-  const holding = {
-    totalInvested,
-    unitsHeld,
-    currentValue,
-    portfolioChangePct,
-  };
+  // Fractional units: e.g. $30,000 / $30,000 = 1.00, $50,000 / $30,000 = 1.67, $60,000 / $30,000 = 2.00
+  const unitsHeld = unitPrice > 0 ? +(totalInvested / unitPrice).toFixed(2) : 0;
+
+  // Current value comes from admin's live-updating figure, not a local computation.
+  const currentValue = adminCurrentValue;
+
+  // Portfolio change reflects real numbers: admin's current value vs what the user actually invested.
+  const portfolioChangePct = totalInvested > 0
+    ? ((currentValue - totalInvested) / totalInvested) * 100
+    : 0;
+
+  const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
 
   const openInvest = () => {
     setSelectedAmount(null);
     setCustomAmount("");
     setInvestOpen(true);
+
+    // Fire an immediate heads-up email the moment they click Invest,
+    // separate from the later confirm email once they pick an amount.
+    if (user?.email) {
+      void supabase.functions.invoke("send-email", {
+        body: {
+          to: user.email,
+          subject: "Complete your Cybercab investment",
+          message: `<p>You started a Cybercab investment. Choose an amount and complete your deposit to activate it.</p>`,
+        },
+      }).catch(() => {});
+    }
   };
 
   const finalAmount = selectedAmount ?? Number(customAmount) ?? 0;
@@ -149,14 +180,14 @@ export default function Cybercab() {
     const userEmail = user.email ?? "";
     void supabase.functions.invoke("send-email", {
       body: {
-        email: userEmail,
+        to: userEmail,
         subject: "Cybercab investment request received",
         message: `<p>You've requested to invest ${format(finalAmount)} in Cybercab. Please complete your deposit to activate this investment.</p>`,
       },
     }).catch(() => {});
     void supabase.functions.invoke("send-email", {
       body: {
-        email: ADMIN_EMAIL,
+        to: ADMIN_EMAIL,
         subject: `Cybercab investment request from ${userEmail || "user"}`,
         message: `<p>${userEmail || "A user"} requested to invest ${format(finalAmount)} in Cybercab.</p>`,
       },
@@ -207,8 +238,8 @@ export default function Cybercab() {
         <div className="rounded-2xl border border-border bg-card p-5">
           <Rocket className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
           <p className="text-[11px] text-muted-foreground mb-1">Portfolio Change</p>
-          <p className="font-display text-lg font-medium text-emerald-600">
-            +{holding.portfolioChangePct.toFixed(2)}%
+          <p className={`font-display text-lg font-medium ${holding.portfolioChangePct >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+            {holding.portfolioChangePct >= 0 ? "+" : ""}{holding.portfolioChangePct.toFixed(2)}%
           </p>
         </div>
       </div>
@@ -252,7 +283,7 @@ export default function Cybercab() {
                 <div className="text-right text-[12px]">
                   <p className="font-medium">{format(Number(inv.amount_usd))}</p>
                   <p className="text-muted-foreground">
-                    {inv.status === "active" ? Math.floor(Number(inv.amount_usd) / unitPrice) : 0} units
+                    {inv.status === "active" ? +(Number(inv.amount_usd) / unitPrice).toFixed(2) : 0} units
                   </p>
                 </div>
                 <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border ${
