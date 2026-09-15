@@ -54,7 +54,24 @@ export default function Cybercab() {
   // unitPrice and adminCurrentValue are both fetched live from the DB and
   // kept in sync via realtime — never hardcoded, never fabricated locally.
   const [unitPrice, setUnitPrice] = useState(DEFAULT_UNIT_PRICE);
-  const [adminCurrentValue, setAdminCurrentValue] = useState(0);
+
+const loadUnitPrice = async () => {
+  const { data } = await supabase.from("cybercab_settings").select("unit_price_usd").eq("id", 1).maybeSingle();
+  if (data) setUnitPrice(Number((data as any).unit_price_usd));
+};
+
+useEffect(() => {
+  Promise.all([loadInvestments(), loadDocuments(), loadUnitPrice()]).finally(() => setLoading(false));
+}, [user?.id]);
+
+const activeInvestments = investments.filter((i) => i.status === "active");
+const totalInvested = activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0);
+const currentValue = activeInvestments.reduce((s, i) => s + Number((i as any).current_value_usd || 0), 0);
+const unitsHeld = unitPrice > 0 ? +(totalInvested / unitPrice).toFixed(2) : 0;
+const portfolioChangePct = totalInvested > 0 ? ((currentValue - totalInvested) / totalInvested) * 100 : 0;
+
+const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
+
 
   const loadInvestments = async () => {
     if (!user) return;
