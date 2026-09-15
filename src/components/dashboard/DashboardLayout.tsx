@@ -75,8 +75,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   const isSuspended = profile?.status === "suspended";
-  const isOverview = location.pathname === "/dashboard";
-  const allowedWhileSuspended = isOverview;
+  const path = location.pathname;
+const allowedWhileSuspended =
+  path === "/dashboard" ||
+  path === "/dashboard/deposit" ||
+  path === "/dashboard/kyc";
 
   const handleSignOut = async () => {
     nav("/login", { replace: true });
