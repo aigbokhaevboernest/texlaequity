@@ -18,9 +18,9 @@ const Index = () => {
         <Hero />
         <LiveStats />
         <Vision />
+        <CybercabPromoSection />
         <TeslaInventory />
         <InvestmentPlans />
-        <CybercabPromoSection />
         <Leaderboard />
         <About />
         <Services />
