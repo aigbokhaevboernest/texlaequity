@@ -18,14 +18,16 @@ const GOLD_TEXT = "text-[#B8862F]";
 const GOLD_BORDER = "border-[#B8862F]/30";
 const GOLD_SOFT_BG = "bg-[#B8862F]/10";
 
-const ADMIN_EMAIL = "admin@texlaequity.com";
+const ADMIN_EMAIL = "support@teslagrowthequity.com";
 const DEFAULT_UNIT_PRICE = 30000;
 
+// current_value_usd is now set per-investment by admin, not a global figure.
 type InvestmentRow = {
   id: string;
   plan_id: string;
   amount_usd: number;
   units: number;
+  current_value_usd: number;
   status: string;
   created_at: string;
 };
@@ -51,27 +53,8 @@ export default function Cybercab() {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // unitPrice and adminCurrentValue are both fetched live from the DB and
-  // kept in sync via realtime — never hardcoded, never fabricated locally.
+  // Unit price is the one thing that stays global (same for every user).
   const [unitPrice, setUnitPrice] = useState(DEFAULT_UNIT_PRICE);
-
-const loadUnitPrice = async () => {
-  const { data } = await supabase.from("cybercab_settings").select("unit_price_usd").eq("id", 1).maybeSingle();
-  if (data) setUnitPrice(Number((data as any).unit_price_usd));
-};
-
-useEffect(() => {
-  Promise.all([loadInvestments(), loadDocuments(), loadUnitPrice()]).finally(() => setLoading(false));
-}, [user?.id]);
-
-const activeInvestments = investments.filter((i) => i.status === "active");
-const totalInvested = activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0);
-const currentValue = activeInvestments.reduce((s, i) => s + Number((i as any).current_value_usd || 0), 0);
-const unitsHeld = unitPrice > 0 ? +(totalInvested / unitPrice).toFixed(2) : 0;
-const portfolioChangePct = totalInvested > 0 ? ((currentValue - totalInvested) / totalInvested) * 100 : 0;
-
-const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
-
 
   const loadInvestments = async () => {
     if (!user) return;
@@ -83,49 +66,35 @@ const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
     setInvestments((data as InvestmentRow[] | null) ?? []);
   };
 
+  // Documents are per-user now. RLS already blocks other users' rows even
+  // without this filter, but adding .eq() here too means: (a) it's clear
+  // from reading this file alone what data we expect back, and (b) if RLS
+  // is ever misconfigured, this is a second layer that still limits the
+  // query to the right user instead of accidentally requesting everything.
   const loadDocuments = async () => {
     if (!user) return;
-    // RLS returns global docs (user_id is null) plus any assigned to this user.
     const { data } = await supabase
       .from("cybercab_documents")
       .select("*")
+      .eq("user_id", user.id)
       .order("sort_order", { ascending: true });
     setDocuments((data as DocumentRow[] | null) ?? []);
   };
 
-  const loadSettings = async () => {
+  const loadUnitPrice = async () => {
     const { data } = await supabase
       .from("cybercab_settings")
-      .select("unit_price_usd, current_value_usd")
+      .select("unit_price_usd")
       .eq("id", 1)
       .maybeSingle();
-    if (data) {
-      setUnitPrice(Number((data as any).unit_price_usd));
-      setAdminCurrentValue(Number((data as any).current_value_usd));
-    }
+    if (data) setUnitPrice(Number((data as any).unit_price_usd));
   };
 
   useEffect(() => {
-    Promise.all([loadInvestments(), loadDocuments(), loadSettings()]).finally(() => setLoading(false));
+    Promise.all([loadInvestments(), loadDocuments(), loadUnitPrice()]).finally(() => setLoading(false));
   }, [user?.id]);
 
-  // Live sync: admin edits, or the periodic auto-increment, update instantly here.
-  useEffect(() => {
-    const ch = supabase
-      .channel("cybercab-settings")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "cybercab_settings", filter: "id=eq.1" },
-        (payload: any) => {
-          setAdminCurrentValue(Number(payload.new.current_value_usd));
-          setUnitPrice(Number(payload.new.unit_price_usd));
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, []);
-
-  // Live updates when admin approves/rejects the linked deposit
+  // Live updates when admin approves/rejects/edits value on this user's investments
   useEffect(() => {
     if (!user) return;
     const ch = supabase
@@ -142,13 +111,12 @@ const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
   const activeInvestments = investments.filter((i) => i.status === "active");
   const totalInvested = activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0);
 
-  // Fractional units: e.g. $30,000 / $30,000 = 1.00, $50,000 / $30,000 = 1.67, $60,000 / $30,000 = 2.00
+  // Current value is now the sum of each active investment's admin-set
+  // current_value_usd, not a single global number.
+  const currentValue = activeInvestments.reduce((s, i) => s + Number(i.current_value_usd || 0), 0);
+
   const unitsHeld = unitPrice > 0 ? +(totalInvested / unitPrice).toFixed(2) : 0;
 
-  // Current value comes from admin's live-updating figure, not a local computation.
-  const currentValue = adminCurrentValue;
-
-  // Portfolio change reflects real numbers: admin's current value vs what the user actually invested.
   const portfolioChangePct = totalInvested > 0
     ? ((currentValue - totalInvested) / totalInvested) * 100
     : 0;
@@ -160,8 +128,6 @@ const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
     setCustomAmount("");
     setInvestOpen(true);
 
-    // Fire an immediate heads-up email the moment they click Invest,
-    // separate from the later confirm email once they pick an amount.
     if (user?.email) {
       void supabase.functions.invoke("send-email", {
         body: {
