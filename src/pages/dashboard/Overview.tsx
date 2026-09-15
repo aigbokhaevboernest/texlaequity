@@ -103,7 +103,7 @@ const Overview = () => {
           <p className="font-display text-lg text-destructive mb-1">Account Suspended</p>
           <p className="text-[13px] text-muted-foreground">
             All actions are blocked. Contact{" "}
-            <a className="text-primary underline" href="mailto:support@teslavest.com">
+            <a className="text-primary underline" href="mailto:support@teslagrowthequity.com">
               support@teslagrowthequity.com
             </a>.
           </p>
