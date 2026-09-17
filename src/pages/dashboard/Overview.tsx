@@ -1,12 +1,13 @@
-import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Banknote, Star, ArrowDownToLine, ArrowUpFromLine, Users, LineChart } from "lucide-react";
+import { Wallet, TrendingUp, Banknote, Star, ArrowDownToLine, ArrowUpFromLine, Users, LineChart, ChevronRight, X, Check } from "lucide-react";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useProfile } from "@/contexts/ProfileContext";
+import { toast } from "sonner";
 
 interface Expert {
   id: string;
@@ -26,15 +27,27 @@ const STATUS_TONES: Record<string, string> = {
   rejected: "bg-red-500/10 text-red-700 border border-red-500/20",
 };
 
+const UPGRADE_PLANS = [
+  { name: "Veteran Account", desc: "For consistent investors ready to grow", price: "$5,000" },
+  { name: "Master Account",  desc: "Advanced tools and priority support",    price: "$10,000" },
+  { name: "Ultimate Account", desc: "Exclusive benefits and higher returns", price: "$25,000" },
+  { name: "Diamond Account", desc: "Our most prestigious membership tier",   price: "$50,000" },
+];
+
+const ADMIN_EMAIL = "support@teslagrowthequity.com";
+
 const Overview = () => {
   const { user } = useAuth();
   const { format, ready: currencyReady } = useCurrency();
-
-  // Balance / profit / deposit / status / level all come from the shared,
-  // realtime-subscribed profile — no separate fetch, updates instantly.
+  const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
 
-  // Transactions + assigned expert are page-specific, keep their own live fetch.
+  // Upgrade modal state
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<typeof UPGRADE_PLANS[0] | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+
   const { data, refresh } = useLiveData(async () => {
     if (!user) return { txs: [] as Tx[], expert: null as Expert | null };
     const t = await supabase
@@ -70,31 +83,68 @@ const Overview = () => {
   const expert = data?.expert ?? null;
   const isSuspended = profile?.status === "suspended";
 
-  // Skeleton should only show while we're actually loading. Once loading
-  // finishes — whether or not a profile row was found — stop waiting.
-  // (ProfileContext already retries a few times before giving up on an
-  // empty row, so by the time profileLoading is false here, "no profile"
-  // is a real, final state, not a race we should keep spinning on.)
   const profileLoaded = !profileLoading;
   const moneyReady = profileLoaded && currencyReady;
   const moneyOrSkeleton = (n: number) =>
     moneyReady ? format(n) : (<span className="inline-block h-7 w-24 rounded bg-muted animate-pulse" />);
 
+  const firstName = profile?.full_name?.trim()?.split(" ")[0];
+
+  const handleUpgradeConfirm = async () => {
+    if (!selectedPlan || !user) return;
+    setUpgrading(true);
+
+    const firstName = profile?.full_name?.trim()?.split(" ")[0] || "";
+
+    // Email to user
+    if (user.email) {
+      void supabase.functions.invoke("send-email", {
+        body: {
+          to: user.email,
+          first_name: firstName,
+          subject: `Account Upgrade Request — ${selectedPlan.name}`,
+          message: `Your request to upgrade to the ${selectedPlan.name} has been received. Your administrator has been notified and your request is pending. Please deposit the required amount for the plan to upgrade your account. Once your deposit is confirmed, your account level will be updated by the admin team.`,
+        },
+      }).catch(() => {});
+    }
+
+    // Email to admin
+    void supabase.functions.invoke("send-email", {
+      body: {
+        to: ADMIN_EMAIL,
+        first_name: "Admin",
+        subject: `Upgrade Request — ${selectedPlan.name}`,
+        message: `${user.email} has requested an upgrade to ${selectedPlan.name}. Please review and update their account level once the deposit is confirmed.`,
+      },
+    }).catch(() => {});
+
+    setUpgrading(false);
+    setConfirmOpen(false);
+    setUpgradeOpen(false);
+    setSelectedPlan(null);
+    toast.success("Upgrade request submitted — proceeding to deposit");
+    navigate("/dashboard/deposit");
+  };
+
   const stats = [
-    { icon: Wallet, label: "Total Balance", value: moneyOrSkeleton(Number(profile?.total_balance ?? 0)) },
-    { icon: TrendingUp, label: "Profit", value: moneyOrSkeleton(Number(profile?.profit ?? 0)) },
-    { icon: Banknote, label: "Deposit", value: moneyOrSkeleton(Number(profile?.deposit ?? 0)) },
-    { icon: Star, label: "Account Level", value: profile?.account_level ?? (profileLoaded ? "Basic" : <span className="inline-block h-7 w-20 rounded bg-muted animate-pulse" />) },
+    { icon: Wallet,    label: "Total Balance",  value: moneyOrSkeleton(Number(profile?.total_balance ?? 0)), cardBg: "bg-card" },
+    { icon: TrendingUp, label: "Profit",        value: moneyOrSkeleton(Number(profile?.profit ?? 0)),        cardBg: "bg-card" },
+    { icon: Banknote,  label: "Deposit",        value: moneyOrSkeleton(Number(profile?.deposit ?? 0)),       cardBg: "bg-card" },
+    {
+      icon: Star,
+      label: "Account Level",
+      value: profile?.account_level ?? (profileLoaded ? "Basic" : <span className="inline-block h-7 w-20 rounded bg-muted animate-pulse" />),
+      cardBg: "bg-muted/60",
+      isLevel: true,
+    },
   ];
 
   const quick = [
-    { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownToLine },
-    { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
-    { to: "/dashboard/copy-experts", label: "Copy Experts", icon: Users },
-    { to: "/dashboard/plans", label: "Trading Plans", icon: LineChart },
+    { to: "/dashboard/deposit",      label: "Deposit",       icon: ArrowDownToLine },
+    { to: "/dashboard/withdraw",     label: "Withdraw",      icon: ArrowUpFromLine },
+    { to: "/dashboard/copy-experts", label: "Copy Experts",  icon: Users },
+    { to: "/dashboard/plans",        label: "Trading Plans", icon: LineChart },
   ];
-
-  const firstName = profile?.full_name?.trim()?.split(" ")[0];
 
   return (
     <div className="space-y-8">
@@ -118,39 +168,42 @@ const Overview = () => {
         <p className="text-muted-foreground text-[14px] mt-1">Here's a snapshot of your portfolio.</p>
       </div>
 
-     {expert && (
-  <Link
-    to="/dashboard/copy-experts"
-    className="flex w-full items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-[1.03] transition-all duration-200 shadow-sm"
-  >
-    {/* Live pulse dot */}
-    <span className="relative flex h-2.5 w-2.5 shrink-0">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-    </span>
+      {expert && (
+        <Link
+          to="/dashboard/copy-experts"
+          className="flex w-full items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:scale-[1.03] transition-all duration-200 shadow-sm"
+        >
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+          </span>
+          <span className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground text-[8px] font-bold shrink-0">
+            {expert.name.split(" ").map((s) => s[0]).join("")}
+          </span>
+          <span className="text-[13px] text-muted-foreground whitespace-nowrap">
+            YOU ARE COPYING <span className="text-foreground font-semibold">{expert.name}</span>
+            <span className="text-muted-foreground/50"> {expert.handle}</span>
+          </span>
+        </Link>
+      )}
 
-    {/* Avatar */}
-    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-primary-foreground text-[8px] font-bold shrink-0">
-      {expert.name.split(" ").map((s) => s[0]).join("")}
-    </span>
-
-    {/* Text */}
-    <span className="text-[13px] text-muted-foreground whitespace-nowrap">
-      YOU ARE COPYING <span className="text-foreground font-semibold">{expert.name}</span>
-      <span className="text-muted-foreground/50"> {expert.handle}</span>
-    </span>
-  </Link>
-)}
-
-
-
+      {/* Balance cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
+          <div key={s.label} className={`rounded-2xl border border-border ${s.cardBg} p-5`}>
             <div className="flex items-center justify-between mb-3">
               <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                 <s.icon className="w-4 h-4 text-foreground/70" />
               </div>
+              {/* Upgrade button — only on Account Level card */}
+              {(s as any).isLevel && (
+                <button
+                  onClick={() => setUpgradeOpen(true)}
+                  className="flex items-center gap-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 text-[11px] font-semibold transition-all"
+                >
+                  Upgrade <ChevronRight className="w-3 h-3" />
+                </button>
+              )}
             </div>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{s.label}</p>
             <p className="font-display text-2xl font-medium tracking-tight">{s.value}</p>
@@ -217,6 +270,135 @@ const Overview = () => {
           <Button className="rounded-full bg-background text-foreground hover:bg-background/90 px-6">Start KYC</Button>
         </Link>
       </div>
+
+      {/* ── Upgrade Plan Picker Modal ── */}
+      {upgradeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setUpgradeOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div>
+                <p className="font-semibold text-[15px]">Upgrade Account</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">Select a plan to request an upgrade</p>
+              </div>
+              <button onClick={() => setUpgradeOpen(false)} className="rounded-full p-1.5 hover:bg-muted transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Current level notice */}
+            <div className="px-5 pt-4">
+              <p className="text-[11px] text-muted-foreground">
+                Current level: <span className="font-semibold text-foreground">{profile?.account_level ?? "Basic"}</span>
+                {" "}· Only your admin can change your badge after deposit confirmation.
+              </p>
+            </div>
+
+            {/* Plan list */}
+            <div className="px-5 py-4 space-y-2">
+              {UPGRADE_PLANS.map((plan) => {
+                const isCurrent = profile?.account_level === plan.name;
+                const isSelected = selectedPlan?.name === plan.name;
+                return (
+                  <button
+                    key={plan.name}
+                    disabled={isCurrent}
+                    onClick={() => setSelectedPlan(plan)}
+                    className={`w-full text-left rounded-xl border px-4 py-3 transition-all ${
+                      isCurrent
+                        ? "border-border bg-muted/40 opacity-50 cursor-not-allowed"
+                        : isSelected
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40 hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-[13px]">{plan.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{plan.desc}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-3">
+                        <span className="text-[12px] font-semibold text-primary">{plan.price}</span>
+                        {isSelected && <Check className="w-4 h-4 text-primary" />}
+                        {isCurrent && <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Current</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-5 pb-5">
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setUpgradeOpen(false); setSelectedPlan(null); }}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 rounded-xl"
+                disabled={!selectedPlan}
+                onClick={() => { setConfirmOpen(true); setUpgradeOpen(false); }}
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirm Upgrade Modal ── */}
+      {confirmOpen && selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => !upgrading && setConfirmOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <p className="font-semibold text-[15px]">Confirm Upgrade</p>
+              <button onClick={() => !upgrading && setConfirmOpen(false)} className="rounded-full p-1.5 hover:bg-muted transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-5 py-5 space-y-4">
+              {/* Selected plan summary */}
+              <div className="rounded-xl bg-muted/40 border border-border px-4 py-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Selected Plan</p>
+                <p className="font-semibold text-[15px]">{selectedPlan.name}</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">{selectedPlan.desc}</p>
+                <p className="text-primary font-bold text-[14px] mt-2">{selectedPlan.price}</p>
+              </div>
+
+              {/* Info notice */}
+              <div className="rounded-xl bg-primary/5 border border-primary/20 px-4 py-3">
+                <p className="text-[12px] text-foreground leading-relaxed">
+                  Your administrator will be notified of your upgrade request. Please deposit the required amount and your account level will be updated by the admin once confirmed.
+                </p>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                A confirmation email will be sent to <span className="font-medium text-foreground">{user?.email}</span>.
+              </p>
+            </div>
+
+            <div className="flex gap-3 px-5 pb-5">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                disabled={upgrading}
+                onClick={() => { setConfirmOpen(false); setUpgradeOpen(true); }}
+              >
+                Back
+              </Button>
+              <Button
+                className="flex-1 rounded-xl"
+                disabled={upgrading}
+                onClick={handleUpgradeConfirm}
+              >
+                {upgrading
+                  ? <span className="flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Sending…</span>
+                  : "Confirm & Deposit"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
