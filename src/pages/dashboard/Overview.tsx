@@ -290,7 +290,7 @@ const Overview = () => {
             <div className="px-5 pt-4">
               <p className="text-[11px] text-muted-foreground">
                 Current level: <span className="font-semibold text-foreground">{profile?.account_level ?? "Basic"}</span>
-                {" "}· Only your admin can change your badge after deposit confirmation.
+                {" "}· Select an upgrade badge and make the required deposit.
               </p>
             </div>
 
