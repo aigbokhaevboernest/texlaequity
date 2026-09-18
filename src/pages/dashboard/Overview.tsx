@@ -103,7 +103,7 @@ const Overview = () => {
           to: user.email,
           first_name: firstName,
           subject: `Account Upgrade Request — ${selectedPlan.name}`,
-          message: `Your request to upgrade to the ${selectedPlan.name} has been received. Your administrator has been notified and your request is pending. Please deposit the required amount for the plan to upgrade your account. Once your deposit is confirmed, your account level will be updated by the admin team.`,
+          message: `Your request to upgrade to the ${selectedPlan.name} has been received. Your request has been and is pending. Deposit the required amount for the plan to upgrade your account. Once your deposit is confirmed, your account level will be updated.`,
         },
       }).catch(() => {});
     }
