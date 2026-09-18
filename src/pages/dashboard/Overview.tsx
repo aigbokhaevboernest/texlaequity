@@ -28,10 +28,10 @@ const STATUS_TONES: Record<string, string> = {
 };
 
 const UPGRADE_PLANS = [
-  { name: "Veteran Account", desc: "For consistent investors ready to grow", price: "$5,000" },
-  { name: "Master Account",  desc: "Advanced tools and priority support",    price: "$10,000" },
-  { name: "Ultimate Account", desc: "Exclusive benefits and higher returns", price: "$25,000" },
-  { name: "Diamond Account", desc: "Our most prestigious membership tier",   price: "$50,000" },
+  { name: "Veteran Account",  desc: "For consistent investors ready to grow" },
+  { name: "Master Account",   desc: "Advanced tools and priority support"    },
+  { name: "Ultimate Account", desc: "Exclusive benefits and higher returns"  },
+  { name: "Diamond Account",  desc: "Our most prestigious membership tier"   },
 ];
 
 const ADMIN_EMAIL = "support@teslagrowthequity.com";
@@ -318,7 +318,6 @@ const Overview = () => {
                         <p className="text-[11px] text-muted-foreground mt-0.5">{plan.desc}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-3">
-                        <span className="text-[12px] font-semibold text-primary">{plan.price}</span>
                         {isSelected && <Check className="w-4 h-4 text-primary" />}
                         {isCurrent && <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Current</span>}
                       </div>
@@ -362,7 +361,6 @@ const Overview = () => {
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Selected Plan</p>
                 <p className="font-semibold text-[15px]">{selectedPlan.name}</p>
                 <p className="text-[12px] text-muted-foreground mt-0.5">{selectedPlan.desc}</p>
-                <p className="text-primary font-bold text-[14px] mt-2">{selectedPlan.price}</p>
               </div>
 
               {/* Info notice */}
