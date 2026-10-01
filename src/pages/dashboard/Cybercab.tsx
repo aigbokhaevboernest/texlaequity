@@ -360,11 +360,7 @@ export default function Cybercab() {
                 placeholder="5000"
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              No guaranteed returns. Values can rise or fall. Not officially affiliated with Tesla, Inc.
-            </p>
-          </div>
+          
           <DialogFooter className="flex-row gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setInvestOpen(false)} disabled={confirming}>
               Cancel
