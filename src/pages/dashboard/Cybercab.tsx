@@ -18,10 +18,8 @@ const GOLD_TEXT = "text-[#B8862F]";
 const GOLD_BORDER = "border-[#B8862F]/30";
 const GOLD_SOFT_BG = "bg-[#B8862F]/10";
 
-const ADMIN_EMAIL = "support@teslagrowthequity.com";
 const DEFAULT_UNIT_PRICE = 30000;
 
-// current_value_usd is now set per-investment by admin, not a global figure.
 type InvestmentRow = {
   id: string;
   plan_id: string;
@@ -53,8 +51,18 @@ export default function Cybercab() {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Unit price is the one thing that stays global (same for every user).
   const [unitPrice, setUnitPrice] = useState(DEFAULT_UNIT_PRICE);
+
+  // First name for email greetings (profiles uses full_name).
+  const getFirstName = async () => {
+    if (!user) return "";
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    return (((data as any)?.full_name || "") as string).trim().split(" ")[0] || "";
+  };
 
   const loadInvestments = async () => {
     if (!user) return;
@@ -66,11 +74,6 @@ export default function Cybercab() {
     setInvestments((data as InvestmentRow[] | null) ?? []);
   };
 
-  // Documents are per-user now. RLS already blocks other users' rows even
-  // without this filter, but adding .eq() here too means: (a) it's clear
-  // from reading this file alone what data we expect back, and (b) if RLS
-  // is ever misconfigured, this is a second layer that still limits the
-  // query to the right user instead of accidentally requesting everything.
   const loadDocuments = async () => {
     if (!user) return;
     const { data } = await supabase
@@ -94,7 +97,6 @@ export default function Cybercab() {
     Promise.all([loadInvestments(), loadDocuments(), loadUnitPrice()]).finally(() => setLoading(false));
   }, [user?.id]);
 
-  // Live updates when admin approves/rejects/edits value on this user's investments
   useEffect(() => {
     if (!user) return;
     const ch = supabase
@@ -110,18 +112,10 @@ export default function Cybercab() {
 
   const activeInvestments = investments.filter((i) => i.status === "active");
   const totalInvested = activeInvestments.reduce((s, i) => s + Number(i.amount_usd), 0);
-
-  // Current value is now the sum of each active investment's admin-set
-  // current_value_usd, not a single global number.
   const currentValue = activeInvestments.reduce((s, i) => s + Number(i.current_value_usd || 0), 0);
-
   const unitsHeld = unitPrice > 0 ? +(totalInvested / unitPrice).toFixed(2) : 0;
 
-  const portfolioChangePct = totalInvested > 0
-    ? ((currentValue - totalInvested) / totalInvested) * 100
-    : 0;
-
-  const holding = { totalInvested, unitsHeld, currentValue, portfolioChangePct };
+  const holding = { totalInvested, unitsHeld, currentValue };
 
   const openInvest = () => {
     setSelectedAmount(null);
@@ -129,21 +123,24 @@ export default function Cybercab() {
     setInvestOpen(true);
 
     if (user?.email) {
-      void supabase.functions.invoke("send-email", {
-        body: {
-          to: user.email,
-          subject: "Complete your Cybercab investment",
-          message: `<p>You started a Cybercab investment. Choose an amount and complete your deposit to activate it.</p>`,
-        },
-      }).catch(() => {});
+      void getFirstName().then((firstName) =>
+        supabase.functions.invoke("send-email", {
+          body: {
+            to: user.email,
+            first_name: firstName,
+            subject: "Complete your Cybercab investment",
+            message: `<p>You started a Cybercab investment. Choose an amount and complete your deposit to activate it.</p>`,
+          },
+        }).catch(() => {})
+      );
     }
   };
 
-  const finalAmount = selectedAmount ?? Number(customAmount) ?? 0;
+  const finalAmount = selectedAmount ?? Number(customAmount);
 
   const handleConfirm = async () => {
-    if (!user || !finalAmount || finalAmount < 5000) {
-      toast.warning("Enter an amount of $5,000 or more");
+    if (!user || !finalAmount || finalAmount <= 0) {
+      toast.warning("Enter an amount greater than 0");
       return;
     }
     setConfirming(true);
@@ -161,18 +158,14 @@ export default function Cybercab() {
     }
 
     const userEmail = user.email ?? "";
+    const firstName = await getFirstName();
+
     void supabase.functions.invoke("send-email", {
       body: {
         to: userEmail,
+        first_name: firstName,
         subject: "Cybercab investment request received",
         message: `<p>You've requested to invest ${format(finalAmount)} in Cybercab. Please complete your deposit to activate this investment.</p>`,
-      },
-    }).catch(() => {});
-    void supabase.functions.invoke("send-email", {
-      body: {
-        to: ADMIN_EMAIL,
-        subject: `Cybercab investment request from ${userEmail || "user"}`,
-        message: `<p>${userEmail || "A user"} requested to invest ${format(finalAmount)} in Cybercab.</p>`,
       },
     }).catch(() => {});
 
@@ -196,7 +189,7 @@ export default function Cybercab() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <div className="rounded-2xl border border-border bg-card p-5">
           <PieChart className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
           <p className="text-[11px] text-muted-foreground mb-1">Total Invested</p>
@@ -211,18 +204,11 @@ export default function Cybercab() {
             {loading ? "—" : format(holding.currentValue)}
           </p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="col-span-2 lg:col-span-1 rounded-2xl border border-border bg-card p-5">
           <Package className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
           <p className="text-[11px] text-muted-foreground mb-1">Units Held</p>
           <p className="font-display text-lg font-medium">
             {loading ? "—" : holding.unitsHeld.toString()}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <Rocket className={`w-5 h-5 mb-3 ${GOLD_TEXT}`} />
-          <p className="text-[11px] text-muted-foreground mb-1">Portfolio Change</p>
-          <p className={`font-display text-lg font-medium ${holding.portfolioChangePct >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-            {holding.portfolioChangePct >= 0 ? "+" : ""}{holding.portfolioChangePct.toFixed(2)}%
           </p>
         </div>
       </div>
@@ -233,7 +219,7 @@ export default function Cybercab() {
         <div className="p-6">
           <h2 className="font-display text-lg font-medium mb-1">Invest in Cybercab</h2>
           <p className="text-[13px] text-muted-foreground mb-5">
-            Choose an amount of $5,000 or more to start your Cybercab investment. Current unit price: {format(unitPrice)}.
+            Choose or enter any amount to start your Cybercab investment. Current unit price: {format(unitPrice)}.
           </p>
           <Button
             className={`w-full ${GOLD_BG} hover:opacity-90 text-white`}
@@ -282,7 +268,7 @@ export default function Cybercab() {
         )}
       </div>
 
-      {/* Info tabs: Documents then Overview */}
+      {/* Info tabs */}
       <div className="rounded-2xl border border-border bg-card p-6 max-w-2xl">
         <div className="flex flex-wrap gap-1 mb-4 border-b border-border pb-3">
           {INFO_TABS.map((t) => (
@@ -351,16 +337,19 @@ export default function Cybercab() {
               ))}
             </div>
             <div>
-              <label className="text-[12px] text-muted-foreground">Or enter a custom amount ($5,000+)</label>
+              <label className="text-[12px] text-muted-foreground">Or enter any amount</label>
               <input
                 type="number"
-                min="5000"
+                min="1"
+                step="any"
                 value={customAmount}
                 onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-                placeholder="5000"
+                placeholder="Enter amount"
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
-          
+            </div>
+          </div>
+
           <DialogFooter className="flex-row gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setInvestOpen(false)} disabled={confirming}>
               Cancel
