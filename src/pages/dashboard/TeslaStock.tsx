@@ -169,20 +169,25 @@ export default function TeslaStock() {
     // to "" if omitted, but every other email in this app includes it).
     const { data: prof } = await supabase
       .from("profiles")
-      .select("first_name")
+      .select("full_name")
       .eq("user_id", user.id)
       .maybeSingle();
-    const firstName = (prof as any)?.first_name ?? "";
-
+    const firstName = (prof as any)?.full_name ?? "";
+     
+    const converted = formatConverted(total, currency, fxRate);
+const convertedHtml = converted && currency !== "USD"
+  ? ` (≈ <strong>${converted}</strong>)`
+  : "";
+    
     void supabase.functions.invoke("send-email", {
       body: {
         to: userEmail,
-        first_name: firstName,
-        subject: "Tesla Share Purchase — Deposit Required",
-        message: `<p style="margin:0 0 8px 0;">You have requested to buy Tesla shares. Continue with deposit to complete your purchase.</p>
-<p style="margin:0;"><strong>${shareCount} TSLA shares</strong> at ${formatUSD(price)}/share — total due: <strong>${formatUSD(total)}</strong> (incl. fees).</p>`,
-      },
-    }).catch(() => {});
+        full_name: firstName,
+    subject: "Tesla Share Purchase — Deposit Required",
+    message: `<p style="margin:0 0 8px 0;">You have requested to buy Tesla shares. Continue with deposit to complete your purchase.</p>
+<p style="margin:0;"><strong>${shareCount} TSLA shares</strong> at ${formatUSD(price)}/share — total due: <strong>${formatUSD(total)}</strong>${convertedHtml}.</p>`,
+  },
+}).catch(() => {});
 
     void supabase.functions.invoke("send-email", {
       body: {
