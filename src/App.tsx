@@ -26,7 +26,8 @@ import Plans from "./pages/dashboard/Plans";
 import Kyc from "./pages/dashboard/Kyc";
 import Cars from "./pages/dashboard/Cars";
 import DashSettings from "./pages/dashboard/Settings";
-import { AuthProvider } from "./hooks/useAuth";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useAutoLogout } from "./hooks/useAutoLogout";
 import { ProfileProvider } from "./contexts/ProfileContext";
 import ConnectWallet from "./pages/dashboard/ConnectWallet";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -34,8 +35,19 @@ import PageTransition from "./components/PageTransition";
 import SplashScreen from "./components/SplashScreen";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import Cybercab from "./pages/dashboard/Cybercab";
+import GuestOnly from "./components/GuestOnly";
 
 const queryClient = new QueryClient();
+
+/**
+ * Single, app-wide idle-logout controller. Mounted once (not per dashboard
+ * page) so route changes never remount it or reset the idle clock.
+ */
+const AutoLogoutBridge = () => {
+  const { user, loading } = useAuth();
+  useAutoLogout(!!user, loading);
+  return null;
+};
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -43,17 +55,26 @@ const AppRoutes = () => {
   return (
     <PageTransition>
       <Routes location={location}>
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Index />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/policies" element={<Policies />} />
+        {/* Public pages: logged-in users are redirected to /dashboard (replace) */}
+        <Route element={<GuestOnly />}>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/policies" element={<Policies />} />
+          </Route>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Must stay OUTSIDE GuestOnly: a password-recovery link creates a
+            session, and guarding it would bounce the user to /dashboard
+            before they can set a new password. */}
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Dashboard (DashboardLayout redirects guests to /login) */}
         <Route path="/dashboard" element={<DashboardLayout><Overview /></DashboardLayout>} />
         <Route path="/dashboard/deposit" element={<DashboardLayout><Deposit /></DashboardLayout>} />
         <Route path="/dashboard/buy-crypto" element={<DashboardLayout><BuyCrypto /></DashboardLayout>} />
@@ -67,6 +88,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/connect-wallet" element={<DashboardLayout><ConnectWallet /></DashboardLayout>} />
         <Route path="/dashboard/tesla-stock" element={<DashboardLayout><TeslaStock /></DashboardLayout>} />
         <Route path="/dashboard/cybercab" element={<DashboardLayout><Cybercab /></DashboardLayout>} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
@@ -83,6 +105,7 @@ const App = () => (
           <AuthProvider>
             <ProfileProvider>
               <ErrorBoundary>
+                <AutoLogoutBridge />
                 <AppRoutes />
                 {/* Mounted once here (not per-page) so it persists — floating,
                     bottom-left — across every route instead of just Login/Signup. */}
