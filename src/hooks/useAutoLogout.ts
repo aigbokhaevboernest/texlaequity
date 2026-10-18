@@ -1,13 +1,22 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle
 const LAST_ACTIVITY_KEY = "tv:last-activity";
 const FORCE_LOGOUT_KEY = "tv:force-logout";
+const WRITE_THROTTLE_MS = 5000;
 
 const AUTH_STORAGE_PATTERNS = [/supabase\.auth/i, /^sb-.*-auth-token$/i, /^sb-.*-code-verifier$/i];
+const isAuthStorageKey = (key: string) => AUTH_STORAGE_PATTERNS.some((p) => p.test(key));
 
-const isAuthStorageKey = (key: string) => AUTH_STORAGE_PATTERNS.some((pattern) => pattern.test(key));
+const clearIdleKeys = () => {
+  try {
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
+    localStorage.removeItem(FORCE_LOGOUT_KEY);
+  } catch {
+    /* ignore */
+  }
+};
 
 const clearAuthStorage = () => {
   [window.localStorage, window.sessionStorage].forEach((storage) => {
@@ -20,158 +29,155 @@ const clearAuthStorage = () => {
       if (isAuthStorageKey(key)) storage.removeItem(key);
     });
   });
-
-  // Also clear the auto-logout bookkeeping keys. Previously these
-  // survived logout forever, so a stale "last activity" timestamp
-  // from a prior session would make the very next login compute a
-  // negative time-remaining and log the user out instantly.
-  try {
-    window.localStorage.removeItem(LAST_ACTIVITY_KEY);
-    window.localStorage.removeItem(FORCE_LOGOUT_KEY);
-  } catch {
-    /* ignore */
-  }
+  clearIdleKeys();
 };
 
 const clearAuthCookies = () => {
   document.cookie.split(";").forEach((cookie) => {
-    const [rawName] = cookie.split("=");
-    const name = rawName?.trim();
+    const name = cookie.split("=")[0]?.trim();
     if (!name || !isAuthStorageKey(name)) return;
-
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
   });
 };
 
-export function useAutoLogout() {
+let loggingOut = false;
+
+/**
+ * The ONE logout path. Used by the Logout buttons AND by idle expiry.
+ * Signs out, wipes auth + idle keys, then hard-navigates to /login
+ * (a full reload avoids races with GuestOnly bouncing back to /dashboard).
+ */
+export async function performLogout() {
+  if (loggingOut) return;
+  loggingOut = true;
+
+  try {
+    localStorage.setItem(FORCE_LOGOUT_KEY, String(Date.now())); // tells other tabs
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    // Don't let a dead network hang the logout forever.
+    await Promise.race([
+      supabase.auth.signOut({ scope: "global" }),
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]);
+  } catch {
+    /* ignore */
+  }
+
+  clearAuthStorage();
+  clearAuthCookies();
+  window.location.replace("/login");
+}
+
+/**
+ * Mount ONCE at app root (see AutoLogoutBridge). Not per page.
+ * enabled = a user is logged in; loading = auth still resolving.
+ */
+export function useAutoLogout(enabled: boolean, loading: boolean) {
   useEffect(() => {
+    // While auth is resolving, do nothing (otherwise a page refresh would
+    // look like "logged out" and wipe the idle clock).
+    if (loading) return;
+
+    // Logged out: make sure no stale timestamp survives to the next login.
+    if (!enabled) {
+      clearIdleKeys();
+      return;
+    }
+
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let heartbeat: ReturnType<typeof setInterval> | null = null;
-    let active = true;
-    let loggingOut = false;
+    let lastWrite = 0;
 
-    const logout = async () => {
-      if (!active || loggingOut) return;
-      loggingOut = true;
-
-      try {
-        localStorage.setItem(FORCE_LOGOUT_KEY, String(Date.now()));
-      } catch {
-        /* ignore */
-      }
-
-      try {
-        await supabase.auth.signOut({ scope: "global" });
-      } catch {
-        /* ignore */
-      }
-
-      clearAuthStorage();
-      clearAuthCookies();
-      window.location.replace("/login");
-    };
-
-    const getLastActivity = () => {
+    const getLast = (): number => {
       try {
         const raw = localStorage.getItem(LAST_ACTIVITY_KEY);
-        return raw ? Number(raw) : Date.now();
+        const n = raw ? Number(raw) : NaN;
+        return Number.isFinite(n) ? n : NaN;
       } catch {
-        return Date.now();
+        return NaN;
       }
     };
 
-    const setLastActivity = (value: number) => {
+    const setLast = (v: number) => {
       try {
-        localStorage.setItem(LAST_ACTIVITY_KEY, String(value));
+        localStorage.setItem(LAST_ACTIVITY_KEY, String(v));
       } catch {
         /* ignore */
       }
     };
 
-    const armTimer = () => {
+    // Recompute against the stored deadline. Never grants new time.
+    const check = () => {
+      const last = getLast();
+      if (Number.isNaN(last)) {
+        setLast(Date.now());
+        arm(TIMEOUT_MS);
+        return;
+      }
+      const remaining = TIMEOUT_MS - (Date.now() - last);
+      if (remaining <= 0) {
+        performLogout();
+        return;
+      }
+      arm(remaining);
+    };
+
+    const arm = (ms: number) => {
       if (timer) clearTimeout(timer);
-      const remaining = Math.max(TIMEOUT_MS - (Date.now() - getLastActivity()), 0);
-      timer = setTimeout(logout, remaining || 0);
+      timer = setTimeout(check, ms);
     };
 
-    const reset = () => {
+    // Real interaction only. No mousemove / pointermove / touchmove:
+    // those fire constantly and kept sessions alive forever.
+    const onActivity = () => {
       const now = Date.now();
-      setLastActivity(now);
-      armTimer();
+      const last = getLast();
+      // If the window already expired (e.g. device just woke up), a tap must
+      // NOT revive the session.
+      if (!Number.isNaN(last) && now - last >= TIMEOUT_MS) {
+        performLogout();
+        return;
+      }
+      if (now - lastWrite < WRITE_THROTTLE_MS) return;
+      lastWrite = now;
+      setLast(now);
+      arm(TIMEOUT_MS);
     };
 
-    const syncFromStorage = (event: StorageEvent) => {
-      if (event.key === LAST_ACTIVITY_KEY) armTimer();
-      if (event.key === FORCE_LOGOUT_KEY) {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === FORCE_LOGOUT_KEY && e.newValue) {
         clearAuthStorage();
         clearAuthCookies();
         window.location.replace("/login");
+      } else if (e.key === LAST_ACTIVITY_KEY) {
+        check();
       }
     };
 
-    // Events that count as genuine user activity and should push the
-    // 30-minute window forward.
-    //
-    // NOTE: "focus" was deliberately removed from this list. The
-    // window/tab "focus" event fires whenever the browser becomes the
-    // active app again -- including when a laptop wakes from sleep or
-    // a phone is unlocked with the tab already open. That is NOT user
-    // activity, and treating it as one caused the exact bug reported:
-    // waking the device silently reset the idle timer to a fresh 30
-    // minutes, so the session never expired even after being idle
-    // (asleep) far longer than the timeout. Regaining focus should
-    // only trigger a RECHECK of the existing deadline (see the
-    // separate "focus" listener below, wired to armTimer, not reset),
-    // never a reset of the deadline itself.
-    const events: (keyof WindowEventMap)[] = [
-      "mousemove",
-      "mousedown",
-      "click",
-      "scroll",
-      "keydown",
-      "keypress",
-      "touchstart",
-      "touchmove",
-      "pointerdown",
-      "pointermove",
-    ];
+    const events: (keyof WindowEventMap)[] = ["mousedown", "keydown", "touchstart", "scroll", "click", "wheel"];
 
-    // Always treat the moment this hook mounts (i.e. right after a
-    // successful login, when the dashboard first renders) as fresh
-    // activity. Previously this only ran if the key was missing, so
-    // a leftover timestamp from a much earlier session would survive
-    // and immediately expire on the next login.
-    setLastActivity(Date.now());
+    // Fresh login => key was cleared while logged out, so this starts a new
+    // window. A returning session with an old key is checked, not refreshed.
+    check();
 
-    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
-    window.addEventListener("storage", syncFromStorage);
-
-    // Recheck-only listeners: these fire when the tab/window regains
-    // visibility or focus (e.g. after device sleep/wake, tab switch,
-    // or app foregrounding). They must call armTimer() -- which
-    // recomputes the remaining time against the existing
-    // lastActivity timestamp -- and must NEVER call reset(), or a
-    // wake/focus event would silently grant a full new timeout window
-    // regardless of how long the device was actually idle.
-    document.addEventListener("visibilitychange", armTimer);
-    window.addEventListener("focus", armTimer);
-
-    armTimer();
-    heartbeat = setInterval(() => {
-      if (document.hidden) return;
-      const inactiveFor = Date.now() - getLastActivity();
-      if (inactiveFor >= TIMEOUT_MS) logout();
-    }, 15000);
+    events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }));
+    window.addEventListener("storage", onStorage);
+    // Wake / tab-switch: recheck only, never reset.
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    const heartbeat = setInterval(check, 15000);
 
     return () => {
-      active = false;
       if (timer) clearTimeout(timer);
-      if (heartbeat) clearInterval(heartbeat);
-      events.forEach((e) => window.removeEventListener(e, reset));
-      window.removeEventListener("storage", syncFromStorage);
-      document.removeEventListener("visibilitychange", armTimer);
-      window.removeEventListener("focus", armTimer);
+      clearInterval(heartbeat);
+      events.forEach((ev) => window.removeEventListener(ev, onActivity));
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
     };
-  }, []);
+  }, [enabled, loading]);
 }
