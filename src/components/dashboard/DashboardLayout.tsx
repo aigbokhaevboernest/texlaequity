@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useProfile } from "@/contexts/ProfileContext";
 import CybercabLoginToast from "@/components/CybercabLoginToast";
-import { useAutoLogout } from "@/hooks/useAutoLogout";
+import { performLogout } from "@/hooks/useAutoLogout";
 import {
   LayoutDashboard, Users, ArrowDownToLine, Car as CarIcon, History,
-  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Zap, Loader2, Wallet, TrendingUp, Rocket,
+  ArrowUpFromLine, ShieldCheck, LineChart, Settings, LogOut, Menu, Loader2, Wallet, TrendingUp, Rocket,
 } from "lucide-react";
 
 const items = [
@@ -51,11 +51,12 @@ const NavItems = ({ onClick }: { onClick?: () => void }) => (
 );
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  useAutoLogout();
+
+  // Idle auto-logout is mounted once at the app root (AutoLogoutBridge in App.tsx).
 
   useEffect(() => {
     if (authLoading) return;
@@ -76,14 +77,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isSuspended = profile?.status === "suspended";
   const path = location.pathname;
-const allowedWhileSuspended =
-  path === "/dashboard" ||
-  path === "/dashboard/deposit" ||
-  path === "/dashboard/kyc";
+  const allowedWhileSuspended =
+    path === "/dashboard" ||
+    path === "/dashboard/deposit" ||
+    path === "/dashboard/kyc";
 
-  const handleSignOut = async () => {
-    nav("/login", { replace: true });
-    await signOut();
+  // Single logout path shared with idle auto-logout: sign out, wipe auth +
+  // idle keys, then hard-navigate to /login (no race with GuestOnly).
+  const handleSignOut = () => {
+    void performLogout();
   };
 
   const initials = (profile?.full_name || profile?.username || "U")
@@ -95,7 +97,8 @@ const allowedWhileSuspended =
 
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/60">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center justify-start">
+          {/* Logo stays inside the app: never links to the public site */}
+          <Link to="/dashboard" className="flex items-center justify-start">
             <BrandLogo className="h-4 w-auto" />
           </Link>
 
@@ -164,7 +167,7 @@ const allowedWhileSuspended =
               <h2 className="font-display text-2xl mb-2 text-destructive">Account Suspended</h2>
               <p className="text-[14px] text-muted-foreground mb-4">
                 Your account has been suspended. Most actions are blocked.
-You can still use Dashboard, Deposit, and KYC.
+                You can still use Dashboard, Deposit, and KYC.
               </p>
               <p className="text-[13px]">Contact support: <a className="text-primary underline" href="mailto:support@teslagrowthequity.com">support@teslagrowthequity.com</a></p>
             </div>
